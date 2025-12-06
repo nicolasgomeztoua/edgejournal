@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AgCharts } from "ag-charts-react";
-import type { AgChartOptions } from "ag-charts-community";
 import {
 	ArrowDownRight,
 	ArrowUpRight,
@@ -96,7 +95,7 @@ function StatsOverview() {
 function WinLossChart() {
 	const { data: stats, isLoading } = api.trades.getStats.useQuery();
 
-	const chartOptions: AgChartOptions = useMemo(() => {
+	const chartOptions = useMemo(() => {
 		if (!stats) return {};
 
 		return {
@@ -108,7 +107,7 @@ function WinLossChart() {
 			],
 			series: [
 				{
-					type: "donut",
+					type: "donut" as const,
 					angleKey: "value",
 					calloutLabelKey: "category",
 					sectorLabelKey: "value",
@@ -117,7 +116,7 @@ function WinLossChart() {
 				},
 			],
 			legend: {
-				position: "bottom",
+				position: "bottom" as const,
 				item: {
 					label: {
 						color: "#94a3b8",
@@ -139,13 +138,14 @@ function WinLossChart() {
 		);
 	}
 
-	return <AgCharts options={chartOptions} style={{ height: 300 }} />;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	return <AgCharts options={chartOptions as any} style={{ height: 300 }} />;
 }
 
 function PnLDistributionChart() {
 	const { data, isLoading } = api.trades.getAll.useQuery({ status: "closed", limit: 100 });
 
-	const chartOptions: AgChartOptions = useMemo(() => {
+	const chartOptions = useMemo(() => {
 		if (!data?.items) return {};
 
 		const trades = data.items
@@ -161,7 +161,7 @@ function PnLDistributionChart() {
 			data: trades.slice(0, 50),
 			series: [
 				{
-					type: "bar",
+					type: "bar" as const,
 					xKey: "trade",
 					yKey: "pnl",
 					fill: "#10b981",
@@ -173,14 +173,14 @@ function PnLDistributionChart() {
 			],
 			axes: [
 				{
-					type: "category",
-					position: "bottom",
+					type: "category" as const,
+					position: "bottom" as const,
 					label: { color: "#94a3b8" },
 					line: { color: "#334155" },
 				},
 				{
-					type: "number",
-					position: "left",
+					type: "number" as const,
+					position: "left" as const,
 					label: { color: "#94a3b8", formatter: (params: { value: number }) => `$${params.value}` },
 					line: { color: "#334155" },
 					gridLine: { style: [{ stroke: "#1e293b" }] },
@@ -201,13 +201,14 @@ function PnLDistributionChart() {
 		);
 	}
 
-	return <AgCharts options={chartOptions} style={{ height: 300 }} />;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	return <AgCharts options={chartOptions as any} style={{ height: 300 }} />;
 }
 
 function CumulativePnLChart() {
 	const { data, isLoading } = api.trades.getAll.useQuery({ status: "closed", limit: 100 });
 
-	const chartOptions: AgChartOptions = useMemo(() => {
+	const chartOptions = useMemo(() => {
 		if (!data?.items) return {};
 
 		let cumulative = 0;
@@ -228,7 +229,7 @@ function CumulativePnLChart() {
 			data: trades,
 			series: [
 				{
-					type: "area",
+					type: "area" as const,
 					xKey: "trade",
 					yKey: "pnl",
 					fill: "#10b98133",
@@ -239,14 +240,14 @@ function CumulativePnLChart() {
 			],
 			axes: [
 				{
-					type: "category",
-					position: "bottom",
+					type: "category" as const,
+					position: "bottom" as const,
 					label: { color: "#94a3b8" },
 					line: { color: "#334155" },
 				},
 				{
-					type: "number",
-					position: "left",
+					type: "number" as const,
+					position: "left" as const,
 					label: { color: "#94a3b8", formatter: (params: { value: number }) => `$${params.value}` },
 					line: { color: "#334155" },
 					gridLine: { style: [{ stroke: "#1e293b" }] },
@@ -267,7 +268,8 @@ function CumulativePnLChart() {
 		);
 	}
 
-	return <AgCharts options={chartOptions} style={{ height: 300 }} />;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	return <AgCharts options={chartOptions as any} style={{ height: 300 }} />;
 }
 
 export default function AnalyticsPage() {
