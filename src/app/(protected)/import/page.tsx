@@ -1,0 +1,931 @@
+"use client";
+
+import { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { api } from "@/trpc/react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+	Alert,
+	AlertDescription,
+	AlertTitle,
+} from "@/components/ui/alert";
+import {
+	ArrowLeft,
+	ArrowRight,
+	Check,
+	FileSpreadsheet,
+	Info,
+	Loader2,
+	Upload,
+	AlertCircle,
+} from "lucide-react";
+import Link from "next/link";
+import { toast } from "sonner";
+import { useAccount } from "@/contexts/account-context";
+import { getParser, TRADING_PLATFORMS } from "@/lib/csv-parsers";
+import { parseProjectXWithOrders } from "@/lib/csv-parsers/projectx-parser";
+import type { ParsedTrade, TradingPlatform } from "@/lib/csv-parsers";
+
+type Step = "select-account" | "upload" | "mapping" | "preview" | "complete";
+
+interface ParsedRow {
+	[key: string]: string;
+}
+
+const REQUIRED_FIELDS = [
+	{ key: "symbol", label: "Symbol", required: true },
+	{ key: "direction", label: "Direction (Long/Short)", required: true },
+	{ key: "entryPrice", label: "Entry Price", required: true },
+	{ key: "entryTime", label: "Entry Date/Time", required: true },
+	{ key: "quantity", label: "Quantity/Lot Size", required: true },
+];
+
+const OPTIONAL_FIELDS = [
+	{ key: "exitPrice", label: "Exit Price", required: false },
+	{ key: "exitTime", label: "Exit Date/Time", required: false },
+	{ key: "stopLoss", label: "Stop Loss", required: false },
+	{ key: "takeProfit", label: "Take Profit", required: false },
+	{ key: "fees", label: "Fees/Commission", required: false },
+	{ key: "notes", label: "Notes", required: false },
+	{ key: "setupType", label: "Setup Type", required: false },
+];
+
+const ALL_FIELDS = [...REQUIRED_FIELDS, ...OPTIONAL_FIELDS];
+
+const PLATFORM_INFO: Record<TradingPlatform, { description: string; status: "ready" | "coming-soon" | "manual" }> = {
+	mt4: { description: "Auto-import from MT4 history export", status: "coming-soon" },
+	mt5: { description: "Auto-import from MT5 history export", status: "coming-soon" },
+	projectx: { description: "Auto-import from ProjectX export", status: "ready" },
+	ninjatrader: { description: "Auto-import from NinjaTrader export", status: "coming-soon" },
+	other: { description: "Manual column mapping", status: "manual" },
+};
+
+export default function ImportPage() {
+	const router = useRouter();
+	const { selectedAccountId, selectedAccount } = useAccount();
+	const { data: accounts = [] } = api.accounts.getAll.useQuery();
+	
+	const [step, setStep] = useState<Step>(selectedAccountId ? "upload" : "select-account");
+	const [selectedImportAccountId, setSelectedImportAccountId] = useState<number | null>(selectedAccountId);
+	const [instrumentType, setInstrumentType] = useState<"futures" | "forex">("futures");
+	
+	// Manual mapping state
+	const [csvData, setCsvData] = useState<ParsedRow[]>([]);
+	const [headers, setHeaders] = useState<string[]>([]);
+	const [mapping, setMapping] = useState<Record<string, string>>({});
+	
+	// Platform parsing state
+	const [parsedTrades, setParsedTrades] = useState<ParsedTrade[]>([]);
+	const [parseErrors, setParseErrors] = useState<string[]>([]);
+	
+	// ProjectX two-file upload state
+	const [tradesCSV, setTradesCSV] = useState<string | null>(null);
+	const [ordersCSV, setOrdersCSV] = useState<string | null>(null);
+	const [tradesFileName, setTradesFileName] = useState<string>("");
+	const [ordersFileName, setOrdersFileName] = useState<string>("");
+	
+	const [importing, setImporting] = useState(false);
+	const [importedCount, setImportedCount] = useState(0);
+
+	const batchImport = api.trades.batchImport.useMutation();
+	
+	const selectedImportAccount = accounts.find(a => a.id === selectedImportAccountId);
+	const accountPlatform = (selectedImportAccount?.platform ?? "other") as TradingPlatform;
+	const platformParser = getParser(accountPlatform);
+	const platformStatus = PLATFORM_INFO[accountPlatform]?.status ?? "manual";
+
+	const parseCSV = useCallback((text: string) => {
+		const lines = text.trim().split("\n");
+		if (lines.length < 2) {
+			toast.error("CSV file must have headers and at least one data row");
+			return;
+		}
+
+		const headerLine = lines[0];
+		const parsedHeaders = headerLine!.split(",").map((h) => h.trim().replace(/"/g, ""));
+		setHeaders(parsedHeaders);
+
+		const rows: ParsedRow[] = [];
+		for (let i = 1; i < lines.length; i++) {
+			const values = lines[i]!.split(",").map((v) => v.trim().replace(/"/g, ""));
+			const row: ParsedRow = {};
+			parsedHeaders.forEach((header, index) => {
+				row[header] = values[index] || "";
+			});
+			rows.push(row);
+		}
+
+		setCsvData(rows);
+		
+		// If we have a working platform parser, try to use it
+		if (platformParser && platformStatus === "ready") {
+			platformParser.parse(text).then((result) => {
+				if (result.success && result.trades.length > 0) {
+					setParsedTrades(result.trades);
+					setParseErrors(result.errors.map(e => `Row ${e.row}: ${e.message}`));
+					setStep("preview");
+				} else {
+					// Fall back to manual mapping
+					setParseErrors(result.errors.map(e => `Row ${e.row}: ${e.message}`));
+					toast.error("Auto-parse failed. Please map columns manually.");
+					setStep("mapping");
+				}
+			});
+		} else {
+			// Use manual mapping flow
+			setStep("mapping");
+		}
+
+		// Auto-map headers if they match field names
+		const autoMapping: Record<string, string> = {};
+		parsedHeaders.forEach((header) => {
+			const lowerHeader = header.toLowerCase().replace(/[^a-z]/g, "");
+			ALL_FIELDS.forEach((field) => {
+				const lowerField = field.key.toLowerCase();
+				if (lowerHeader.includes(lowerField) || lowerField.includes(lowerHeader)) {
+					autoMapping[field.key] = header;
+				}
+			});
+		});
+		setMapping(autoMapping);
+	}, [platformParser, platformStatus]);
+
+	const handleFileUpload = useCallback(
+		(e: React.ChangeEvent<HTMLInputElement>) => {
+			const file = e.target.files?.[0];
+			if (!file) return;
+
+			if (!file.name.endsWith(".csv")) {
+				toast.error("Please upload a CSV file");
+				return;
+			}
+
+			const reader = new FileReader();
+			reader.onload = (event) => {
+				const text = event.target?.result as string;
+				parseCSV(text);
+			};
+			reader.readAsText(file);
+		},
+		[parseCSV]
+	);
+
+	const handleDrop = useCallback(
+		(e: React.DragEvent) => {
+			e.preventDefault();
+			const file = e.dataTransfer.files[0];
+			if (!file) return;
+
+			if (!file.name.endsWith(".csv")) {
+				toast.error("Please upload a CSV file");
+				return;
+			}
+
+			const reader = new FileReader();
+			reader.onload = (event) => {
+				const text = event.target?.result as string;
+				parseCSV(text);
+			};
+			reader.readAsText(file);
+		},
+		[parseCSV]
+	);
+
+	const isValidMapping = () => {
+		return REQUIRED_FIELDS.every((field) => mapping[field.key]);
+	};
+
+	const getMappedValue = (row: ParsedRow, fieldKey: string): string => {
+		const csvHeader = mapping[fieldKey];
+		return csvHeader ? row[csvHeader] || "" : "";
+	};
+
+	const parseDirection = (value: string): "long" | "short" => {
+		const lower = value.toLowerCase();
+		if (lower.includes("long") || lower === "buy" || lower === "b") return "long";
+		return "short";
+	};
+
+	const parseDateTime = (value: string): string => {
+		try {
+			const date = new Date(value);
+			if (isNaN(date.getTime())) {
+				// Try common formats
+				const parts = value.split(/[\/\-\s]/);
+				if (parts.length >= 3) {
+					const [m, d, y] = parts;
+					const date = new Date(`${y}-${m?.padStart(2, "0")}-${d?.padStart(2, "0")}`);
+					if (!isNaN(date.getTime())) return date.toISOString();
+				}
+				return new Date().toISOString();
+			}
+			return date.toISOString();
+		} catch {
+			return new Date().toISOString();
+		}
+	};
+
+	const handleImport = async () => {
+		if (!selectedImportAccountId) {
+			toast.error("Please select an account");
+			return;
+		}
+		
+		setImporting(true);
+
+		try {
+			// Prepare trades array for batch import
+			let tradesToInsert: Array<{
+				symbol: string;
+				instrumentType: "futures" | "forex";
+				direction: "long" | "short";
+				entryPrice: string;
+				entryTime: string;
+				exitPrice?: string;
+				exitTime?: string;
+				quantity: string;
+				stopLoss?: string;
+				takeProfit?: string;
+				stopLossHit?: boolean;
+				takeProfitHit?: boolean;
+				fees?: string;
+				notes?: string;
+				externalId?: string;
+			}>;
+
+			if (parsedTrades.length > 0) {
+				// Using platform-parsed data
+				tradesToInsert = parsedTrades.map((trade) => ({
+					symbol: trade.symbol.toUpperCase(),
+					instrumentType: trade.instrumentType,
+					direction: trade.direction,
+					entryPrice: trade.entryPrice,
+					entryTime: trade.entryTime.toISOString(),
+					exitPrice: trade.exitPrice || undefined,
+					exitTime: trade.exitTime?.toISOString(),
+					quantity: trade.quantity,
+					stopLoss: trade.stopLoss || undefined,
+					takeProfit: trade.takeProfit || undefined,
+					stopLossHit: trade.stopLossHit,
+					takeProfitHit: trade.takeProfitHit,
+					fees: trade.fees || undefined,
+					notes: trade.comment || undefined,
+					externalId: trade.externalId || undefined,
+				}));
+			} else {
+				// Using manual mapping
+				tradesToInsert = csvData.map((csvRow) => {
+					const entryTime = parseDateTime(getMappedValue(csvRow, "entryTime"));
+					const exitPrice = getMappedValue(csvRow, "exitPrice");
+					const exitTimeRaw = getMappedValue(csvRow, "exitTime");
+
+					return {
+						symbol: getMappedValue(csvRow, "symbol").toUpperCase(),
+						instrumentType,
+						direction: parseDirection(getMappedValue(csvRow, "direction")),
+						entryPrice: getMappedValue(csvRow, "entryPrice"),
+						entryTime,
+						exitPrice: exitPrice || undefined,
+						exitTime: exitTimeRaw ? parseDateTime(exitTimeRaw) : undefined,
+						quantity: getMappedValue(csvRow, "quantity") || "1",
+						stopLoss: getMappedValue(csvRow, "stopLoss") || undefined,
+						takeProfit: getMappedValue(csvRow, "takeProfit") || undefined,
+						notes: getMappedValue(csvRow, "notes") || undefined,
+					};
+				});
+			}
+
+			// Single batch insert - much faster!
+			const result = await batchImport.mutateAsync({
+				accountId: selectedImportAccountId,
+				trades: tradesToInsert,
+			});
+
+			setImportedCount(result.imported);
+			toast.success(`Imported ${result.imported} trades`);
+			setStep("complete");
+		} catch (error) {
+			console.error("Failed to import trades:", error);
+			toast.error("Failed to import trades. Please try again.");
+		} finally {
+			setImporting(false);
+		}
+	};
+
+	const totalRows = parsedTrades.length > 0 ? parsedTrades.length : csvData.length;
+
+	return (
+		<div className="mx-auto max-w-4xl space-y-6">
+			{/* Header */}
+			<div className="flex items-center gap-4">
+				<Button variant="ghost" size="icon" asChild>
+					<Link href="/journal">
+						<ArrowLeft className="h-4 w-4" />
+					</Link>
+				</Button>
+				<div>
+					<h1 className="text-2xl font-bold tracking-tight">Import Trades</h1>
+					<p className="text-muted-foreground">
+						Import trades from a CSV file
+					</p>
+				</div>
+			</div>
+
+			{/* Progress */}
+			<div className="flex items-center justify-center gap-4">
+				{["select-account", "upload", "mapping", "preview", "complete"].map((s, i) => {
+					// Skip mapping step display if using auto-parser
+					if (s === "mapping" && parsedTrades.length > 0) return null;
+					
+					return (
+						<div key={s} className="flex items-center gap-2">
+							<div
+								className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
+									step === s
+										? "bg-primary text-primary-foreground"
+										: ["select-account", "upload", "mapping", "preview", "complete"].indexOf(step) > i
+										? "bg-profit text-profit-foreground"
+										: "bg-muted text-muted-foreground"
+								}`}
+							>
+								{["select-account", "upload", "mapping", "preview", "complete"].indexOf(step) > i ? (
+									<Check className="h-4 w-4" />
+								) : (
+									i + 1
+								)}
+							</div>
+							<span
+								className={`hidden text-sm sm:block ${
+									step === s ? "font-medium" : "text-muted-foreground"
+								}`}
+							>
+								{s === "select-account" ? "Account" : s.charAt(0).toUpperCase() + s.slice(1)}
+							</span>
+							{i < 4 && (
+								<div className="hidden h-px w-8 bg-border sm:block" />
+							)}
+						</div>
+					);
+				})}
+			</div>
+
+			{/* Step: Select Account */}
+			{step === "select-account" && (
+				<Card>
+					<CardHeader>
+						<CardTitle>Select Account</CardTitle>
+						<CardDescription>
+							Choose which trading account to import trades into
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="space-y-6">
+						{accounts.length === 0 ? (
+							<Alert>
+								<AlertCircle className="h-4 w-4" />
+								<AlertTitle>No Accounts</AlertTitle>
+								<AlertDescription>
+									You need to create a trading account before importing trades.{" "}
+									<Link href="/settings?tab=accounts" className="underline">
+										Create an account
+									</Link>
+								</AlertDescription>
+							</Alert>
+						) : (
+							<>
+								<Select
+									value={selectedImportAccountId?.toString() || ""}
+									onValueChange={(value) => setSelectedImportAccountId(parseInt(value))}
+								>
+									<SelectTrigger className="w-full">
+										<SelectValue placeholder="Select an account" />
+									</SelectTrigger>
+									<SelectContent>
+										{accounts.map((account) => (
+											<SelectItem key={account.id} value={account.id.toString()}>
+												{account.name} ({TRADING_PLATFORMS.find(p => p.value === account.platform)?.label || "Other"})
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+
+								{selectedImportAccount && (
+									<Alert>
+										<Info className="h-4 w-4" />
+										<AlertTitle>
+											{TRADING_PLATFORMS.find(p => p.value === accountPlatform)?.label || "Manual"} Import
+										</AlertTitle>
+										<AlertDescription>
+											{PLATFORM_INFO[accountPlatform]?.description}
+											{platformStatus === "coming-soon" && (
+												<span className="block mt-1 text-yellow-500">
+													⚠️ Auto-parsing coming soon. Manual column mapping will be used.
+												</span>
+											)}
+										</AlertDescription>
+									</Alert>
+								)}
+
+								<div className="flex justify-end">
+									<Button 
+										onClick={() => setStep("upload")} 
+										disabled={!selectedImportAccountId}
+									>
+										Continue
+										<ArrowRight className="ml-2 h-4 w-4" />
+									</Button>
+								</div>
+							</>
+						)}
+					</CardContent>
+				</Card>
+			)}
+
+			{/* Step: Upload */}
+			{step === "upload" && (
+				<Card>
+					<CardHeader>
+						<CardTitle>Upload CSV {accountPlatform === "projectx" ? "Files" : "File"}</CardTitle>
+						<CardDescription>
+							Importing to: <strong>{selectedImportAccount?.name}</strong>
+							{accountPlatform === "projectx" && (
+								<span className="block mt-1 text-primary">
+									ProjectX requires both "Trades" and "Orders" CSV exports
+								</span>
+							)}
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="space-y-6">
+						{platformStatus !== "ready" && accountPlatform !== "projectx" && (
+							<div>
+								<label className="text-sm font-medium">Instrument Type</label>
+								<Tabs
+									value={instrumentType}
+									onValueChange={(v) => setInstrumentType(v as "futures" | "forex")}
+									className="mt-2"
+								>
+									<TabsList className="grid w-full grid-cols-2">
+										<TabsTrigger value="futures">Futures</TabsTrigger>
+										<TabsTrigger value="forex">Forex</TabsTrigger>
+									</TabsList>
+								</Tabs>
+							</div>
+						)}
+
+						{/* ProjectX Two-File Upload */}
+						{accountPlatform === "projectx" ? (
+							<div className="space-y-4">
+								<Alert>
+									<Info className="h-4 w-4" />
+									<AlertTitle>How to export from ProjectX</AlertTitle>
+									<AlertDescription>
+										<ol className="list-decimal list-inside mt-2 space-y-1 text-sm">
+											<li>Go to the <strong>Trades</strong> tab and export CSV</li>
+											<li>Go to the <strong>Orders</strong> tab and export CSV</li>
+											<li>Upload both files below</li>
+										</ol>
+									</AlertDescription>
+								</Alert>
+
+								{/* Trades CSV Upload */}
+								<div className="space-y-2">
+									<label className="text-sm font-medium">
+										Trades CSV <span className="text-destructive">*</span>
+									</label>
+									<div
+										className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition-colors ${
+											tradesCSV ? "border-profit bg-profit/5" : "border-border hover:border-primary/50"
+										}`}
+									>
+										{tradesCSV ? (
+											<div className="flex items-center gap-2 text-profit">
+												<Check className="h-5 w-5" />
+												<span className="font-medium">{tradesFileName}</span>
+												<Button
+													variant="ghost"
+													size="sm"
+													onClick={() => {
+														setTradesCSV(null);
+														setTradesFileName("");
+													}}
+												>
+													Remove
+												</Button>
+											</div>
+										) : (
+											<>
+												<FileSpreadsheet className="mb-2 h-8 w-8 text-muted-foreground" />
+												<input
+													type="file"
+													accept=".csv"
+													onChange={(e) => {
+														const file = e.target.files?.[0];
+														if (file) {
+															const reader = new FileReader();
+															reader.onload = (event) => {
+																setTradesCSV(event.target?.result as string);
+																setTradesFileName(file.name);
+															};
+															reader.readAsText(file);
+														}
+													}}
+													className="hidden"
+													id="trades-csv-upload"
+												/>
+												<Button asChild size="sm" variant="outline">
+													<label htmlFor="trades-csv-upload" className="cursor-pointer">
+														<Upload className="mr-2 h-4 w-4" />
+														Select Trades CSV
+													</label>
+												</Button>
+											</>
+										)}
+									</div>
+								</div>
+
+								{/* Orders CSV Upload */}
+								<div className="space-y-2">
+									<label className="text-sm font-medium">
+										Orders CSV <span className="text-destructive">*</span>
+									</label>
+									<div
+										className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition-colors ${
+											ordersCSV ? "border-profit bg-profit/5" : "border-border hover:border-primary/50"
+										}`}
+									>
+										{ordersCSV ? (
+											<div className="flex items-center gap-2 text-profit">
+												<Check className="h-5 w-5" />
+												<span className="font-medium">{ordersFileName}</span>
+												<Button
+													variant="ghost"
+													size="sm"
+													onClick={() => {
+														setOrdersCSV(null);
+														setOrdersFileName("");
+													}}
+												>
+													Remove
+												</Button>
+											</div>
+										) : (
+											<>
+												<FileSpreadsheet className="mb-2 h-8 w-8 text-muted-foreground" />
+												<input
+													type="file"
+													accept=".csv"
+													onChange={(e) => {
+														const file = e.target.files?.[0];
+														if (file) {
+															const reader = new FileReader();
+															reader.onload = (event) => {
+																setOrdersCSV(event.target?.result as string);
+																setOrdersFileName(file.name);
+															};
+															reader.readAsText(file);
+														}
+													}}
+													className="hidden"
+													id="orders-csv-upload"
+												/>
+												<Button asChild size="sm" variant="outline">
+													<label htmlFor="orders-csv-upload" className="cursor-pointer">
+														<Upload className="mr-2 h-4 w-4" />
+														Select Orders CSV
+													</label>
+												</Button>
+											</>
+										)}
+									</div>
+								</div>
+
+								<div className="flex justify-between pt-4">
+									<Button variant="outline" onClick={() => setStep("select-account")}>
+										<ArrowLeft className="mr-2 h-4 w-4" />
+										Back
+									</Button>
+									<Button
+										disabled={!tradesCSV || !ordersCSV}
+										onClick={async () => {
+											if (!tradesCSV || !ordersCSV) return;
+											
+											const result = await parseProjectXWithOrders(tradesCSV, ordersCSV);
+											
+											if (result.success && result.trades.length > 0) {
+												setParsedTrades(result.trades);
+												setParseErrors([
+													...result.errors.map(e => `Row ${e.row}: ${e.message}`),
+													...result.warnings,
+												]);
+												setStep("preview");
+											} else {
+												toast.error("Failed to parse CSVs");
+												setParseErrors(result.errors.map(e => `Row ${e.row}: ${e.message}`));
+											}
+										}}
+									>
+										Continue
+										<ArrowRight className="ml-2 h-4 w-4" />
+									</Button>
+								</div>
+							</div>
+						) : (
+							/* Standard Single-File Upload */
+							<>
+								<div
+									className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-12 transition-colors hover:border-primary/50"
+									onDragOver={(e) => e.preventDefault()}
+									onDrop={handleDrop}
+								>
+									<FileSpreadsheet className="mb-4 h-12 w-12 text-muted-foreground" />
+									<p className="mb-2 text-lg font-medium">
+										Drop your CSV file here
+									</p>
+									<p className="mb-4 text-sm text-muted-foreground">
+										or click to browse
+									</p>
+									<input
+										type="file"
+										accept=".csv"
+										onChange={handleFileUpload}
+										className="hidden"
+										id="csv-upload"
+									/>
+									<Button asChild>
+										<label htmlFor="csv-upload" className="cursor-pointer">
+											<Upload className="mr-2 h-4 w-4" />
+											Select File
+										</label>
+									</Button>
+								</div>
+
+								<div className="flex justify-between">
+									<Button variant="outline" onClick={() => setStep("select-account")}>
+										<ArrowLeft className="mr-2 h-4 w-4" />
+										Back
+									</Button>
+								</div>
+							</>
+						)}
+					</CardContent>
+				</Card>
+			)}
+
+			{/* Step: Manual Mapping */}
+			{step === "mapping" && (
+				<Card>
+					<CardHeader>
+						<CardTitle>Map Columns</CardTitle>
+						<CardDescription>
+							Match your CSV columns to trade fields
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="space-y-6">
+						{parseErrors.length > 0 && (
+							<Alert variant="destructive">
+								<AlertCircle className="h-4 w-4" />
+								<AlertTitle>Parse Warnings</AlertTitle>
+								<AlertDescription>
+									<ul className="list-disc list-inside mt-2">
+										{parseErrors.slice(0, 3).map((err, i) => (
+											<li key={i}>{err}</li>
+										))}
+									</ul>
+								</AlertDescription>
+							</Alert>
+						)}
+						
+						<div className="grid gap-4 sm:grid-cols-2">
+							{ALL_FIELDS.map((field) => (
+								<div key={field.key} className="space-y-2">
+									<label className="text-sm font-medium">
+										{field.label}
+										{field.required && (
+											<span className="ml-1 text-destructive">*</span>
+										)}
+									</label>
+									<Select
+										value={mapping[field.key] || ""}
+										onValueChange={(value) =>
+											setMapping({ ...mapping, [field.key]: value })
+										}
+									>
+										<SelectTrigger>
+											<SelectValue placeholder="Select column" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="">-- Skip --</SelectItem>
+											{headers.map((header) => (
+												<SelectItem key={header} value={header}>
+													{header}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
+							))}
+						</div>
+
+						<div className="flex justify-between">
+							<Button variant="outline" onClick={() => setStep("upload")}>
+								<ArrowLeft className="mr-2 h-4 w-4" />
+								Back
+							</Button>
+							<Button onClick={() => setStep("preview")} disabled={!isValidMapping()}>
+								Preview
+								<ArrowRight className="ml-2 h-4 w-4" />
+							</Button>
+						</div>
+					</CardContent>
+				</Card>
+			)}
+
+			{/* Step: Preview */}
+			{step === "preview" && (
+				<Card>
+					<CardHeader>
+						<CardTitle>Preview Import</CardTitle>
+						<CardDescription>
+							Review {totalRows} trades before importing to {selectedImportAccount?.name}
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="space-y-6">
+						<div className="max-h-96 overflow-auto rounded-lg border">
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Symbol</TableHead>
+										<TableHead>Direction</TableHead>
+										<TableHead>Entry</TableHead>
+										<TableHead>Exit</TableHead>
+										<TableHead>Qty</TableHead>
+										{accountPlatform === "projectx" && (
+											<TableHead>Exit Type</TableHead>
+										)}
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{(parsedTrades.length > 0 ? parsedTrades : csvData).slice(0, 10).map((row, i) => {
+										const isParsed = parsedTrades.length > 0;
+										const trade = isParsed ? row as ParsedTrade : null;
+										const csvRow = !isParsed ? row as ParsedRow : null;
+										
+										const symbol = trade?.symbol || getMappedValue(csvRow!, "symbol");
+										const direction = trade?.direction || parseDirection(getMappedValue(csvRow!, "direction"));
+										const entryPrice = trade?.entryPrice || getMappedValue(csvRow!, "entryPrice");
+										const exitPrice = trade?.exitPrice || getMappedValue(csvRow!, "exitPrice");
+										const quantity = trade?.quantity || getMappedValue(csvRow!, "quantity") || "1";
+										
+										// Determine exit type for ProjectX
+										let exitType = "";
+										if (trade?.stopLossHit) exitType = "SL";
+										else if (trade?.takeProfitHit) exitType = "TP";
+										else if (trade?.stopLoss || trade?.takeProfit) exitType = "Manual";
+										else exitType = "-";
+										
+										return (
+											<TableRow key={i}>
+												<TableCell className="font-mono text-xs">
+													{symbol.toUpperCase()}
+												</TableCell>
+												<TableCell>
+													<Badge
+														variant="outline"
+														className={`text-xs ${
+															direction === "long"
+																? "border-profit/50 text-profit"
+																: "border-loss/50 text-loss"
+														}`}
+													>
+														{direction}
+													</Badge>
+												</TableCell>
+												<TableCell className="font-mono text-xs">
+													{entryPrice}
+												</TableCell>
+												<TableCell className="font-mono text-xs">
+													{exitPrice || "-"}
+												</TableCell>
+												<TableCell className="font-mono text-xs">
+													{quantity}
+												</TableCell>
+												{accountPlatform === "projectx" && (
+													<TableCell>
+														<Badge
+															variant="outline"
+															className={`text-xs ${
+																exitType === "SL"
+																	? "border-loss/50 text-loss"
+																	: exitType === "TP"
+																	? "border-profit/50 text-profit"
+																	: "border-muted text-muted-foreground"
+															}`}
+														>
+															{exitType}
+														</Badge>
+													</TableCell>
+												)}
+											</TableRow>
+										);
+									})}
+								</TableBody>
+							</Table>
+						</div>
+						{totalRows > 10 && (
+							<p className="text-center text-sm text-muted-foreground">
+								Showing first 10 of {totalRows} trades
+							</p>
+						)}
+						
+						{/* ProjectX summary */}
+						{accountPlatform === "projectx" && parsedTrades.length > 0 && (
+							<div className="grid grid-cols-3 gap-4 rounded-lg border bg-muted/30 p-4">
+								<div className="text-center">
+									<div className="text-lg font-semibold text-profit">
+										{parsedTrades.filter(t => t.takeProfitHit).length}
+									</div>
+									<div className="text-xs text-muted-foreground">TP Hits</div>
+								</div>
+								<div className="text-center">
+									<div className="text-lg font-semibold text-loss">
+										{parsedTrades.filter(t => t.stopLossHit).length}
+									</div>
+									<div className="text-xs text-muted-foreground">SL Hits</div>
+								</div>
+								<div className="text-center">
+									<div className="text-lg font-semibold text-muted-foreground">
+										{parsedTrades.filter(t => !t.stopLossHit && !t.takeProfitHit).length}
+									</div>
+									<div className="text-xs text-muted-foreground">Manual</div>
+								</div>
+							</div>
+						)}
+
+						<div className="flex justify-between">
+							<Button variant="outline" onClick={() => setStep(parsedTrades.length > 0 ? "upload" : "mapping")}>
+								<ArrowLeft className="mr-2 h-4 w-4" />
+								Back
+							</Button>
+							<Button onClick={handleImport} disabled={importing}>
+								{importing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+								Import {totalRows} Trades
+							</Button>
+						</div>
+					</CardContent>
+				</Card>
+			)}
+
+			{/* Step: Complete */}
+			{step === "complete" && (
+				<Card>
+					<CardContent className="flex flex-col items-center justify-center py-12">
+						<div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-profit/20">
+							<Check className="h-8 w-8 text-profit" />
+						</div>
+						<h2 className="mb-2 text-xl font-semibold">Import Complete!</h2>
+						<p className="mb-6 text-muted-foreground">
+							Successfully imported {importedCount} of {totalRows} trades to {selectedImportAccount?.name}
+						</p>
+						<div className="flex gap-4">
+							<Button variant="outline" onClick={() => {
+								setStep("upload");
+								setCsvData([]);
+								setHeaders([]);
+								setMapping({});
+								setParsedTrades([]);
+								setParseErrors([]);
+								// Reset ProjectX state
+								setTradesCSV(null);
+								setOrdersCSV(null);
+								setTradesFileName("");
+								setOrdersFileName("");
+							}}>
+								Import More
+							</Button>
+							<Button onClick={() => router.push("/journal")}>
+								View Journal
+							</Button>
+						</div>
+					</CardContent>
+				</Card>
+			)}
+		</div>
+	);
+}

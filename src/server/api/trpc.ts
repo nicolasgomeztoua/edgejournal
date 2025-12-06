@@ -6,11 +6,14 @@
  * TL;DR - This is where all the tRPC server stuff is created and plugged in. The pieces you will
  * need to use are documented accordingly near the end.
  */
-import { initTRPC } from "@trpc/server";
+import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
+import { auth, currentUser } from "@clerk/nextjs/server";
 
 import { db } from "@/server/db";
+import { users } from "@/server/db/schema";
+import { eq } from "drizzle-orm";
 
 /**
  * 1. CONTEXT
@@ -25,8 +28,11 @@ import { db } from "@/server/db";
  * @see https://trpc.io/docs/server/context
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
+	const { userId } = await auth();
+
 	return {
 		db,
+		userId,
 		...opts,
 	};
 };
@@ -97,6 +103,65 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
 });
 
 /**
+ * Auth middleware - ensures user is authenticated and syncs user to DB if needed
+ */
+const authMiddleware = t.middleware(async ({ ctx, next }) => {
+	if (!ctx.userId) {
+		throw new TRPCError({ code: "UNAUTHORIZED" });
+	}
+
+	// Try to find user in database
+	let user = await ctx.db.query.users.findFirst({
+		where: eq(users.clerkId, ctx.userId),
+	});
+
+	// If user doesn't exist, create them (auto-sync on first login)
+	if (!user) {
+		const clerkUser = await currentUser();
+		
+		if (!clerkUser) {
+			throw new TRPCError({
+				code: "UNAUTHORIZED",
+				message: "Could not fetch user data from Clerk",
+			});
+		}
+
+		const email = clerkUser.emailAddresses[0]?.emailAddress ?? "";
+		const name = [clerkUser.firstName, clerkUser.lastName]
+			.filter(Boolean)
+			.join(" ") || null;
+
+		const [newUser] = await ctx.db
+			.insert(users)
+			.values({
+				clerkId: ctx.userId,
+				email,
+				name,
+				imageUrl: clerkUser.imageUrl,
+				role: "user",
+			})
+			.returning();
+
+		user = newUser;
+		console.log(`[AUTH] Created new user: ${ctx.userId}`);
+	}
+
+	if (!user) {
+		throw new TRPCError({
+			code: "INTERNAL_SERVER_ERROR",
+			message: "Failed to create or find user",
+		});
+	}
+
+	return next({
+		ctx: {
+			...ctx,
+			user,
+		},
+	});
+});
+
+/**
  * Public (unauthenticated) procedure
  *
  * This is the base piece you use to build new queries and mutations on your tRPC API. It does not
@@ -104,3 +169,13 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
  * are logged in.
  */
 export const publicProcedure = t.procedure.use(timingMiddleware);
+
+/**
+ * Protected (authenticated) procedure
+ *
+ * This procedure requires the user to be authenticated and will fetch the user from the database.
+ * Use this for any operation that requires a logged-in user.
+ */
+export const protectedProcedure = t.procedure
+	.use(timingMiddleware)
+	.use(authMiddleware);

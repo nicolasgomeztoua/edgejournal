@@ -1,7 +1,227 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
 
 @theme {
-	--font-sans:
-		var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
+	--font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
 		"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+	--font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, "SF Mono",
+		Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+@theme inline {
+	--radius-sm: calc(var(--radius) - 4px);
+	--radius-md: calc(var(--radius) - 2px);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) + 4px);
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+	--color-popover: var(--popover);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-destructive: var(--destructive);
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+	--color-chart-1: var(--chart-1);
+	--color-chart-2: var(--chart-2);
+	--color-chart-3: var(--chart-3);
+	--color-chart-4: var(--chart-4);
+	--color-chart-5: var(--chart-5);
+	--color-sidebar: var(--sidebar);
+	--color-sidebar-foreground: var(--sidebar-foreground);
+	--color-sidebar-primary: var(--sidebar-primary);
+	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+	--color-sidebar-accent: var(--sidebar-accent);
+	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+	--color-sidebar-border: var(--sidebar-border);
+	--color-sidebar-ring: var(--sidebar-ring);
+
+	/* Trading-specific colors */
+	--color-profit: var(--profit);
+	--color-loss: var(--loss);
+	--color-breakeven: var(--breakeven);
+}
+
+/* Dark-first trading theme - this is the default */
+:root {
+	--radius: 0.5rem;
+
+	/* Deep slate/navy background */
+	--background: oklch(0.13 0.015 260);
+	--foreground: oklch(0.95 0.01 260);
+
+	/* Cards slightly lighter than background */
+	--card: oklch(0.16 0.015 260);
+	--card-foreground: oklch(0.95 0.01 260);
+
+	/* Popover same as card */
+	--popover: oklch(0.16 0.015 260);
+	--popover-foreground: oklch(0.95 0.01 260);
+
+	/* Primary - Emerald accent */
+	--primary: oklch(0.7 0.17 162);
+	--primary-foreground: oklch(0.13 0.015 260);
+
+	/* Secondary - Subtle slate */
+	--secondary: oklch(0.22 0.015 260);
+	--secondary-foreground: oklch(0.9 0.01 260);
+
+	/* Muted - For subtle text */
+	--muted: oklch(0.22 0.015 260);
+	--muted-foreground: oklch(0.6 0.01 260);
+
+	/* Accent - Teal/cyan */
+	--accent: oklch(0.22 0.015 260);
+	--accent-foreground: oklch(0.9 0.01 260);
+
+	/* Destructive - Trading loss red */
+	--destructive: oklch(0.65 0.2 25);
+
+	/* Borders */
+	--border: oklch(0.25 0.015 260);
+	--input: oklch(0.22 0.015 260);
+	--ring: oklch(0.7 0.17 162);
+
+	/* Chart colors */
+	--chart-1: oklch(0.7 0.17 162);
+	--chart-2: oklch(0.7 0.15 200);
+	--chart-3: oklch(0.7 0.18 280);
+	--chart-4: oklch(0.75 0.15 85);
+	--chart-5: oklch(0.65 0.2 25);
+
+	/* Sidebar */
+	--sidebar: oklch(0.11 0.015 260);
+	--sidebar-foreground: oklch(0.9 0.01 260);
+	--sidebar-primary: oklch(0.7 0.17 162);
+	--sidebar-primary-foreground: oklch(0.13 0.015 260);
+	--sidebar-accent: oklch(0.18 0.015 260);
+	--sidebar-accent-foreground: oklch(0.9 0.01 260);
+	--sidebar-border: oklch(0.22 0.015 260);
+	--sidebar-ring: oklch(0.7 0.17 162);
+
+	/* Trading specific */
+	--profit: oklch(0.72 0.19 155);
+	--loss: oklch(0.65 0.22 25);
+	--breakeven: oklch(0.7 0.15 85);
+}
+
+/* Light mode override (optional, but keeping for flexibility) */
+.light {
+	--background: oklch(0.98 0.005 260);
+	--foreground: oklch(0.15 0.015 260);
+	--card: oklch(1 0 0);
+	--card-foreground: oklch(0.15 0.015 260);
+	--popover: oklch(1 0 0);
+	--popover-foreground: oklch(0.15 0.015 260);
+	--primary: oklch(0.55 0.2 162);
+	--primary-foreground: oklch(0.98 0.005 260);
+	--secondary: oklch(0.94 0.01 260);
+	--secondary-foreground: oklch(0.2 0.015 260);
+	--muted: oklch(0.94 0.01 260);
+	--muted-foreground: oklch(0.45 0.01 260);
+	--accent: oklch(0.94 0.01 260);
+	--accent-foreground: oklch(0.2 0.015 260);
+	--destructive: oklch(0.55 0.25 25);
+	--border: oklch(0.9 0.01 260);
+	--input: oklch(0.9 0.01 260);
+	--ring: oklch(0.55 0.2 162);
+	--profit: oklch(0.55 0.22 155);
+	--loss: oklch(0.55 0.25 25);
+	--breakeven: oklch(0.6 0.18 85);
+}
+
+@layer base {
+	* {
+		@apply border-border outline-ring/50;
+	}
+	body {
+		@apply bg-background text-foreground antialiased;
+	}
+}
+
+/* Custom utility classes for trading */
+@layer utilities {
+	.text-profit {
+		color: var(--profit);
+	}
+	.text-loss {
+		color: var(--loss);
+	}
+	.text-breakeven {
+		color: var(--breakeven);
+	}
+	.bg-profit {
+		background-color: var(--profit);
+	}
+	.bg-loss {
+		background-color: var(--loss);
+	}
+	.bg-breakeven {
+		background-color: var(--breakeven);
+	}
+	.font-mono {
+		font-family: var(--font-mono);
+	}
+
+	/* Gradient backgrounds for landing page */
+	.gradient-radial {
+		background: radial-gradient(var(--tw-gradient-stops));
+	}
+	.gradient-trading {
+		background: linear-gradient(
+			135deg,
+			oklch(0.13 0.015 260) 0%,
+			oklch(0.11 0.02 200) 50%,
+			oklch(0.13 0.015 260) 100%
+		);
+	}
+}
+
+/* Scrollbar styling for dark theme */
+@layer base {
+	::-webkit-scrollbar {
+		width: 8px;
+		height: 8px;
+	}
+	::-webkit-scrollbar-track {
+		background: var(--background);
+	}
+	::-webkit-scrollbar-thumb {
+		background: var(--border);
+		border-radius: 4px;
+	}
+	::-webkit-scrollbar-thumb:hover {
+		background: var(--muted-foreground);
+	}
+}
+
+.dark {
+	--sidebar: hsl(240 5.9% 10%);
+	--sidebar-foreground: hsl(240 4.8% 95.9%);
+	--sidebar-primary: hsl(224.3 76.3% 48%);
+	--sidebar-primary-foreground: hsl(0 0% 100%);
+	--sidebar-accent: hsl(240 3.7% 15.9%);
+	--sidebar-accent-foreground: hsl(240 4.8% 95.9%);
+	--sidebar-border: hsl(240 3.7% 15.9%);
+	--sidebar-ring: hsl(217.2 91.2% 59.8%);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+	}
+  body {
+    @apply bg-background text-foreground;
+	}
 }

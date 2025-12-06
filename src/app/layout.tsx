@@ -6,6 +6,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 
 import { TRPCReactProvider } from "@/trpc/react";
+import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
 	title: "EdgeJournal - Trading Journal with AI Analytics",
@@ -45,6 +46,7 @@ export default function RootLayout({
 			>
 				<body className="bg-slate-950 text-slate-100 antialiased">
 					<TRPCReactProvider>{children}</TRPCReactProvider>
+					<Toaster richColors position="top-right" />
 				</body>
 			</html>
 		</ClerkProvider>
