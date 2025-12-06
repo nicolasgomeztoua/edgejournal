@@ -79,7 +79,7 @@ export function Features() {
 			<div className="container relative mx-auto px-4">
 				{/* Section header */}
 				<div className="mx-auto max-w-2xl text-center">
-					<h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+					<h2 className="font-bold text-3xl tracking-tight sm:text-4xl">
 						Everything you need to{" "}
 						<span className="text-primary">level up</span> your trading
 					</h2>
@@ -101,7 +101,7 @@ export function Features() {
 						>
 							<feature.icon className={`h-10 w-10 ${feature.color}`} />
 							<h3 className="mt-4 font-semibold">{feature.title}</h3>
-							<p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+							<p className="mt-2 text-muted-foreground text-sm leading-relaxed">
 								{feature.description}
 							</p>
 						</div>

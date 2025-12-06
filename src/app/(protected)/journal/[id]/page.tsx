@@ -33,7 +33,6 @@ import {
 	AlertTriangle,
 	ArrowDownRight,
 	ArrowLeft,
-	ArrowUpRight,
 	BarChart3,
 	Calendar,
 	Camera,
@@ -54,7 +53,7 @@ import {
 	XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
-import { formatCurrency, formatDateTime, getPnLColorClass, cn } from "@/lib/utils";
+import { formatCurrency, getPnLColorClass, cn } from "@/lib/utils";
 import { FUTURES_SYMBOLS, FOREX_SYMBOLS } from "@/lib/symbols";
 
 const SETUP_TYPES = [
@@ -84,7 +83,7 @@ const EMOTIONAL_STATES = [
 export default function TradeDetailPage() {
 	const params = useParams();
 	const router = useRouter();
-	const tradeId = parseInt(params.id as string);
+	const tradeId = parseInt(params.id as string, 10);
 
 	const [isEditing, setIsEditing] = useState(false);
 	const [isClosing, setIsClosing] = useState(false);
@@ -114,7 +113,7 @@ export default function TradeDetailPage() {
 
 	const { data: trade, isLoading, refetch } = api.trades.getById.useQuery(
 		{ id: tradeId },
-		{ enabled: !isNaN(tradeId) }
+		{ enabled: !Number.isNaN(tradeId) }
 	);
 
 	// Initialize edit form when trade loads
@@ -276,9 +275,9 @@ export default function TradeDetailPage() {
 	if (!trade) {
 		return (
 			<div className="flex flex-col items-center justify-center py-16">
-				<AlertTriangle className="h-12 w-12 text-muted-foreground mb-4" />
-				<h2 className="text-xl font-semibold">Trade not found</h2>
-				<p className="text-muted-foreground mb-4">
+				<AlertTriangle className="mb-4 h-12 w-12 text-muted-foreground" />
+				<h2 className="font-semibold text-xl">Trade not found</h2>
+				<p className="mb-4 text-muted-foreground">
 					This trade doesn&apos;t exist or you don&apos;t have access to it.
 				</p>
 				<Button asChild>
@@ -299,8 +298,8 @@ export default function TradeDetailPage() {
 						</Link>
 					</Button>
 					<div>
-						<div className="flex items-center gap-3 flex-wrap">
-							<h1 className="text-2xl font-bold tracking-tight">
+						<div className="flex flex-wrap items-center gap-3">
+							<h1 className="font-bold text-2xl tracking-tight">
 								{trade.symbol}
 							</h1>
 							<Badge
@@ -331,7 +330,7 @@ export default function TradeDetailPage() {
 								{trade.status.charAt(0).toUpperCase() + trade.status.slice(1)}
 							</Badge>
 						</div>
-						<p className="text-sm text-muted-foreground mt-1">
+						<p className="mt-1 text-muted-foreground text-sm">
 							{trade.instrumentType.charAt(0).toUpperCase() + trade.instrumentType.slice(1)}
 							{trade.setupType && ` • ${trade.setupType}`}
 							{stats?.duration && ` • ${stats.duration}`}
@@ -493,7 +492,7 @@ export default function TradeDetailPage() {
 			{trade.status === "closed" && trade.netPnl && (
 				<Card
 					className={cn(
-						"border-2 overflow-hidden",
+						"overflow-hidden border-2",
 						parseFloat(trade.netPnl) >= 0
 							? "border-profit/30 bg-gradient-to-br from-profit/10 to-profit/5"
 							: "border-loss/30 bg-gradient-to-br from-loss/10 to-loss/5"
@@ -503,13 +502,13 @@ export default function TradeDetailPage() {
 						<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
 							{/* Net P&L */}
 							<div className="space-y-1">
-								<p className="text-sm text-muted-foreground flex items-center gap-1">
+								<p className="flex items-center gap-1 text-muted-foreground text-sm">
 									<DollarSign className="h-3 w-3" />
 									Net P&L
 								</p>
 								<p
 									className={cn(
-										"text-3xl font-bold font-mono",
+										"font-bold font-mono text-3xl",
 										getPnLColorClass(trade.netPnl)
 									)}
 								>
@@ -520,13 +519,13 @@ export default function TradeDetailPage() {
 							{/* Percentage Change */}
 							{stats?.percentChange != null && (
 								<div className="space-y-1">
-									<p className="text-sm text-muted-foreground flex items-center gap-1">
+									<p className="flex items-center gap-1 text-muted-foreground text-sm">
 										<Percent className="h-3 w-3" />
 										Change
 									</p>
 									<p
 										className={cn(
-											"text-3xl font-bold font-mono",
+											"font-bold font-mono text-3xl",
 											stats.percentChange >= 0 ? "text-profit" : "text-loss"
 										)}
 									>
@@ -539,13 +538,13 @@ export default function TradeDetailPage() {
 							{/* R Multiple */}
 							{stats?.rMultiple != null && (
 								<div className="space-y-1">
-									<p className="text-sm text-muted-foreground flex items-center gap-1">
+									<p className="flex items-center gap-1 text-muted-foreground text-sm">
 										<Target className="h-3 w-3" />
 										R Multiple
 									</p>
 									<p
 										className={cn(
-											"text-3xl font-bold font-mono",
+											"font-bold font-mono text-3xl",
 											stats.rMultiple >= 0 ? "text-profit" : "text-loss"
 										)}
 									>
@@ -556,7 +555,7 @@ export default function TradeDetailPage() {
 							)}
 
 							{/* Status Badges */}
-							<div className="space-y-2 flex flex-col justify-center">
+							<div className="flex flex-col justify-center space-y-2">
 								{trade.stopLossHit && (
 									<Badge variant="destructive" className="w-fit">
 										<AlertTriangle className="mr-1 h-3 w-3" />
@@ -564,7 +563,7 @@ export default function TradeDetailPage() {
 									</Badge>
 								)}
 								{trade.takeProfitHit && (
-									<Badge className="bg-profit text-profit-foreground w-fit">
+									<Badge className="w-fit bg-profit text-profit-foreground">
 										<Target className="mr-1 h-3 w-3" />
 										Take Profit Hit
 									</Badge>
@@ -603,9 +602,9 @@ export default function TradeDetailPage() {
 						{/* Entry Details */}
 						<Card>
 							<CardHeader className="pb-3">
-								<CardTitle className="text-base flex items-center gap-2">
+								<CardTitle className="flex items-center gap-2 text-base">
 									<div className={cn(
-										"p-1.5 rounded-md",
+										"rounded-md p-1.5",
 										isEditing 
 											? editForm.direction === "long" ? "bg-profit/10" : "bg-loss/10"
 											: trade.direction === "long" ? "bg-profit/10" : "bg-loss/10"
@@ -634,7 +633,7 @@ export default function TradeDetailPage() {
 													})
 												}
 											>
-												<TabsList className="grid w-full grid-cols-2 h-9">
+												<TabsList className="grid h-9 w-full grid-cols-2">
 													<TabsTrigger value="futures" className="text-xs">
 														Futures
 													</TabsTrigger>
@@ -672,7 +671,7 @@ export default function TradeDetailPage() {
 													setEditForm({ ...editForm, direction: v as "long" | "short" })
 												}
 											>
-												<TabsList className="grid w-full grid-cols-2 h-9">
+												<TabsList className="grid h-9 w-full grid-cols-2">
 													<TabsTrigger
 														value="long"
 														className="text-xs data-[state=active]:bg-profit/20 data-[state=active]:text-profit"
@@ -693,7 +692,7 @@ export default function TradeDetailPage() {
 											<Input
 												type="number"
 												step="any"
-												className="font-mono h-9"
+												className="h-9 font-mono"
 												value={editForm.entryPrice}
 												onChange={(e) =>
 													setEditForm({ ...editForm, entryPrice: e.target.value })
@@ -707,7 +706,7 @@ export default function TradeDetailPage() {
 											<Input
 												type="number"
 												step="any"
-												className="font-mono h-9"
+												className="h-9 font-mono"
 												value={editForm.quantity}
 												onChange={(e) =>
 													setEditForm({ ...editForm, quantity: e.target.value })
@@ -717,8 +716,8 @@ export default function TradeDetailPage() {
 									</>
 								) : (
 									<>
-										<div className="flex justify-between items-center">
-											<span className="text-sm text-muted-foreground">Price</span>
+										<div className="flex items-center justify-between">
+											<span className="text-muted-foreground text-sm">Price</span>
 											<span className="font-mono font-semibold text-lg">
 												{parseFloat(trade.entryPrice).toLocaleString(undefined, {
 													minimumFractionDigits: 2,
@@ -727,24 +726,24 @@ export default function TradeDetailPage() {
 											</span>
 										</div>
 										<Separator />
-										<div className="flex justify-between items-center">
-											<span className="text-sm text-muted-foreground">Date</span>
+										<div className="flex items-center justify-between">
+											<span className="text-muted-foreground text-sm">Date</span>
 											<span className="text-sm">
 												{new Date(trade.entryTime).toLocaleDateString()}
 											</span>
 										</div>
-										<div className="flex justify-between items-center">
-											<span className="text-sm text-muted-foreground">Time</span>
+										<div className="flex items-center justify-between">
+											<span className="text-muted-foreground text-sm">Time</span>
 											<span className="text-sm">
 												{new Date(trade.entryTime).toLocaleTimeString()}
 											</span>
 										</div>
 										<Separator />
-										<div className="flex justify-between items-center">
-											<span className="text-sm text-muted-foreground">
+										<div className="flex items-center justify-between">
+											<span className="text-muted-foreground text-sm">
 												{trade.instrumentType === "futures" ? "Contracts" : "Lots"}
 											</span>
-											<span className="font-mono font-medium">
+											<span className="font-medium font-mono">
 												{parseFloat(trade.quantity).toFixed(2)}
 											</span>
 										</div>
@@ -756,16 +755,16 @@ export default function TradeDetailPage() {
 						{/* Exit Details */}
 						<Card>
 							<CardHeader className="pb-3">
-								<CardTitle className="text-base flex items-center gap-2">
-									<div className="p-1.5 rounded-md bg-loss/10">
+								<CardTitle className="flex items-center gap-2 text-base">
+									<div className="rounded-md bg-loss/10 p-1.5">
 										<ArrowDownRight className="h-4 w-4 text-loss" />
 									</div>
 									Exit
 								</CardTitle>
 							</CardHeader>
 							<CardContent className="space-y-3">
-								<div className="flex justify-between items-center">
-									<span className="text-sm text-muted-foreground">Price</span>
+								<div className="flex items-center justify-between">
+									<span className="text-muted-foreground text-sm">Price</span>
 									<span className="font-mono font-semibold text-lg">
 										{trade.exitPrice
 											? parseFloat(trade.exitPrice).toLocaleString(undefined, {
@@ -776,16 +775,16 @@ export default function TradeDetailPage() {
 									</span>
 								</div>
 								<Separator />
-								<div className="flex justify-between items-center">
-									<span className="text-sm text-muted-foreground">Date</span>
+								<div className="flex items-center justify-between">
+									<span className="text-muted-foreground text-sm">Date</span>
 									<span className="text-sm">
 										{trade.exitTime
 											? new Date(trade.exitTime).toLocaleDateString()
 											: "—"}
 									</span>
 								</div>
-								<div className="flex justify-between items-center">
-									<span className="text-sm text-muted-foreground">Time</span>
+								<div className="flex items-center justify-between">
+									<span className="text-muted-foreground text-sm">Time</span>
 									<span className="text-sm">
 										{trade.exitTime
 											? new Date(trade.exitTime).toLocaleTimeString()
@@ -793,8 +792,8 @@ export default function TradeDetailPage() {
 									</span>
 								</div>
 								<Separator />
-								<div className="flex justify-between items-center">
-									<span className="text-sm text-muted-foreground">Fees</span>
+								<div className="flex items-center justify-between">
+									<span className="text-muted-foreground text-sm">Fees</span>
 									<span className="font-mono text-sm">
 										{trade.fees
 											? formatCurrency(parseFloat(trade.fees))
@@ -807,8 +806,8 @@ export default function TradeDetailPage() {
 						{/* Risk Management */}
 						<Card>
 							<CardHeader className="pb-3">
-								<CardTitle className="text-base flex items-center gap-2">
-									<div className="p-1.5 rounded-md bg-chart-3/10">
+								<CardTitle className="flex items-center gap-2 text-base">
+									<div className="rounded-md bg-chart-3/10 p-1.5">
 										<Shield className="h-4 w-4 text-chart-3" />
 									</div>
 									Risk
@@ -823,7 +822,7 @@ export default function TradeDetailPage() {
 												type="number"
 												step="any"
 												placeholder="Not set"
-												className="font-mono h-9"
+												className="h-9 font-mono"
 												value={editForm.stopLoss}
 												onChange={(e) =>
 													setEditForm({ ...editForm, stopLoss: e.target.value })
@@ -836,7 +835,7 @@ export default function TradeDetailPage() {
 												type="number"
 												step="any"
 												placeholder="Not set"
-												className="font-mono h-9"
+												className="h-9 font-mono"
 												value={editForm.takeProfit}
 												onChange={(e) =>
 													setEditForm({ ...editForm, takeProfit: e.target.value })
@@ -846,9 +845,9 @@ export default function TradeDetailPage() {
 									</>
 								) : (
 									<>
-										<div className="flex justify-between items-center">
-											<span className="text-sm text-muted-foreground">Stop Loss</span>
-											<span className="font-mono font-medium text-loss">
+										<div className="flex items-center justify-between">
+											<span className="text-muted-foreground text-sm">Stop Loss</span>
+											<span className="font-medium font-mono text-loss">
 												{trade.stopLoss
 													? parseFloat(trade.stopLoss).toLocaleString(undefined, {
 															minimumFractionDigits: 2,
@@ -858,9 +857,9 @@ export default function TradeDetailPage() {
 											</span>
 										</div>
 										<Separator />
-										<div className="flex justify-between items-center">
-											<span className="text-sm text-muted-foreground">Take Profit</span>
-											<span className="font-mono font-medium text-profit">
+										<div className="flex items-center justify-between">
+											<span className="text-muted-foreground text-sm">Take Profit</span>
+											<span className="font-medium font-mono text-profit">
 												{trade.takeProfit
 													? parseFloat(trade.takeProfit).toLocaleString(undefined, {
 															minimumFractionDigits: 2,
@@ -870,9 +869,9 @@ export default function TradeDetailPage() {
 											</span>
 										</div>
 										<Separator />
-										<div className="flex justify-between items-center">
-											<span className="text-sm text-muted-foreground">R:R Ratio</span>
-											<span className="font-mono font-medium">
+										<div className="flex items-center justify-between">
+											<span className="text-muted-foreground text-sm">R:R Ratio</span>
+											<span className="font-medium font-mono">
 												{stats?.rrRatio
 													? `1:${stats.rrRatio.toFixed(2)}`
 													: "—"}
@@ -887,8 +886,8 @@ export default function TradeDetailPage() {
 					{/* Trade Context */}
 					<Card>
 						<CardHeader className="pb-3">
-							<CardTitle className="text-base flex items-center gap-2">
-								<div className="p-1.5 rounded-md bg-chart-4/10">
+							<CardTitle className="flex items-center gap-2 text-base">
+								<div className="rounded-md bg-chart-4/10 p-1.5">
 									<Calendar className="h-4 w-4 text-chart-4" />
 								</div>
 								Trade Context
@@ -969,8 +968,8 @@ export default function TradeDetailPage() {
 					{/* Notes */}
 					<Card>
 						<CardHeader className="pb-3">
-							<CardTitle className="text-base flex items-center gap-2">
-								<div className="p-1.5 rounded-md bg-chart-5/10">
+							<CardTitle className="flex items-center gap-2 text-base">
+								<div className="rounded-md bg-chart-5/10 p-1.5">
 									<FileText className="h-4 w-4 text-chart-5" />
 								</div>
 								Notes & Analysis
@@ -994,7 +993,7 @@ export default function TradeDetailPage() {
 									{trade.notes}
 								</p>
 							) : (
-								<p className="text-sm text-muted-foreground italic">
+								<p className="text-muted-foreground text-sm italic">
 									No notes recorded. Click Edit to add your analysis.
 								</p>
 							)}
@@ -1014,8 +1013,8 @@ export default function TradeDetailPage() {
 											key={tt.tag.id}
 											variant="secondary"
 											style={{
-												backgroundColor: tt.tag.color + "20",
-												borderColor: tt.tag.color + "50",
+												backgroundColor: `${tt.tag.color}20`,
+												borderColor: `${tt.tag.color}50`,
 											}}
 											className="border"
 										>
@@ -1038,13 +1037,13 @@ export default function TradeDetailPage() {
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
-							<div className="h-[400px] flex items-center justify-center border border-dashed rounded-lg bg-muted/50">
-								<div className="text-center space-y-2">
-									<BarChart3 className="h-12 w-12 mx-auto text-muted-foreground" />
+							<div className="flex h-[400px] items-center justify-center rounded-lg border border-dashed bg-muted/50">
+								<div className="space-y-2 text-center">
+									<BarChart3 className="mx-auto h-12 w-12 text-muted-foreground" />
 									<p className="text-muted-foreground">
 										TradingView Lightweight Charts integration coming soon
 									</p>
-									<p className="text-xs text-muted-foreground">
+									<p className="text-muted-foreground text-xs">
 										Will display candlestick chart with entry ({trade.entryPrice}),
 										{trade.exitPrice && ` exit (${trade.exitPrice}),`}
 										{trade.stopLoss && ` SL (${trade.stopLoss}),`}
@@ -1071,21 +1070,21 @@ export default function TradeDetailPage() {
 									{trade.screenshots.map((ss) => (
 										<div
 											key={ss.id}
-											className="aspect-video rounded-lg border bg-muted overflow-hidden"
+											className="aspect-video overflow-hidden rounded-lg border bg-muted"
 										>
 											{/* eslint-disable-next-line @next/next/no-img-element */}
 											<img
 												src={ss.url}
 												alt={ss.caption || "Trade screenshot"}
-												className="w-full h-full object-cover"
+												className="h-full w-full object-cover"
 											/>
 										</div>
 									))}
 								</div>
 							) : (
-								<div className="h-[200px] flex items-center justify-center border border-dashed rounded-lg bg-muted/50">
-									<div className="text-center space-y-2">
-										<Camera className="h-12 w-12 mx-auto text-muted-foreground" />
+								<div className="flex h-[200px] items-center justify-center rounded-lg border border-dashed bg-muted/50">
+									<div className="space-y-2 text-center">
+										<Camera className="mx-auto h-12 w-12 text-muted-foreground" />
 										<p className="text-muted-foreground">
 											No screenshots attached
 										</p>

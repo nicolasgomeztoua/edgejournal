@@ -173,6 +173,9 @@ export const trades = createTable(
 		importSource: importSourceEnum("import_source").notNull().default("manual"),
 		externalId: text("external_id"), // For tracking imported trades
 		
+		// Soft delete
+		deletedAt: timestamp("deleted_at", { withTimezone: true }),
+		
 		// Timestamps
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
@@ -187,6 +190,7 @@ export const trades = createTable(
 		index("trade_symbol_idx").on(t.symbol),
 		index("trade_entry_time_idx").on(t.entryTime),
 		index("trade_status_idx").on(t.status),
+		index("trade_deleted_at_idx").on(t.deletedAt),
 	]
 );
 

@@ -16,7 +16,7 @@ import type { CSVParser, ParseResult, ParsedTrade, ParseError } from "./types";
  */
 
 // Futures contract month codes
-const MONTH_CODES: Record<string, string> = {
+const _MONTH_CODES: Record<string, string> = {
 	F: "January", G: "February", H: "March", J: "April",
 	K: "May", M: "June", N: "July", Q: "August",
 	U: "September", V: "October", X: "November", Z: "December"
@@ -28,7 +28,7 @@ const MONTH_CODES: Record<string, string> = {
  */
 function stripExpiration(contractName: string): string {
 	const match = contractName.match(/^(.+?)[FGHJKMNQUVXZ]\d{1,2}$/i);
-	if (match && match[1]) {
+	if (match?.[1]) {
 		return match[1];
 	}
 	return contractName;
@@ -44,16 +44,16 @@ function parseProjectXDate(dateStr: string): Date {
 	
 	const trimmed = dateStr.trim();
 	const date = new Date(trimmed);
-	if (!isNaN(date.getTime())) {
+	if (!Number.isNaN(date.getTime())) {
 		return date;
 	}
 	
 	const match = trimmed.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})\s*([+-]\d{2}:\d{2})?/);
 	if (match) {
 		const [, month, day, year, hour, min, sec, tz] = match;
-		const isoString = `${year}-${month!.padStart(2, '0')}-${day!.padStart(2, '0')}T${hour!.padStart(2, '0')}:${min}:${sec}${tz || '+00:00'}`;
+		const isoString = `${year}-${month?.padStart(2, '0')}-${day?.padStart(2, '0')}T${hour?.padStart(2, '0')}:${min}:${sec}${tz || '+00:00'}`;
 		const parsed = new Date(isoString);
-		if (!isNaN(parsed.getTime())) {
+		if (!Number.isNaN(parsed.getTime())) {
 			return parsed;
 		}
 	}
@@ -130,8 +130,8 @@ function getOrderInfoForTrade(
 ): OrderInfo {
 	// Find orders for this contract within the trade timeframe
 	const relevantOrders = orders.filter(order => {
-		const orderContract = order['contractname'] || '';
-		const createdAt = order['createdat'] ? parseProjectXDate(order['createdat']) : null;
+		const orderContract = order.contractname || '';
+		const createdAt = order.createdat ? parseProjectXDate(order.createdat) : null;
 		
 		if (orderContract !== contractName || !createdAt) return false;
 		
@@ -151,11 +151,11 @@ function getOrderInfoForTrade(
 	let exitType: 'sl' | 'tp' | 'manual' | 'unknown' = 'unknown';
 	
 	for (const order of relevantOrders) {
-		const disposition = order['creationdisposition'] || '';
-		const status = order['status'] || '';
-		const stopPrice = order['stopprice'] || '';
-		const limitPrice = order['limitprice'] || '';
-		const positionDisposition = order['positiondisposition'] || '';
+		const disposition = order.creationdisposition || '';
+		const status = order.status || '';
+		const stopPrice = order.stopprice || '';
+		const limitPrice = order.limitprice || '';
+		const positionDisposition = order.positiondisposition || '';
 		
 		// Extract SL level
 		if (disposition.toLowerCase() === 'stoploss' && stopPrice) {
@@ -273,17 +273,17 @@ function parseProjectXTrades(tradesCSV: string, ordersCSV: string | null): Parse
 		const row = tradeRows[i]!;
 		
 		try {
-			const contractName = row['contractname'] || '';
-			const enteredAt = row['enteredat'] || '';
-			const exitedAt = row['exitedat'] || '';
-			const entryPrice = row['entryprice'] || '';
-			const exitPrice = row['exitprice'] || '';
-			const fees = row['fees'] || '';
-			const pnl = row['pnl'] || '';
-			const size = row['size'] || '';
-			const type = row['type'] || '';
-			const externalId = row['id'] || '';
-			const commissions = row['commissions'] || '';
+			const contractName = row.contractname || '';
+			const enteredAt = row.enteredat || '';
+			const exitedAt = row.exitedat || '';
+			const entryPrice = row.entryprice || '';
+			const exitPrice = row.exitprice || '';
+			const fees = row.fees || '';
+			const pnl = row.pnl || '';
+			const size = row.size || '';
+			const type = row.type || '';
+			const externalId = row.id || '';
+			const commissions = row.commissions || '';
 			
 			// Validate required fields
 			if (!contractName || !entryPrice || !size || !type) {

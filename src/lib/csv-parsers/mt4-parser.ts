@@ -1,4 +1,4 @@
-import type { CSVParser, ParseResult, ParsedTrade, ParseError } from "./types";
+import type { CSVParser, ParseResult, } from "./types";
 
 /**
  * MetaTrader 4 CSV Parser
@@ -54,7 +54,7 @@ export const mt4Parser: CSVParser = {
 		);
 	},
 
-	async parse(csvContent: string): Promise<ParseResult> {
+	async parse(_csvContent: string): Promise<ParseResult> {
 		// TODO: Implement actual parsing logic
 		// PSEUDO CODE:
 		// 1. Split CSV into rows
@@ -128,7 +128,7 @@ export const mt5Parser: CSVParser = {
 		);
 	},
 
-	async parse(csvContent: string): Promise<ParseResult> {
+	async parse(_csvContent: string): Promise<ParseResult> {
 		// TODO: Implement actual parsing logic
 		// Similar to MT4 but with MT5-specific field mappings
 		

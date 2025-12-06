@@ -21,7 +21,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
 	Alert,
 	AlertDescription,
@@ -120,12 +120,12 @@ export default function ImportPage() {
 		}
 
 		const headerLine = lines[0];
-		const parsedHeaders = headerLine!.split(",").map((h) => h.trim().replace(/"/g, ""));
+		const parsedHeaders = headerLine?.split(",").map((h) => h.trim().replace(/"/g, ""));
 		setHeaders(parsedHeaders);
 
 		const rows: ParsedRow[] = [];
 		for (let i = 1; i < lines.length; i++) {
-			const values = lines[i]!.split(",").map((v) => v.trim().replace(/"/g, ""));
+			const values = lines[i]?.split(",").map((v) => v.trim().replace(/"/g, ""));
 			const row: ParsedRow = {};
 			parsedHeaders.forEach((header, index) => {
 				row[header] = values[index] || "";
@@ -227,13 +227,13 @@ export default function ImportPage() {
 	const parseDateTime = (value: string): string => {
 		try {
 			const date = new Date(value);
-			if (isNaN(date.getTime())) {
+			if (Number.isNaN(date.getTime())) {
 				// Try common formats
-				const parts = value.split(/[\/\-\s]/);
+				const parts = value.split(/[/\-\s]/);
 				if (parts.length >= 3) {
 					const [m, d, y] = parts;
 					const date = new Date(`${y}-${m?.padStart(2, "0")}-${d?.padStart(2, "0")}`);
-					if (!isNaN(date.getTime())) return date.toISOString();
+					if (!Number.isNaN(date.getTime())) return date.toISOString();
 				}
 				return new Date().toISOString();
 			}
@@ -342,7 +342,7 @@ export default function ImportPage() {
 					</Link>
 				</Button>
 				<div>
-					<h1 className="text-2xl font-bold tracking-tight">Import Trades</h1>
+					<h1 className="font-bold text-2xl tracking-tight">Import Trades</h1>
 					<p className="text-muted-foreground">
 						Import trades from a CSV file
 					</p>
@@ -358,7 +358,7 @@ export default function ImportPage() {
 					return (
 						<div key={s} className="flex items-center gap-2">
 							<div
-								className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
+								className={`flex h-8 w-8 items-center justify-center rounded-full font-medium text-sm ${
 									step === s
 										? "bg-primary text-primary-foreground"
 										: ["select-account", "upload", "mapping", "preview", "complete"].indexOf(step) > i
@@ -412,7 +412,7 @@ export default function ImportPage() {
 							<>
 								<Select
 									value={selectedImportAccountId?.toString() || ""}
-									onValueChange={(value) => setSelectedImportAccountId(parseInt(value))}
+									onValueChange={(value) => setSelectedImportAccountId(parseInt(value, 10))}
 								>
 									<SelectTrigger className="w-full">
 										<SelectValue placeholder="Select an account" />
@@ -435,7 +435,7 @@ export default function ImportPage() {
 										<AlertDescription>
 											{PLATFORM_INFO[accountPlatform]?.description}
 											{platformStatus === "coming-soon" && (
-												<span className="block mt-1 text-yellow-500">
+												<span className="mt-1 block text-yellow-500">
 													⚠️ Auto-parsing coming soon. Manual column mapping will be used.
 												</span>
 											)}
@@ -466,7 +466,7 @@ export default function ImportPage() {
 						<CardDescription>
 							Importing to: <strong>{selectedImportAccount?.name}</strong>
 							{accountPlatform === "projectx" && (
-								<span className="block mt-1 text-primary">
+								<span className="mt-1 block text-primary">
 									ProjectX requires both "Trades" and "Orders" CSV exports
 								</span>
 							)}
@@ -475,7 +475,7 @@ export default function ImportPage() {
 					<CardContent className="space-y-6">
 						{platformStatus !== "ready" && accountPlatform !== "projectx" && (
 							<div>
-								<label className="text-sm font-medium">Instrument Type</label>
+								<label className="font-medium text-sm">Instrument Type</label>
 								<Tabs
 									value={instrumentType}
 									onValueChange={(v) => setInstrumentType(v as "futures" | "forex")}
@@ -496,7 +496,7 @@ export default function ImportPage() {
 									<Info className="h-4 w-4" />
 									<AlertTitle>How to export from ProjectX</AlertTitle>
 									<AlertDescription>
-										<ol className="list-decimal list-inside mt-2 space-y-1 text-sm">
+										<ol className="mt-2 list-inside list-decimal space-y-1 text-sm">
 											<li>Go to the <strong>Trades</strong> tab and export CSV</li>
 											<li>Go to the <strong>Orders</strong> tab and export CSV</li>
 											<li>Upload both files below</li>
@@ -506,7 +506,7 @@ export default function ImportPage() {
 
 								{/* Trades CSV Upload */}
 								<div className="space-y-2">
-									<label className="text-sm font-medium">
+									<label className="font-medium text-sm">
 										Trades CSV <span className="text-destructive">*</span>
 									</label>
 									<div
@@ -562,7 +562,7 @@ export default function ImportPage() {
 
 								{/* Orders CSV Upload */}
 								<div className="space-y-2">
-									<label className="text-sm font-medium">
+									<label className="font-medium text-sm">
 										Orders CSV <span className="text-destructive">*</span>
 									</label>
 									<div
@@ -650,15 +650,15 @@ export default function ImportPage() {
 							/* Standard Single-File Upload */
 							<>
 								<div
-									className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-12 transition-colors hover:border-primary/50"
+									className="flex flex-col items-center justify-center rounded-lg border-2 border-border border-dashed p-12 transition-colors hover:border-primary/50"
 									onDragOver={(e) => e.preventDefault()}
 									onDrop={handleDrop}
 								>
 									<FileSpreadsheet className="mb-4 h-12 w-12 text-muted-foreground" />
-									<p className="mb-2 text-lg font-medium">
+									<p className="mb-2 font-medium text-lg">
 										Drop your CSV file here
 									</p>
-									<p className="mb-4 text-sm text-muted-foreground">
+									<p className="mb-4 text-muted-foreground text-sm">
 										or click to browse
 									</p>
 									<input
@@ -703,7 +703,7 @@ export default function ImportPage() {
 								<AlertCircle className="h-4 w-4" />
 								<AlertTitle>Parse Warnings</AlertTitle>
 								<AlertDescription>
-									<ul className="list-disc list-inside mt-2">
+									<ul className="mt-2 list-inside list-disc">
 										{parseErrors.slice(0, 3).map((err, i) => (
 											<li key={i}>{err}</li>
 										))}
@@ -715,7 +715,7 @@ export default function ImportPage() {
 						<div className="grid gap-4 sm:grid-cols-2">
 							{ALL_FIELDS.map((field) => (
 								<div key={field.key} className="space-y-2">
-									<label className="text-sm font-medium">
+									<label className="font-medium text-sm">
 										{field.label}
 										{field.required && (
 											<span className="ml-1 text-destructive">*</span>
@@ -849,7 +849,7 @@ export default function ImportPage() {
 							</Table>
 						</div>
 						{totalRows > 10 && (
-							<p className="text-center text-sm text-muted-foreground">
+							<p className="text-center text-muted-foreground text-sm">
 								Showing first 10 of {totalRows} trades
 							</p>
 						)}
@@ -858,22 +858,22 @@ export default function ImportPage() {
 						{accountPlatform === "projectx" && parsedTrades.length > 0 && (
 							<div className="grid grid-cols-3 gap-4 rounded-lg border bg-muted/30 p-4">
 								<div className="text-center">
-									<div className="text-lg font-semibold text-profit">
+									<div className="font-semibold text-lg text-profit">
 										{parsedTrades.filter(t => t.takeProfitHit).length}
 									</div>
-									<div className="text-xs text-muted-foreground">TP Hits</div>
+									<div className="text-muted-foreground text-xs">TP Hits</div>
 								</div>
 								<div className="text-center">
-									<div className="text-lg font-semibold text-loss">
+									<div className="font-semibold text-lg text-loss">
 										{parsedTrades.filter(t => t.stopLossHit).length}
 									</div>
-									<div className="text-xs text-muted-foreground">SL Hits</div>
+									<div className="text-muted-foreground text-xs">SL Hits</div>
 								</div>
 								<div className="text-center">
-									<div className="text-lg font-semibold text-muted-foreground">
+									<div className="font-semibold text-lg text-muted-foreground">
 										{parsedTrades.filter(t => !t.stopLossHit && !t.takeProfitHit).length}
 									</div>
-									<div className="text-xs text-muted-foreground">Manual</div>
+									<div className="text-muted-foreground text-xs">Manual</div>
 								</div>
 							</div>
 						)}
@@ -899,7 +899,7 @@ export default function ImportPage() {
 						<div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-profit/20">
 							<Check className="h-8 w-8 text-profit" />
 						</div>
-						<h2 className="mb-2 text-xl font-semibold">Import Complete!</h2>
+						<h2 className="mb-2 font-semibold text-xl">Import Complete!</h2>
 						<p className="mb-6 text-muted-foreground">
 							Successfully imported {importedCount} of {totalRows} trades to {selectedImportAccount?.name}
 						</p>

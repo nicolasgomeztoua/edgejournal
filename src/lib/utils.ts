@@ -14,7 +14,7 @@ export function formatCurrency(
 ): string {
 	if (value === null || value === undefined) return "-";
 	const num = typeof value === "string" ? parseFloat(value) : value;
-	if (isNaN(num)) return "-";
+	if (Number.isNaN(num)) return "-";
 
 	return new Intl.NumberFormat("en-US", {
 		style: "currency",
@@ -33,7 +33,7 @@ export function formatPnL(
 ): string {
 	if (value === null || value === undefined) return "-";
 	const num = typeof value === "string" ? parseFloat(value) : value;
-	if (isNaN(num)) return "-";
+	if (Number.isNaN(num)) return "-";
 
 	const formatted = formatCurrency(Math.abs(num), currency);
 	if (num > 0) return `+${formatted}`;
@@ -50,7 +50,7 @@ export function formatPercent(
 ): string {
 	if (value === null || value === undefined) return "-";
 	const num = typeof value === "string" ? parseFloat(value) : value;
-	if (isNaN(num)) return "-";
+	if (Number.isNaN(num)) return "-";
 
 	return `${num >= 0 ? "+" : ""}${num.toFixed(decimals)}%`;
 }
@@ -64,7 +64,7 @@ export function formatNumber(
 ): string {
 	if (value === null || value === undefined) return "-";
 	const num = typeof value === "string" ? parseFloat(value) : value;
-	if (isNaN(num)) return "-";
+	if (Number.isNaN(num)) return "-";
 
 	return num.toLocaleString("en-US", {
 		minimumFractionDigits: decimals,
@@ -118,7 +118,7 @@ export function formatDateTime(date: Date | string | null | undefined): string {
 export function getPnLColorClass(value: number | string | null | undefined): string {
 	if (value === null || value === undefined) return "text-muted-foreground";
 	const num = typeof value === "string" ? parseFloat(value) : value;
-	if (isNaN(num)) return "text-muted-foreground";
+	if (Number.isNaN(num)) return "text-muted-foreground";
 
 	if (num > 0) return "text-profit";
 	if (num < 0) return "text-loss";

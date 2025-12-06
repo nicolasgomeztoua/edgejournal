@@ -64,7 +64,7 @@ export function Pricing() {
 			<div className="container mx-auto px-4">
 				{/* Section header */}
 				<div className="mx-auto max-w-2xl text-center">
-					<h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+					<h2 className="font-bold text-3xl tracking-tight sm:text-4xl">
 						Simple, transparent pricing
 					</h2>
 					<p className="mt-4 text-lg text-muted-foreground">
@@ -97,7 +97,7 @@ export function Pricing() {
 							}`}
 						>
 							{plan.popular && (
-								<Badge className="absolute -top-3 left-1/2 -translate-x-1/2 gap-1">
+								<Badge className="-top-3 -translate-x-1/2 absolute left-1/2 gap-1">
 									<Sparkles className="h-3 w-3" />
 									Most Popular
 								</Badge>
@@ -115,7 +115,7 @@ export function Pricing() {
 
 							<CardContent className="flex-1">
 								<div className="mb-6">
-									<span className="text-4xl font-bold">{plan.price}</span>
+									<span className="font-bold text-4xl">{plan.price}</span>
 									<span className="text-muted-foreground">{plan.period}</span>
 								</div>
 
@@ -123,7 +123,7 @@ export function Pricing() {
 									{plan.features.map((feature) => (
 										<li key={feature} className="flex items-start gap-3">
 											<Check className="mt-0.5 h-4 w-4 shrink-0 text-profit" />
-											<span className="text-sm text-muted-foreground">
+											<span className="text-muted-foreground text-sm">
 												{feature}
 											</span>
 										</li>
@@ -152,7 +152,7 @@ export function Pricing() {
 				</div>
 
 				{/* FAQ-style note */}
-				<p className="mt-8 text-center text-sm text-muted-foreground">
+				<p className="mt-8 text-center text-muted-foreground text-sm">
 					All plans include a 14-day free trial of Pro features. No credit card
 					required.
 				</p>

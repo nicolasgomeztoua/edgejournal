@@ -30,16 +30,16 @@ export function AIShowcase() {
 		<section id="ai" className="relative py-24">
 			{/* Background effects */}
 			<div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent" />
-			<div className="absolute left-1/3 top-1/2 h-64 w-64 -translate-y-1/2 rounded-full bg-chart-3/10 blur-[100px]" />
+			<div className="-translate-y-1/2 absolute top-1/2 left-1/3 h-64 w-64 rounded-full bg-chart-3/10 blur-[100px]" />
 
 			<div className="container relative mx-auto px-4">
 				{/* Section header */}
 				<div className="mx-auto max-w-2xl text-center">
-					<div className="mb-4 inline-flex items-center gap-2 rounded-full border border-chart-3/30 bg-chart-3/10 px-4 py-1.5 text-sm text-chart-3">
+					<div className="mb-4 inline-flex items-center gap-2 rounded-full border border-chart-3/30 bg-chart-3/10 px-4 py-1.5 text-chart-3 text-sm">
 						<Sparkles className="h-4 w-4" />
 						AI-Powered
 					</div>
-					<h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+					<h2 className="font-bold text-3xl tracking-tight sm:text-4xl">
 						Ask anything about your trading
 					</h2>
 					<p className="mt-4 text-lg text-muted-foreground">
@@ -52,21 +52,21 @@ export function AIShowcase() {
 				<div className="mx-auto mt-12 max-w-3xl">
 					<Card className="overflow-hidden border-border/50 bg-card/80 backdrop-blur-sm">
 						{/* Chat header */}
-						<div className="flex items-center gap-3 border-b border-border/50 px-6 py-4">
+						<div className="flex items-center gap-3 border-border/50 border-b px-6 py-4">
 							<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-chart-3/20">
 								<Brain className="h-5 w-5 text-chart-3" />
 							</div>
 							<div>
 								<div className="font-medium">Trading AI Assistant</div>
-								<div className="text-sm text-muted-foreground">
+								<div className="text-muted-foreground text-sm">
 									Analyzing your performance data...
 								</div>
 							</div>
 						</div>
 
 						{/* Query selection */}
-						<div className="border-b border-border/50 px-6 py-4">
-							<div className="mb-3 text-sm text-muted-foreground">
+						<div className="border-border/50 border-b px-6 py-4">
+							<div className="mb-3 text-muted-foreground text-sm">
 								Try asking:
 							</div>
 							<div className="flex flex-wrap gap-2">
@@ -142,7 +142,7 @@ export function AIShowcase() {
 					</Card>
 
 					{/* Provider badges */}
-					<div className="mt-6 flex items-center justify-center gap-4 text-sm text-muted-foreground">
+					<div className="mt-6 flex items-center justify-center gap-4 text-muted-foreground text-sm">
 						<span>Works with:</span>
 						<div className="flex items-center gap-3">
 							<span className="rounded border border-border/50 px-2 py-1">

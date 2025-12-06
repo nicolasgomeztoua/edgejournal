@@ -272,7 +272,7 @@ export function SettingsContent() {
 		<div className="mx-auto max-w-3xl space-y-6">
 			{/* Header */}
 			<div>
-				<h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+				<h1 className="font-bold text-3xl tracking-tight">Settings</h1>
 				<p className="text-muted-foreground">
 					Configure your accounts and AI integrations
 				</p>
@@ -310,7 +310,7 @@ export function SettingsContent() {
 								<p className="font-medium">
 									{user?.firstName} {user?.lastName}
 								</p>
-								<p className="text-sm text-muted-foreground">
+								<p className="text-muted-foreground text-sm">
 									{user?.primaryEmailAddress?.emailAddress}
 								</p>
 							</div>
@@ -426,7 +426,7 @@ export function SettingsContent() {
 								placeholder="3.00"
 							/>
 						</div>
-						<p className="text-sm text-muted-foreground">
+						<p className="text-muted-foreground text-sm">
 							Trades with P&L within ±${settings.breakevenThreshold || "0"} are classified as breakeven
 						</p>
 					</div>
@@ -522,7 +522,7 @@ export function SettingsContent() {
 														<SelectItem value="other">Other / Manual</SelectItem>
 													</SelectContent>
 												</Select>
-												<p className="text-xs text-muted-foreground">
+												<p className="text-muted-foreground text-xs">
 													Used for CSV import format
 												</p>
 											</div>
@@ -634,7 +634,7 @@ export function SettingsContent() {
 							<div className="flex flex-col items-center justify-center py-8 text-center">
 								<Wallet className="h-12 w-12 text-muted-foreground/50" />
 								<h3 className="mt-4 font-semibold">No accounts yet</h3>
-								<p className="text-sm text-muted-foreground">
+								<p className="text-muted-foreground text-sm">
 									Create your first trading account to start tracking
 								</p>
 							</div>
@@ -665,7 +665,7 @@ export function SettingsContent() {
 														{ACCOUNT_TYPE_LABELS[account.accountType]}
 													</Badge>
 												</div>
-												<p className="text-sm text-muted-foreground">
+												<p className="text-muted-foreground text-sm">
 													{PLATFORM_LABELS[account.platform ?? "other"]}
 													{account.broker && ` • ${account.broker}`} •{" "}
 													{account.initialBalance
@@ -732,7 +732,7 @@ export function SettingsContent() {
 						<Sparkles className="mt-0.5 h-5 w-5 text-primary" />
 						<div>
 							<p className="font-medium">Bring Your Own Key (BYOK)</p>
-							<p className="text-sm text-muted-foreground">
+							<p className="text-muted-foreground text-sm">
 								Your API keys are encrypted and stored securely. We never share
 								your keys or use them for any purpose other than generating
 								insights for you.
@@ -770,7 +770,7 @@ export function SettingsContent() {
 							<div className="flex items-center justify-between">
 								<Label htmlFor={provider.id}>
 									{provider.name} API Key
-									<span className="ml-2 text-xs text-muted-foreground">
+									<span className="ml-2 text-muted-foreground text-xs">
 										{provider.description}
 									</span>
 								</Label>
@@ -803,7 +803,7 @@ export function SettingsContent() {
 									type="button"
 									variant="ghost"
 									size="icon"
-									className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2"
+									className="-translate-y-1/2 absolute top-1/2 right-1 h-8 w-8"
 									onClick={() => toggleShowKey(provider.id)}
 								>
 									{showKeys[provider.id] ? (

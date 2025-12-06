@@ -54,7 +54,7 @@ export const TRADING_PLATFORMS = [
  */
 export function detectPlatform(headers: string[]): TradingPlatform | null {
 	for (const [platform, parser] of Object.entries(parsers)) {
-		if (parser && parser.validateHeaders(headers)) {
+		if (parser?.validateHeaders(headers)) {
 			return platform as TradingPlatform;
 		}
 	}

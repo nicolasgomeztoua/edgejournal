@@ -53,7 +53,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
 	useEffect(() => {
 		const stored = localStorage.getItem("selectedAccountId");
 		if (stored) {
-			const id = parseInt(stored);
+			const id = parseInt(stored, 10);
 			// Verify the account still exists and belongs to user
 			if (accounts.some((a) => a.id === id)) {
 				setSelectedAccountId(id);

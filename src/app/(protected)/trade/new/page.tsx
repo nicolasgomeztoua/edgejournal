@@ -156,7 +156,7 @@ export default function NewTradePage() {
 					</Link>
 				</Button>
 				<div>
-					<h1 className="text-2xl font-bold tracking-tight">Log Trade</h1>
+					<h1 className="font-bold text-2xl tracking-tight">Log Trade</h1>
 					<p className="text-muted-foreground">Record a completed trade</p>
 				</div>
 			</div>
@@ -175,7 +175,7 @@ export default function NewTradePage() {
 						<CardContent>
 							<Select
 								value={accountId?.toString() ?? ""}
-								onValueChange={(value) => setAccountId(value ? parseInt(value) : undefined)}
+								onValueChange={(value) => setAccountId(value ? parseInt(value, 10) : undefined)}
 							>
 								<SelectTrigger>
 									<SelectValue placeholder="Select account" />
@@ -327,7 +327,7 @@ export default function NewTradePage() {
 									checked={isStillOpen}
 									onCheckedChange={(checked) => setIsStillOpen(checked === true)}
 								/>
-								<Label htmlFor="stillOpen" className="text-sm font-normal cursor-pointer">
+								<Label htmlFor="stillOpen" className="cursor-pointer font-normal text-sm">
 									Trade still open
 								</Label>
 							</div>

@@ -1,12 +1,11 @@
 import { z } from "zod";
-import { eq, desc, and, gte, lte, sql } from "drizzle-orm";
+import { eq, desc, and, gte, lte, sql, isNull, isNotNull, ilike, or } from "drizzle-orm";
 
 import {
 	createTRPCRouter,
-	publicProcedure,
 	protectedProcedure,
 } from "@/server/api/trpc";
-import { trades, tradeExecutions, tradeTags, tags, userSettings } from "@/server/db/schema";
+import { trades, tradeTags, userSettings } from "@/server/db/schema";
 import { calculatePnL } from "@/lib/symbols";
 
 // Input schemas
@@ -110,9 +109,12 @@ export const tradesRouter = createTRPCRouter({
 					cursor: z.number().optional(),
 					status: z.enum(["open", "closed"]).optional(),
 					symbol: z.string().optional(),
+					tradeDirection: z.enum(["long", "short"]).optional(),
 					startDate: z.string().datetime().optional(),
 					endDate: z.string().datetime().optional(),
-					accountId: z.number().optional(), // Filter by account
+					accountId: z.number().optional(),
+					search: z.string().optional(), // Server-side search
+					includeDeleted: z.boolean().optional(), // Include soft-deleted trades
 				})
 				.optional()
 		)
@@ -120,6 +122,11 @@ export const tradesRouter = createTRPCRouter({
 			const limit = input?.limit ?? 50;
 
 			const conditions = [eq(trades.userId, ctx.user.id)];
+
+			// Exclude deleted trades by default
+			if (!input?.includeDeleted) {
+				conditions.push(isNull(trades.deletedAt));
+			}
 
 			// Filter by account if specified
 			if (input?.accountId) {
@@ -129,13 +136,27 @@ export const tradesRouter = createTRPCRouter({
 				conditions.push(eq(trades.status, input.status));
 			}
 			if (input?.symbol) {
-				conditions.push(eq(trades.symbol, input.symbol));
+				conditions.push(ilike(trades.symbol, `%${input.symbol}%`));
+			}
+			if (input?.tradeDirection) {
+				conditions.push(eq(trades.direction, input.tradeDirection));
 			}
 			if (input?.startDate) {
 				conditions.push(gte(trades.entryTime, new Date(input.startDate)));
 			}
 			if (input?.endDate) {
 				conditions.push(lte(trades.entryTime, new Date(input.endDate)));
+			}
+			// Server-side search: symbol, setupType, or notes
+			if (input?.search) {
+				const searchTerm = `%${input.search}%`;
+				conditions.push(
+					or(
+						ilike(trades.symbol, searchTerm),
+						ilike(trades.setupType, searchTerm),
+						ilike(trades.notes, searchTerm)
+					)!
+				);
 			}
 			if (input?.cursor) {
 				conditions.push(lte(trades.id, input.cursor));
@@ -151,7 +172,7 @@ export const tradesRouter = createTRPCRouter({
 							tag: true,
 						},
 					},
-					account: true, // Include account info
+					account: true,
 				},
 			});
 
@@ -518,8 +539,83 @@ export const tradesRouter = createTRPCRouter({
 			return updated;
 		}),
 
-	// Delete a trade
+	// Soft delete a trade
 	delete: protectedProcedure
+		.input(z.object({ id: z.number() }))
+		.mutation(async ({ ctx, input }) => {
+			const existingTrade = await ctx.db.query.trades.findFirst({
+				where: and(eq(trades.id, input.id), eq(trades.userId, ctx.user.id)),
+			});
+
+			if (!existingTrade) {
+				throw new Error("Trade not found");
+			}
+
+			// Soft delete by setting deletedAt timestamp
+			await ctx.db
+				.update(trades)
+				.set({ deletedAt: new Date() })
+				.where(eq(trades.id, input.id));
+			
+			return { success: true };
+		}),
+
+	// Bulk soft delete trades
+	deleteMany: protectedProcedure
+		.input(z.object({ ids: z.array(z.number()).min(1).max(100) }))
+		.mutation(async ({ ctx, input }) => {
+			// Verify all trades belong to user before deleting
+			const existingTrades = await ctx.db.query.trades.findMany({
+				where: and(
+					eq(trades.userId, ctx.user.id),
+					sql`${trades.id} IN (${sql.join(input.ids.map(id => sql`${id}`), sql`, `)})`
+				),
+			});
+
+			if (existingTrades.length !== input.ids.length) {
+				throw new Error("Some trades not found or don't belong to you");
+			}
+
+			// Soft delete all
+			await ctx.db
+				.update(trades)
+				.set({ deletedAt: new Date() })
+				.where(
+					and(
+						eq(trades.userId, ctx.user.id),
+						sql`${trades.id} IN (${sql.join(input.ids.map(id => sql`${id}`), sql`, `)})`
+					)
+				);
+			
+			return { success: true, deleted: input.ids.length };
+		}),
+
+	// Restore a soft-deleted trade
+	restore: protectedProcedure
+		.input(z.object({ id: z.number() }))
+		.mutation(async ({ ctx, input }) => {
+			const existingTrade = await ctx.db.query.trades.findFirst({
+				where: and(
+					eq(trades.id, input.id),
+					eq(trades.userId, ctx.user.id),
+					isNotNull(trades.deletedAt)
+				),
+			});
+
+			if (!existingTrade) {
+				throw new Error("Deleted trade not found");
+			}
+
+			await ctx.db
+				.update(trades)
+				.set({ deletedAt: null })
+				.where(eq(trades.id, input.id));
+			
+			return { success: true };
+		}),
+
+	// Permanently delete a trade (hard delete)
+	permanentDelete: protectedProcedure
 		.input(z.object({ id: z.number() }))
 		.mutation(async ({ ctx, input }) => {
 			const existingTrade = await ctx.db.query.trades.findFirst({
@@ -532,6 +628,36 @@ export const tradesRouter = createTRPCRouter({
 
 			await ctx.db.delete(trades).where(eq(trades.id, input.id));
 			return { success: true };
+		}),
+
+	// Get deleted trades (trash)
+	getDeleted: protectedProcedure
+		.input(
+			z.object({
+				accountId: z.number().optional(),
+				limit: z.number().min(1).max(100).default(50),
+			}).optional()
+		)
+		.query(async ({ ctx, input }) => {
+			const conditions = [
+				eq(trades.userId, ctx.user.id),
+				isNotNull(trades.deletedAt),
+			];
+
+			if (input?.accountId) {
+				conditions.push(eq(trades.accountId, input.accountId));
+			}
+
+			const items = await ctx.db.query.trades.findMany({
+				where: and(...conditions),
+				orderBy: [desc(trades.deletedAt)],
+				limit: input?.limit ?? 50,
+				with: {
+					account: true,
+				},
+			});
+
+			return items;
 		}),
 
 	// Get trade statistics
@@ -558,6 +684,7 @@ export const tradesRouter = createTRPCRouter({
 			const conditions = [
 				eq(trades.userId, ctx.user.id),
 				eq(trades.status, "closed"),
+				isNull(trades.deletedAt), // Exclude deleted trades from stats
 			];
 
 			// Filter by account if specified
