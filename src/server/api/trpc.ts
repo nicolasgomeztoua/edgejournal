@@ -6,14 +6,14 @@
  * TL;DR - This is where all the tRPC server stuff is created and plugged in. The pieces you will
  * need to use are documented accordingly near the end.
  */
+
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { initTRPC, TRPCError } from "@trpc/server";
+import { eq } from "drizzle-orm";
 import superjson from "superjson";
 import { ZodError } from "zod";
-import { auth, currentUser } from "@clerk/nextjs/server";
-
 import { db } from "@/server/db";
 import { users } from "@/server/db/schema";
-import { eq } from "drizzle-orm";
 
 /**
  * 1. CONTEXT
@@ -118,7 +118,7 @@ const authMiddleware = t.middleware(async ({ ctx, next }) => {
 	// If user doesn't exist, create them (auto-sync on first login)
 	if (!user) {
 		const clerkUser = await currentUser();
-		
+
 		if (!clerkUser) {
 			throw new TRPCError({
 				code: "UNAUTHORIZED",
@@ -127,9 +127,9 @@ const authMiddleware = t.middleware(async ({ ctx, next }) => {
 		}
 
 		const email = clerkUser.emailAddresses[0]?.emailAddress ?? "";
-		const name = [clerkUser.firstName, clerkUser.lastName]
-			.filter(Boolean)
-			.join(" ") || null;
+		const name =
+			[clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") ||
+			null;
 
 		const [newUser] = await ctx.db
 			.insert(users)

@@ -1,12 +1,11 @@
 import "@/styles/globals.css";
 
-import type { Metadata } from "next";
-import { Geist, JetBrains_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
-
-import { TRPCReactProvider } from "@/trpc/react";
+import type { Metadata } from "next";
+import { Geist, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { TRPCReactProvider } from "@/trpc/react";
 
 export const metadata: Metadata = {
 	title: "EdgeJournal - Trading Journal with AI Analytics",
@@ -40,13 +39,10 @@ export default function RootLayout({
 				},
 			}}
 		>
-			<html
-				className={`${geist.variable} ${jetbrainsMono.variable}`}
-				lang="en"
-			>
+			<html className={`${geist.variable} ${jetbrainsMono.variable}`} lang="en">
 				<body className="bg-slate-950 text-slate-100 antialiased">
 					<TRPCReactProvider>{children}</TRPCReactProvider>
-					<Toaster richColors position="top-right" />
+					<Toaster position="top-right" richColors />
 				</body>
 			</html>
 		</ClerkProvider>

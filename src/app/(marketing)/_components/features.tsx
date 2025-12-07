@@ -72,7 +72,7 @@ const features = [
 
 export function Features() {
 	return (
-		<section id="features" className="relative py-24">
+		<section className="relative py-24" id="features">
 			{/* Subtle gradient */}
 			<div className="absolute inset-0 bg-gradient-to-b from-transparent via-card/30 to-transparent" />
 
@@ -93,8 +93,8 @@ export function Features() {
 				<div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
 					{features.map((feature, index) => (
 						<div
-							key={feature.title}
 							className="group relative rounded-xl border border-border/50 bg-card/50 p-6 transition-all hover:border-border hover:bg-card"
+							key={feature.title}
 							style={{
 								animationDelay: `${index * 100}ms`,
 							}}
@@ -111,4 +111,3 @@ export function Features() {
 		</section>
 	);
 }
-

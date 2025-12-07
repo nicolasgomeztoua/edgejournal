@@ -1,12 +1,19 @@
-import { z } from "zod";
-import { eq, desc, and, gte, lte, sql, isNull, isNotNull, ilike, or } from "drizzle-orm";
-
 import {
-	createTRPCRouter,
-	protectedProcedure,
-} from "@/server/api/trpc";
-import { trades, tradeTags, userSettings } from "@/server/db/schema";
+	and,
+	desc,
+	eq,
+	gte,
+	ilike,
+	isNotNull,
+	isNull,
+	lte,
+	or,
+	sql,
+} from "drizzle-orm";
+import { z } from "zod";
 import { calculatePnL } from "@/lib/symbols";
+import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import { trades, tradeTags, userSettings } from "@/server/db/schema";
 
 // Input schemas
 const createTradeSchema = z.object({
@@ -116,7 +123,7 @@ export const tradesRouter = createTRPCRouter({
 					search: z.string().optional(), // Server-side search
 					includeDeleted: z.boolean().optional(), // Include soft-deleted trades
 				})
-				.optional()
+				.optional(),
 		)
 		.query(async ({ ctx, input }) => {
 			const limit = input?.limit ?? 50;
@@ -150,13 +157,14 @@ export const tradesRouter = createTRPCRouter({
 			// Server-side search: symbol, setupType, or notes
 			if (input?.search) {
 				const searchTerm = `%${input.search}%`;
-				conditions.push(
-					or(
-						ilike(trades.symbol, searchTerm),
-						ilike(trades.setupType, searchTerm),
-						ilike(trades.notes, searchTerm)
-					)!
+				const searchCondition = or(
+					ilike(trades.symbol, searchTerm),
+					ilike(trades.setupType, searchTerm),
+					ilike(trades.notes, searchTerm),
 				);
+				if (searchCondition) {
+					conditions.push(searchCondition);
+				}
 			}
 			if (input?.cursor) {
 				conditions.push(lte(trades.id, input.cursor));
@@ -221,7 +229,7 @@ export const tradesRouter = createTRPCRouter({
 
 			// Determine if trade is closed (has exit price)
 			const isClosed = !!input.exitPrice && !!input.exitTime;
-			
+
 			// Calculate P&L if trade is closed
 			let realizedPnl: string | undefined;
 			let netPnl: string | undefined;
@@ -235,10 +243,10 @@ export const tradesRouter = createTRPCRouter({
 					parseFloat(input.entryPrice),
 					parseFloat(input.exitPrice),
 					parseFloat(input.quantity),
-					input.direction
+					input.direction,
 				);
 				realizedPnl = pnl.toFixed(2);
-				
+
 				const fees = parseFloat(input.fees || "0");
 				netPnl = (pnl - fees).toFixed(2);
 
@@ -286,7 +294,7 @@ export const tradesRouter = createTRPCRouter({
 					tagIds.map((tagId) => ({
 						tradeId: newTrade.id,
 						tagId,
-					}))
+					})),
 				);
 			}
 
@@ -302,10 +310,10 @@ export const tradesRouter = createTRPCRouter({
 			// Prepare all trade records with P&L calculations
 			const tradeRecords = tradesToImport.map((trade) => {
 				const isClosed = !!trade.exitPrice && !!trade.exitTime;
-				
+
 				let realizedPnl: string | undefined;
 				let netPnl: string | undefined;
-				
+
 				// Use provided SL/TP hit values if available (from Orders CSV), otherwise calculate
 				let stopLossHit = trade.stopLossHit ?? false;
 				let takeProfitHit = trade.takeProfitHit ?? false;
@@ -317,10 +325,10 @@ export const tradesRouter = createTRPCRouter({
 						parseFloat(trade.entryPrice),
 						parseFloat(trade.exitPrice),
 						parseFloat(trade.quantity),
-						trade.direction
+						trade.direction,
 					);
 					realizedPnl = pnl.toFixed(2);
-					
+
 					const fees = parseFloat(trade.fees || "0");
 					netPnl = (pnl - fees).toFixed(2);
 
@@ -361,7 +369,7 @@ export const tradesRouter = createTRPCRouter({
 					fees: trade.fees || null,
 					notes: trade.notes || null,
 					externalId: trade.externalId || null,
-					status: isClosed ? "closed" as const : "open" as const,
+					status: isClosed ? ("closed" as const) : ("open" as const),
 					importSource: "csv" as const,
 					realizedPnl,
 					netPnl,
@@ -416,7 +424,8 @@ export const tradesRouter = createTRPCRouter({
 
 			// Get symbol and instrument type (use updated values if provided)
 			const finalSymbol = updateData.symbol ?? existingTrade.symbol;
-			const finalInstrumentType = updateData.instrumentType ?? existingTrade.instrumentType;
+			const finalInstrumentType =
+				updateData.instrumentType ?? existingTrade.instrumentType;
 
 			if (existingTrade.status === "closed" && finalExitPrice) {
 				const entryPrice = parseFloat(finalEntryPrice);
@@ -431,7 +440,7 @@ export const tradesRouter = createTRPCRouter({
 					entryPrice,
 					exitPrice,
 					quantity,
-					finalDirection
+					finalDirection,
 				);
 
 				const netPnl = realizedPnl - fees;
@@ -439,13 +448,17 @@ export const tradesRouter = createTRPCRouter({
 				// Check if SL/TP was hit
 				const stopLossHit =
 					finalStopLoss &&
-					((finalDirection === "long" && exitPrice <= parseFloat(finalStopLoss)) ||
-						(finalDirection === "short" && exitPrice >= parseFloat(finalStopLoss)));
+					((finalDirection === "long" &&
+						exitPrice <= parseFloat(finalStopLoss)) ||
+						(finalDirection === "short" &&
+							exitPrice >= parseFloat(finalStopLoss)));
 
 				const takeProfitHit =
 					finalTakeProfit &&
-					((finalDirection === "long" && exitPrice >= parseFloat(finalTakeProfit)) ||
-						(finalDirection === "short" && exitPrice <= parseFloat(finalTakeProfit)));
+					((finalDirection === "long" &&
+						exitPrice >= parseFloat(finalTakeProfit)) ||
+						(finalDirection === "short" &&
+							exitPrice <= parseFloat(finalTakeProfit)));
 
 				recalculatedPnl = {
 					realizedPnl: realizedPnl.toString(),
@@ -478,7 +491,7 @@ export const tradesRouter = createTRPCRouter({
 				exitPrice: z.string(),
 				exitTime: z.string().datetime(),
 				fees: z.string().optional(),
-			})
+			}),
 		)
 		.mutation(async ({ ctx, input }) => {
 			const existingTrade = await ctx.db.query.trades.findFirst({
@@ -501,7 +514,7 @@ export const tradesRouter = createTRPCRouter({
 				entryPrice,
 				exitPrice,
 				quantity,
-				existingTrade.direction
+				existingTrade.direction,
 			);
 
 			const netPnl = realizedPnl - fees;
@@ -530,8 +543,8 @@ export const tradesRouter = createTRPCRouter({
 					realizedPnl: realizedPnl.toString(),
 					fees: fees.toString(),
 					netPnl: netPnl.toString(),
-				stopLossHit: Boolean(stopLossHit),
-				takeProfitHit: Boolean(takeProfitHit),
+					stopLossHit: Boolean(stopLossHit),
+					takeProfitHit: Boolean(takeProfitHit),
 				})
 				.where(eq(trades.id, input.id))
 				.returning();
@@ -556,7 +569,7 @@ export const tradesRouter = createTRPCRouter({
 				.update(trades)
 				.set({ deletedAt: new Date() })
 				.where(eq(trades.id, input.id));
-			
+
 			return { success: true };
 		}),
 
@@ -568,7 +581,10 @@ export const tradesRouter = createTRPCRouter({
 			const existingTrades = await ctx.db.query.trades.findMany({
 				where: and(
 					eq(trades.userId, ctx.user.id),
-					sql`${trades.id} IN (${sql.join(input.ids.map(id => sql`${id}`), sql`, `)})`
+					sql`${trades.id} IN (${sql.join(
+						input.ids.map((id) => sql`${id}`),
+						sql`, `,
+					)})`,
 				),
 			});
 
@@ -583,10 +599,13 @@ export const tradesRouter = createTRPCRouter({
 				.where(
 					and(
 						eq(trades.userId, ctx.user.id),
-						sql`${trades.id} IN (${sql.join(input.ids.map(id => sql`${id}`), sql`, `)})`
-					)
+						sql`${trades.id} IN (${sql.join(
+							input.ids.map((id) => sql`${id}`),
+							sql`, `,
+						)})`,
+					),
 				);
-			
+
 			return { success: true, deleted: input.ids.length };
 		}),
 
@@ -598,7 +617,7 @@ export const tradesRouter = createTRPCRouter({
 				where: and(
 					eq(trades.id, input.id),
 					eq(trades.userId, ctx.user.id),
-					isNotNull(trades.deletedAt)
+					isNotNull(trades.deletedAt),
 				),
 			});
 
@@ -610,7 +629,7 @@ export const tradesRouter = createTRPCRouter({
 				.update(trades)
 				.set({ deletedAt: null })
 				.where(eq(trades.id, input.id));
-			
+
 			return { success: true };
 		}),
 
@@ -633,10 +652,12 @@ export const tradesRouter = createTRPCRouter({
 	// Get deleted trades (trash)
 	getDeleted: protectedProcedure
 		.input(
-			z.object({
-				accountId: z.number().optional(),
-				limit: z.number().min(1).max(100).default(50),
-			}).optional()
+			z
+				.object({
+					accountId: z.number().optional(),
+					limit: z.number().min(1).max(100).default(50),
+				})
+				.optional(),
 		)
 		.query(async ({ ctx, input }) => {
 			const conditions = [
@@ -669,7 +690,7 @@ export const tradesRouter = createTRPCRouter({
 					endDate: z.string().datetime().optional(),
 					accountId: z.number().optional(), // Filter by account
 				})
-				.optional()
+				.optional(),
 		)
 		.query(async ({ ctx, input }) => {
 			// Get user's breakeven threshold setting
@@ -679,7 +700,9 @@ export const tradesRouter = createTRPCRouter({
 					breakevenThreshold: true,
 				},
 			});
-			const beThreshold = parseFloat(userSettingsResult?.breakevenThreshold ?? "3.00");
+			const beThreshold = parseFloat(
+				userSettingsResult?.breakevenThreshold ?? "3.00",
+			);
 
 			const conditions = [
 				eq(trades.userId, ctx.user.id),
@@ -703,26 +726,26 @@ export const tradesRouter = createTRPCRouter({
 			});
 
 			const totalTrades = closedTrades.length;
-			
+
 			// Classify trades using breakeven threshold
 			// Win: P&L > threshold, Loss: P&L < -threshold, Breakeven: within ±threshold
 			const wins = closedTrades.filter((t) => {
 				const pnl = t.netPnl ? parseFloat(t.netPnl) : 0;
 				return pnl > beThreshold;
 			}).length;
-			
+
 			const losses = closedTrades.filter((t) => {
 				const pnl = t.netPnl ? parseFloat(t.netPnl) : 0;
 				return pnl < -beThreshold;
 			}).length;
-			
+
 			const breakevens = totalTrades - wins - losses;
 
 			const totalPnl = closedTrades.reduce(
 				(sum, t) => sum + (t.netPnl ? parseFloat(t.netPnl) : 0),
-				0
+				0,
 			);
-			
+
 			// For profit factor, use threshold-adjusted wins/losses
 			const grossProfit = closedTrades.reduce((sum, t) => {
 				const pnl = t.netPnl ? parseFloat(t.netPnl) : 0;
@@ -756,4 +779,3 @@ export const tradesRouter = createTRPCRouter({
 			};
 		}),
 });
-

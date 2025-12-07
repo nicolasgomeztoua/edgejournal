@@ -1,9 +1,9 @@
 "use client";
 
+import { Brain, Send, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Brain, Send, Sparkles } from "lucide-react";
 
 const exampleQueries = [
 	"Are my breakevens optimal?",
@@ -27,7 +27,7 @@ export function AIShowcase() {
 	const [showResponse, setShowResponse] = useState(false);
 
 	return (
-		<section id="ai" className="relative py-24">
+		<section className="relative py-24" id="ai">
 			{/* Background effects */}
 			<div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent" />
 			<div className="-translate-y-1/2 absolute top-1/2 left-1/3 h-64 w-64 rounded-full bg-chart-3/10 blur-[100px]" />
@@ -73,12 +73,12 @@ export function AIShowcase() {
 								{exampleQueries.map((query) => (
 									<Button
 										key={query}
-										variant={selectedQuery === query ? "secondary" : "outline"}
-										size="sm"
 										onClick={() => {
 											setSelectedQuery(query);
 											setShowResponse(false);
 										}}
+										size="sm"
+										variant={selectedQuery === query ? "secondary" : "outline"}
 									>
 										{query}
 									</Button>
@@ -103,10 +103,13 @@ export function AIShowcase() {
 									</div>
 									<div className="rounded-2xl rounded-tl-md bg-secondary px-4 py-3">
 										<div className="prose prose-sm prose-invert max-w-none">
-											{exampleResponse.split("\n").map((line, i) => {
+											{exampleResponse.split("\n").map((line) => {
 												if (line.startsWith("**") && line.endsWith("**")) {
 													return (
-														<p key={i} className="mt-3 font-semibold first:mt-0">
+														<p
+															className="mt-3 font-semibold first:mt-0"
+															key={`heading-${line}`}
+														>
 															{line.replace(/\*\*/g, "")}
 														</p>
 													);
@@ -114,15 +117,18 @@ export function AIShowcase() {
 												if (line.startsWith("- ")) {
 													return (
 														<p
-															key={i}
 															className="ml-4 text-muted-foreground"
+															key={`bullet-${line}`}
 														>
 															{line}
 														</p>
 													);
 												}
 												return line ? (
-													<p key={i} className="text-muted-foreground">
+													<p
+														className="text-muted-foreground"
+														key={`text-${line}`}
+													>
 														{line}
 													</p>
 												) : null;
@@ -132,7 +138,10 @@ export function AIShowcase() {
 								</div>
 							) : (
 								<div className="flex items-center justify-center py-12">
-									<Button onClick={() => setShowResponse(true)} className="gap-2">
+									<Button
+										className="gap-2"
+										onClick={() => setShowResponse(true)}
+									>
 										<Send className="h-4 w-4" />
 										See AI Response
 									</Button>
@@ -161,4 +170,3 @@ export function AIShowcase() {
 		</section>
 	);
 }
-

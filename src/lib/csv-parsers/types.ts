@@ -2,7 +2,12 @@
 // CSV Parser Types
 // ============================================
 
-export type TradingPlatform = "mt4" | "mt5" | "projectx" | "ninjatrader" | "other";
+export type TradingPlatform =
+	| "mt4"
+	| "mt5"
+	| "projectx"
+	| "ninjatrader"
+	| "other";
 
 export interface ParsedTrade {
 	// Required fields
@@ -24,7 +29,7 @@ export interface ParsedTrade {
 	commission?: string;
 	swap?: string;
 	profit?: string; // Platform-reported profit (for verification)
-	
+
 	// Metadata
 	externalId?: string; // Platform's trade ID
 	comment?: string;
@@ -52,20 +57,19 @@ export interface CSVParser {
 	platform: TradingPlatform;
 	name: string;
 	description: string;
-	
+
 	/**
 	 * Validate if the CSV headers match this platform's format
 	 */
 	validateHeaders(headers: string[]): boolean;
-	
+
 	/**
 	 * Parse the CSV content into trades
 	 */
 	parse(csvContent: string): Promise<ParseResult>;
-	
+
 	/**
 	 * Get expected column mappings for this platform
 	 */
 	getExpectedColumns(): string[];
 }
-

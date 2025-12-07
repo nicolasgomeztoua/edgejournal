@@ -1,13 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { ArrowLeft, Loader2, Wallet } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { api } from "@/trpc/react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
 	Select,
 	SelectContent,
@@ -16,12 +24,10 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Loader2, Wallet } from "lucide-react";
-import Link from "next/link";
-import { toast } from "sonner";
-import { FUTURES_SYMBOLS, FOREX_SYMBOLS } from "@/lib/symbols";
+import { Textarea } from "@/components/ui/textarea";
 import { useAccount } from "@/contexts/account-context";
+import { FOREX_SYMBOLS, FUTURES_SYMBOLS } from "@/lib/symbols";
+import { api } from "@/trpc/react";
 
 const SETUP_TYPES = [
 	"Breakout",
@@ -49,29 +55,43 @@ const EMOTIONAL_STATES = [
 
 export default function NewTradePage() {
 	const router = useRouter();
-	const { selectedAccountId, selectedAccount, accounts } = useAccount();
+	const { selectedAccountId, accounts } = useAccount();
 
 	// Form state
-	const [instrumentType, setInstrumentType] = useState<"futures" | "forex">("futures");
+	const [instrumentType, setInstrumentType] = useState<"futures" | "forex">(
+		"futures",
+	);
 	const [symbol, setSymbol] = useState("");
 	const [direction, setDirection] = useState<"long" | "short">("long");
 	const [entryPrice, setEntryPrice] = useState("");
-	const [entryDate, setEntryDate] = useState(new Date().toISOString().split("T")[0]);
+	const [entryDate, setEntryDate] = useState(
+		new Date().toISOString().split("T")[0],
+	);
 	const [entryTime, setEntryTime] = useState("");
 	const [quantity, setQuantity] = useState("");
 	const [isStillOpen, setIsStillOpen] = useState(false);
 	const [exitPrice, setExitPrice] = useState("");
-	const [exitDate, setExitDate] = useState(new Date().toISOString().split("T")[0]);
+	const [exitDate, setExitDate] = useState(
+		new Date().toISOString().split("T")[0],
+	);
 	const [exitTime, setExitTime] = useState("");
 	const [stopLoss, setStopLoss] = useState("");
 	const [takeProfit, setTakeProfit] = useState("");
 	const [fees, setFees] = useState("");
 	const [setupType, setSetupType] = useState("");
 	const [emotionalState, setEmotionalState] = useState<
-		"confident" | "fearful" | "greedy" | "neutral" | "frustrated" | "excited" | "anxious"
+		| "confident"
+		| "fearful"
+		| "greedy"
+		| "neutral"
+		| "frustrated"
+		| "excited"
+		| "anxious"
 	>("neutral");
 	const [notes, setNotes] = useState("");
-	const [accountId, setAccountId] = useState<number | undefined>(selectedAccountId ?? undefined);
+	const [accountId, setAccountId] = useState<number | undefined>(
+		selectedAccountId ?? undefined,
+	);
 
 	const createTrade = api.trades.create.useMutation({
 		onSuccess: (trade) => {
@@ -121,9 +141,10 @@ export default function NewTradePage() {
 		}
 
 		const entryDateTime = new Date(`${entryDate}T${entryTime}`).toISOString();
-		const exitDateTime = !isStillOpen && exitDate && exitTime 
-			? new Date(`${exitDate}T${exitTime}`).toISOString() 
-			: undefined;
+		const exitDateTime =
+			!isStillOpen && exitDate && exitTime
+				? new Date(`${exitDate}T${exitTime}`).toISOString()
+				: undefined;
 
 		createTrade.mutate({
 			symbol,
@@ -143,14 +164,15 @@ export default function NewTradePage() {
 		});
 	};
 
-	const symbols = instrumentType === "futures" ? FUTURES_SYMBOLS : FOREX_SYMBOLS;
+	const symbols =
+		instrumentType === "futures" ? FUTURES_SYMBOLS : FOREX_SYMBOLS;
 	const isPending = createTrade.isPending || closeTrade.isPending;
 
 	return (
 		<div className="mx-auto max-w-2xl space-y-6">
 			{/* Header */}
 			<div className="flex items-center gap-4">
-				<Button variant="ghost" size="icon" asChild>
+				<Button asChild size="icon" variant="ghost">
 					<Link href="/journal">
 						<ArrowLeft className="h-4 w-4" />
 					</Link>
@@ -161,7 +183,7 @@ export default function NewTradePage() {
 				</div>
 			</div>
 
-			<form onSubmit={handleSubmit} className="space-y-6">
+			<form className="space-y-6" onSubmit={handleSubmit}>
 				{/* Account Selection */}
 				{accounts.length > 0 && (
 					<Card>
@@ -170,12 +192,16 @@ export default function NewTradePage() {
 								<Wallet className="h-5 w-5" />
 								Trading Account
 							</CardTitle>
-							<CardDescription>Select which account to log this trade to</CardDescription>
+							<CardDescription>
+								Select which account to log this trade to
+							</CardDescription>
 						</CardHeader>
 						<CardContent>
 							<Select
+								onValueChange={(value) =>
+									setAccountId(value ? parseInt(value, 10) : undefined)
+								}
 								value={accountId?.toString() ?? ""}
-								onValueChange={(value) => setAccountId(value ? parseInt(value, 10) : undefined)}
 							>
 								<SelectTrigger>
 									<SelectValue placeholder="Select account" />
@@ -202,11 +228,11 @@ export default function NewTradePage() {
 						<div className="space-y-2">
 							<Label>Type</Label>
 							<Tabs
-								value={instrumentType}
 								onValueChange={(v) => {
 									setInstrumentType(v as "futures" | "forex");
 									setSymbol("");
 								}}
+								value={instrumentType}
 							>
 								<TabsList className="grid w-full grid-cols-2">
 									<TabsTrigger value="futures">Futures</TabsTrigger>
@@ -217,7 +243,7 @@ export default function NewTradePage() {
 
 						<div className="space-y-2">
 							<Label>Symbol *</Label>
-							<Select value={symbol} onValueChange={setSymbol}>
+							<Select onValueChange={setSymbol} value={symbol}>
 								<SelectTrigger>
 									<SelectValue placeholder="Select a symbol" />
 								</SelectTrigger>
@@ -243,19 +269,19 @@ export default function NewTradePage() {
 						<div className="space-y-2">
 							<Label>Direction</Label>
 							<Tabs
-								value={direction}
 								onValueChange={(v) => setDirection(v as "long" | "short")}
+								value={direction}
 							>
 								<TabsList className="grid w-full grid-cols-2">
 									<TabsTrigger
-										value="long"
 										className="data-[state=active]:bg-profit/20 data-[state=active]:text-profit"
+										value="long"
 									>
 										Long
 									</TabsTrigger>
 									<TabsTrigger
-										value="short"
 										className="data-[state=active]:bg-loss/20 data-[state=active]:text-loss"
+										value="short"
 									>
 										Short
 									</TabsTrigger>
@@ -267,12 +293,12 @@ export default function NewTradePage() {
 							<div className="space-y-2">
 								<Label>Entry Price *</Label>
 								<Input
-									type="number"
-									step="any"
-									placeholder="0.00"
 									className="font-mono"
-									value={entryPrice}
 									onChange={(e) => setEntryPrice(e.target.value)}
+									placeholder="0.00"
+									step="any"
+									type="number"
+									value={entryPrice}
 								/>
 							</div>
 
@@ -281,12 +307,12 @@ export default function NewTradePage() {
 									{instrumentType === "futures" ? "Contracts *" : "Lot Size *"}
 								</Label>
 								<Input
-									type="number"
-									step="any"
-									placeholder={instrumentType === "futures" ? "1" : "0.01"}
 									className="font-mono"
-									value={quantity}
 									onChange={(e) => setQuantity(e.target.value)}
+									placeholder={instrumentType === "futures" ? "1" : "0.01"}
+									step="any"
+									type="number"
+									value={quantity}
 								/>
 							</div>
 						</div>
@@ -295,18 +321,18 @@ export default function NewTradePage() {
 							<div className="space-y-2">
 								<Label>Entry Date *</Label>
 								<Input
+									onChange={(e) => setEntryDate(e.target.value)}
 									type="date"
 									value={entryDate}
-									onChange={(e) => setEntryDate(e.target.value)}
 								/>
 							</div>
 
 							<div className="space-y-2">
 								<Label>Entry Time *</Label>
 								<Input
+									onChange={(e) => setEntryTime(e.target.value)}
 									type="time"
 									value={entryTime}
-									onChange={(e) => setEntryTime(e.target.value)}
 								/>
 							</div>
 						</div>
@@ -323,11 +349,16 @@ export default function NewTradePage() {
 							</div>
 							<div className="flex items-center gap-2">
 								<Checkbox
-									id="stillOpen"
 									checked={isStillOpen}
-									onCheckedChange={(checked) => setIsStillOpen(checked === true)}
+									id="stillOpen"
+									onCheckedChange={(checked) =>
+										setIsStillOpen(checked === true)
+									}
 								/>
-								<Label htmlFor="stillOpen" className="cursor-pointer font-normal text-sm">
+								<Label
+									className="cursor-pointer font-normal text-sm"
+									htmlFor="stillOpen"
+								>
 									Trade still open
 								</Label>
 							</div>
@@ -339,24 +370,24 @@ export default function NewTradePage() {
 								<div className="space-y-2">
 									<Label>Exit Price *</Label>
 									<Input
-										type="number"
-										step="any"
-										placeholder="0.00"
 										className="font-mono"
-										value={exitPrice}
 										onChange={(e) => setExitPrice(e.target.value)}
+										placeholder="0.00"
+										step="any"
+										type="number"
+										value={exitPrice}
 									/>
 								</div>
 
 								<div className="space-y-2">
 									<Label>Fees / Commission</Label>
 									<Input
-										type="number"
-										step="any"
-										placeholder="0.00"
 										className="font-mono"
-										value={fees}
 										onChange={(e) => setFees(e.target.value)}
+										placeholder="0.00"
+										step="any"
+										type="number"
+										value={fees}
 									/>
 								</div>
 							</div>
@@ -365,18 +396,18 @@ export default function NewTradePage() {
 								<div className="space-y-2">
 									<Label>Exit Date *</Label>
 									<Input
+										onChange={(e) => setExitDate(e.target.value)}
 										type="date"
 										value={exitDate}
-										onChange={(e) => setExitDate(e.target.value)}
 									/>
 								</div>
 
 								<div className="space-y-2">
 									<Label>Exit Time *</Label>
 									<Input
+										onChange={(e) => setExitTime(e.target.value)}
 										type="time"
 										value={exitTime}
-										onChange={(e) => setExitTime(e.target.value)}
 									/>
 								</div>
 							</div>
@@ -395,24 +426,24 @@ export default function NewTradePage() {
 							<div className="space-y-2">
 								<Label>Stop Loss</Label>
 								<Input
-									type="number"
-									step="any"
-									placeholder="Optional"
 									className="font-mono"
-									value={stopLoss}
 									onChange={(e) => setStopLoss(e.target.value)}
+									placeholder="Optional"
+									step="any"
+									type="number"
+									value={stopLoss}
 								/>
 							</div>
 
 							<div className="space-y-2">
 								<Label>Take Profit</Label>
 								<Input
-									type="number"
-									step="any"
-									placeholder="Optional"
 									className="font-mono"
-									value={takeProfit}
 									onChange={(e) => setTakeProfit(e.target.value)}
+									placeholder="Optional"
+									step="any"
+									type="number"
+									value={takeProfit}
 								/>
 							</div>
 						</div>
@@ -423,13 +454,15 @@ export default function NewTradePage() {
 				<Card>
 					<CardHeader>
 						<CardTitle>Trade Context</CardTitle>
-						<CardDescription>Additional information about the trade</CardDescription>
+						<CardDescription>
+							Additional information about the trade
+						</CardDescription>
 					</CardHeader>
 					<CardContent className="space-y-4">
 						<div className="grid gap-4 sm:grid-cols-2">
 							<div className="space-y-2">
 								<Label>Setup Type</Label>
-								<Select value={setupType} onValueChange={setSetupType}>
+								<Select onValueChange={setSetupType} value={setupType}>
 									<SelectTrigger>
 										<SelectValue placeholder="Select setup type" />
 									</SelectTrigger>
@@ -446,7 +479,6 @@ export default function NewTradePage() {
 							<div className="space-y-2">
 								<Label>Emotional State</Label>
 								<Select
-									value={emotionalState}
 									onValueChange={(v) =>
 										setEmotionalState(
 											v as
@@ -456,9 +488,10 @@ export default function NewTradePage() {
 												| "neutral"
 												| "frustrated"
 												| "excited"
-												| "anxious"
+												| "anxious",
 										)
 									}
+									value={emotionalState}
 								>
 									<SelectTrigger>
 										<SelectValue placeholder="How were you feeling?" />
@@ -477,10 +510,10 @@ export default function NewTradePage() {
 						<div className="space-y-2">
 							<Label>Notes</Label>
 							<Textarea
+								onChange={(e) => setNotes(e.target.value)}
 								placeholder="What was your reasoning? What did you learn?"
 								rows={4}
 								value={notes}
-								onChange={(e) => setNotes(e.target.value)}
 							/>
 						</div>
 					</CardContent>
@@ -488,10 +521,10 @@ export default function NewTradePage() {
 
 				{/* Submit */}
 				<div className="flex justify-end gap-4">
-					<Button type="button" variant="outline" asChild>
+					<Button asChild type="button" variant="outline">
 						<Link href="/journal">Cancel</Link>
 					</Button>
-					<Button type="submit" disabled={isPending}>
+					<Button disabled={isPending} type="submit">
 						{isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
 						Log Trade
 					</Button>

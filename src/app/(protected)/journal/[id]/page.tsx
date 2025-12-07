@@ -1,34 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
-import { api } from "@/trpc/react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
 	AlertTriangle,
 	ArrowDownRight,
@@ -46,15 +17,50 @@ import {
 	Save,
 	Shield,
 	Target,
+	Trash2,
 	TrendingDown,
 	TrendingUp,
-	Trash2,
 	X,
 	XCircle,
 } from "lucide-react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { formatCurrency, getPnLColorClass, cn } from "@/lib/utils";
-import { FUTURES_SYMBOLS, FOREX_SYMBOLS } from "@/lib/symbols";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { FOREX_SYMBOLS, FUTURES_SYMBOLS } from "@/lib/symbols";
+import { cn, formatCurrency, getPnLColorClass } from "@/lib/utils";
+import { api } from "@/trpc/react";
 
 const SETUP_TYPES = [
 	"Breakout",
@@ -111,9 +117,13 @@ export default function TradeDetailPage() {
 		fees: "",
 	});
 
-	const { data: trade, isLoading, refetch } = api.trades.getById.useQuery(
+	const {
+		data: trade,
+		isLoading,
+		refetch,
+	} = api.trades.getById.useQuery(
 		{ id: tradeId },
-		{ enabled: !Number.isNaN(tradeId) }
+		{ enabled: !Number.isNaN(tradeId) },
 	);
 
 	// Initialize edit form when trade loads
@@ -177,14 +187,22 @@ export default function TradeDetailPage() {
 			stopLoss: editForm.stopLoss || undefined,
 			takeProfit: editForm.takeProfit || undefined,
 			setupType: editForm.setupType || undefined,
-			emotionalState: (editForm.emotionalState as "confident" | "fearful" | "greedy" | "neutral" | "frustrated" | "excited" | "anxious") || undefined,
+			emotionalState:
+				(editForm.emotionalState as
+					| "confident"
+					| "fearful"
+					| "greedy"
+					| "neutral"
+					| "frustrated"
+					| "excited"
+					| "anxious") || undefined,
 			notes: editForm.notes || undefined,
 		});
 	};
 
 	const handleCloseTrade = () => {
 		const exitTime = new Date(
-			`${closeData.exitDate}T${closeData.exitTime}`
+			`${closeData.exitDate}T${closeData.exitTime}`,
 		).toISOString();
 
 		closeTrade.mutate({
@@ -211,7 +229,7 @@ export default function TradeDetailPage() {
 
 		// Risk (distance to SL)
 		const riskPips = sl ? Math.abs(entry - sl) : null;
-		
+
 		// Reward (distance to TP)
 		const rewardPips = tp ? Math.abs(tp - entry) : null;
 
@@ -228,7 +246,9 @@ export default function TradeDetailPage() {
 		// Trade duration
 		let duration = null;
 		if (trade.exitTime && trade.entryTime) {
-			const ms = new Date(trade.exitTime).getTime() - new Date(trade.entryTime).getTime();
+			const ms =
+				new Date(trade.exitTime).getTime() -
+				new Date(trade.entryTime).getTime();
 			const hours = Math.floor(ms / (1000 * 60 * 60));
 			const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
 			if (hours > 24) {
@@ -247,7 +267,14 @@ export default function TradeDetailPage() {
 			percentChange = ((exit - entry) / entry) * 100 * (isLong ? 1 : -1);
 		}
 
-		return { riskPips, rewardPips, rrRatio, rMultiple, duration, percentChange };
+		return {
+			riskPips,
+			rewardPips,
+			rrRatio,
+			rMultiple,
+			duration,
+			percentChange,
+		};
 	};
 
 	const stats = calculateStats();
@@ -292,7 +319,7 @@ export default function TradeDetailPage() {
 			{/* Header */}
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 				<div className="flex items-center gap-4">
-					<Button variant="ghost" size="icon" asChild>
+					<Button asChild size="icon" variant="ghost">
 						<Link href="/journal">
 							<ArrowLeft className="h-4 w-4" />
 						</Link>
@@ -303,13 +330,13 @@ export default function TradeDetailPage() {
 								{trade.symbol}
 							</h1>
 							<Badge
-								variant="outline"
 								className={cn(
 									"font-medium",
 									trade.direction === "long"
 										? "border-profit/50 bg-profit/10 text-profit"
-										: "border-loss/50 bg-loss/10 text-loss"
+										: "border-loss/50 bg-loss/10 text-loss",
 								)}
+								variant="outline"
 							>
 								{trade.direction === "long" ? (
 									<TrendingUp className="mr-1 h-3 w-3" />
@@ -318,9 +345,9 @@ export default function TradeDetailPage() {
 								)}
 								{trade.direction.toUpperCase()}
 							</Badge>
-							<Badge 
-								variant={trade.status === "open" ? "secondary" : "default"}
+							<Badge
 								className={trade.status === "closed" ? "bg-chart-1" : ""}
+								variant={trade.status === "open" ? "secondary" : "default"}
 							>
 								{trade.status === "open" ? (
 									<Clock className="mr-1 h-3 w-3" />
@@ -331,7 +358,8 @@ export default function TradeDetailPage() {
 							</Badge>
 						</div>
 						<p className="mt-1 text-muted-foreground text-sm">
-							{trade.instrumentType.charAt(0).toUpperCase() + trade.instrumentType.slice(1)}
+							{trade.instrumentType.charAt(0).toUpperCase() +
+								trade.instrumentType.slice(1)}
 							{trade.setupType && ` • ${trade.setupType}`}
 							{stats?.duration && ` • ${stats.duration}`}
 						</p>
@@ -342,14 +370,14 @@ export default function TradeDetailPage() {
 					{isEditing ? (
 						<>
 							<Button
-								variant="outline"
-								onClick={() => setIsEditing(false)}
 								disabled={updateTrade.isPending}
+								onClick={() => setIsEditing(false)}
+								variant="outline"
 							>
 								<X className="mr-2 h-4 w-4" />
 								Cancel
 							</Button>
-							<Button onClick={handleSaveEdit} disabled={updateTrade.isPending}>
+							<Button disabled={updateTrade.isPending} onClick={handleSaveEdit}>
 								{updateTrade.isPending ? (
 									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 								) : (
@@ -360,13 +388,13 @@ export default function TradeDetailPage() {
 						</>
 					) : (
 						<>
-							<Button variant="outline" onClick={() => setIsEditing(true)}>
+							<Button onClick={() => setIsEditing(true)} variant="outline">
 								<Edit className="mr-2 h-4 w-4" />
 								Edit
 							</Button>
 
 							{trade.status === "open" && (
-								<Dialog open={isClosing} onOpenChange={setIsClosing}>
+								<Dialog onOpenChange={setIsClosing} open={isClosing}>
 									<DialogTrigger asChild>
 										<Button>
 											<XCircle className="mr-2 h-4 w-4" />
@@ -377,22 +405,26 @@ export default function TradeDetailPage() {
 										<DialogHeader>
 											<DialogTitle>Close Trade</DialogTitle>
 											<DialogDescription>
-												Enter the exit details to close this {trade.symbol} {trade.direction} trade.
+												Enter the exit details to close this {trade.symbol}{" "}
+												{trade.direction} trade.
 											</DialogDescription>
 										</DialogHeader>
 										<div className="space-y-4 py-4">
 											<div className="space-y-2">
 												<Label htmlFor="exitPrice">Exit Price *</Label>
 												<Input
-													id="exitPrice"
-													type="number"
-													step="any"
-													placeholder="0.00"
 													className="font-mono"
-													value={closeData.exitPrice}
+													id="exitPrice"
 													onChange={(e) =>
-														setCloseData({ ...closeData, exitPrice: e.target.value })
+														setCloseData({
+															...closeData,
+															exitPrice: e.target.value,
+														})
 													}
+													placeholder="0.00"
+													step="any"
+													type="number"
+													value={closeData.exitPrice}
 												/>
 											</div>
 											<div className="grid grid-cols-2 gap-4">
@@ -400,47 +432,56 @@ export default function TradeDetailPage() {
 													<Label htmlFor="exitDate">Exit Date</Label>
 													<Input
 														id="exitDate"
+														onChange={(e) =>
+															setCloseData({
+																...closeData,
+																exitDate: e.target.value,
+															})
+														}
 														type="date"
 														value={closeData.exitDate}
-														onChange={(e) =>
-															setCloseData({ ...closeData, exitDate: e.target.value })
-														}
 													/>
 												</div>
 												<div className="space-y-2">
 													<Label htmlFor="exitTime">Exit Time</Label>
 													<Input
 														id="exitTime"
+														onChange={(e) =>
+															setCloseData({
+																...closeData,
+																exitTime: e.target.value,
+															})
+														}
 														type="time"
 														value={closeData.exitTime}
-														onChange={(e) =>
-															setCloseData({ ...closeData, exitTime: e.target.value })
-														}
 													/>
 												</div>
 											</div>
 											<div className="space-y-2">
 												<Label htmlFor="fees">Fees (optional)</Label>
 												<Input
-													id="fees"
-													type="number"
-													step="any"
-													placeholder="0.00"
 													className="font-mono"
-													value={closeData.fees}
+													id="fees"
 													onChange={(e) =>
 														setCloseData({ ...closeData, fees: e.target.value })
 													}
+													placeholder="0.00"
+													step="any"
+													type="number"
+													value={closeData.fees}
 												/>
 											</div>
 										</div>
 										<DialogFooter>
-											<Button variant="outline" onClick={() => setIsClosing(false)}>
+											<Button
+												onClick={() => setIsClosing(false)}
+												variant="outline"
+											>
 												Cancel
 											</Button>
 											<Button
-												onClick={handleCloseTrade}
 												disabled={!closeData.exitPrice || closeTrade.isPending}
+												onClick={handleCloseTrade}
 											>
 												{closeTrade.isPending && (
 													<Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -452,9 +493,9 @@ export default function TradeDetailPage() {
 								</Dialog>
 							)}
 
-							<Dialog open={isDeleting} onOpenChange={setIsDeleting}>
+							<Dialog onOpenChange={setIsDeleting} open={isDeleting}>
 								<DialogTrigger asChild>
-									<Button variant="outline" size="icon">
+									<Button size="icon" variant="outline">
 										<Trash2 className="h-4 w-4" />
 									</Button>
 								</DialogTrigger>
@@ -462,18 +503,21 @@ export default function TradeDetailPage() {
 									<DialogHeader>
 										<DialogTitle>Delete Trade</DialogTitle>
 										<DialogDescription>
-											Are you sure you want to delete this trade? This action cannot
-											be undone.
+											Are you sure you want to delete this trade? This action
+											cannot be undone.
 										</DialogDescription>
 									</DialogHeader>
 									<DialogFooter>
-										<Button variant="outline" onClick={() => setIsDeleting(false)}>
+										<Button
+											onClick={() => setIsDeleting(false)}
+											variant="outline"
+										>
 											Cancel
 										</Button>
 										<Button
-											variant="destructive"
-											onClick={handleDeleteTrade}
 											disabled={deleteTrade.isPending}
+											onClick={handleDeleteTrade}
+											variant="destructive"
 										>
 											{deleteTrade.isPending && (
 												<Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -495,7 +539,7 @@ export default function TradeDetailPage() {
 						"overflow-hidden border-2",
 						parseFloat(trade.netPnl) >= 0
 							? "border-profit/30 bg-gradient-to-br from-profit/10 to-profit/5"
-							: "border-loss/30 bg-gradient-to-br from-loss/10 to-loss/5"
+							: "border-loss/30 bg-gradient-to-br from-loss/10 to-loss/5",
 					)}
 				>
 					<CardContent className="p-6">
@@ -509,7 +553,7 @@ export default function TradeDetailPage() {
 								<p
 									className={cn(
 										"font-bold font-mono text-3xl",
-										getPnLColorClass(trade.netPnl)
+										getPnLColorClass(trade.netPnl),
 									)}
 								>
 									{formatCurrency(parseFloat(trade.netPnl))}
@@ -526,7 +570,7 @@ export default function TradeDetailPage() {
 									<p
 										className={cn(
 											"font-bold font-mono text-3xl",
-											stats.percentChange >= 0 ? "text-profit" : "text-loss"
+											stats.percentChange >= 0 ? "text-profit" : "text-loss",
 										)}
 									>
 										{stats.percentChange >= 0 ? "+" : ""}
@@ -539,13 +583,12 @@ export default function TradeDetailPage() {
 							{stats?.rMultiple != null && (
 								<div className="space-y-1">
 									<p className="flex items-center gap-1 text-muted-foreground text-sm">
-										<Target className="h-3 w-3" />
-										R Multiple
+										<Target className="h-3 w-3" />R Multiple
 									</p>
 									<p
 										className={cn(
 											"font-bold font-mono text-3xl",
-											stats.rMultiple >= 0 ? "text-profit" : "text-loss"
+											stats.rMultiple >= 0 ? "text-profit" : "text-loss",
 										)}
 									>
 										{stats.rMultiple >= 0 ? "+" : ""}
@@ -557,7 +600,7 @@ export default function TradeDetailPage() {
 							{/* Status Badges */}
 							<div className="flex flex-col justify-center space-y-2">
 								{trade.stopLossHit && (
-									<Badge variant="destructive" className="w-fit">
+									<Badge className="w-fit" variant="destructive">
 										<AlertTriangle className="mr-1 h-3 w-3" />
 										Stop Loss Hit
 									</Badge>
@@ -569,7 +612,7 @@ export default function TradeDetailPage() {
 									</Badge>
 								)}
 								{!trade.stopLossHit && !trade.takeProfitHit && (
-									<Badge variant="secondary" className="w-fit">
+									<Badge className="w-fit" variant="secondary">
 										Manual Exit
 									</Badge>
 								)}
@@ -580,36 +623,43 @@ export default function TradeDetailPage() {
 			)}
 
 			{/* Main Content Tabs */}
-			<Tabs defaultValue="details" className="space-y-6">
+			<Tabs className="space-y-6" defaultValue="details">
 				<TabsList>
-					<TabsTrigger value="details" className="gap-2">
+					<TabsTrigger className="gap-2" value="details">
 						<FileText className="h-4 w-4" />
 						Details
 					</TabsTrigger>
-					<TabsTrigger value="chart" className="gap-2">
+					<TabsTrigger className="gap-2" value="chart">
 						<BarChart3 className="h-4 w-4" />
 						Chart
 					</TabsTrigger>
-					<TabsTrigger value="screenshots" className="gap-2">
+					<TabsTrigger className="gap-2" value="screenshots">
 						<Camera className="h-4 w-4" />
 						Screenshots
 					</TabsTrigger>
 				</TabsList>
 
 				{/* Details Tab */}
-				<TabsContent value="details" className="space-y-6">
+				<TabsContent className="space-y-6" value="details">
 					<div className="grid gap-6 lg:grid-cols-3">
 						{/* Entry Details */}
 						<Card>
 							<CardHeader className="pb-3">
 								<CardTitle className="flex items-center gap-2 text-base">
-									<div className={cn(
-										"rounded-md p-1.5",
-										isEditing 
-											? editForm.direction === "long" ? "bg-profit/10" : "bg-loss/10"
-											: trade.direction === "long" ? "bg-profit/10" : "bg-loss/10"
-									)}>
-										{(isEditing ? editForm.direction : trade.direction) === "long" ? (
+									<div
+										className={cn(
+											"rounded-md p-1.5",
+											isEditing
+												? editForm.direction === "long"
+													? "bg-profit/10"
+													: "bg-loss/10"
+												: trade.direction === "long"
+													? "bg-profit/10"
+													: "bg-loss/10",
+										)}
+									>
+										{(isEditing ? editForm.direction : trade.direction) ===
+										"long" ? (
 											<TrendingUp className="h-4 w-4 text-profit" />
 										) : (
 											<TrendingDown className="h-4 w-4 text-loss" />
@@ -624,20 +674,20 @@ export default function TradeDetailPage() {
 										<div className="space-y-2">
 											<Label className="text-xs">Instrument Type</Label>
 											<Tabs
-												value={editForm.instrumentType}
 												onValueChange={(v) =>
-													setEditForm({ 
-														...editForm, 
+													setEditForm({
+														...editForm,
 														instrumentType: v as "futures" | "forex",
-														symbol: "" // Reset symbol when type changes
+														symbol: "", // Reset symbol when type changes
 													})
 												}
+												value={editForm.instrumentType}
 											>
 												<TabsList className="grid h-9 w-full grid-cols-2">
-													<TabsTrigger value="futures" className="text-xs">
+													<TabsTrigger className="text-xs" value="futures">
 														Futures
 													</TabsTrigger>
-													<TabsTrigger value="forex" className="text-xs">
+													<TabsTrigger className="text-xs" value="forex">
 														Forex
 													</TabsTrigger>
 												</TabsList>
@@ -646,16 +696,19 @@ export default function TradeDetailPage() {
 										<div className="space-y-2">
 											<Label className="text-xs">Symbol</Label>
 											<Select
-												value={editForm.symbol}
 												onValueChange={(v) =>
 													setEditForm({ ...editForm, symbol: v })
 												}
+												value={editForm.symbol}
 											>
 												<SelectTrigger className="h-9">
 													<SelectValue placeholder="Select symbol" />
 												</SelectTrigger>
 												<SelectContent>
-													{(editForm.instrumentType === "futures" ? FUTURES_SYMBOLS : FOREX_SYMBOLS).map((s) => (
+													{(editForm.instrumentType === "futures"
+														? FUTURES_SYMBOLS
+														: FOREX_SYMBOLS
+													).map((s) => (
 														<SelectItem key={s.value} value={s.value}>
 															{s.label}
 														</SelectItem>
@@ -666,21 +719,24 @@ export default function TradeDetailPage() {
 										<div className="space-y-2">
 											<Label className="text-xs">Direction</Label>
 											<Tabs
-												value={editForm.direction}
 												onValueChange={(v) =>
-													setEditForm({ ...editForm, direction: v as "long" | "short" })
+													setEditForm({
+														...editForm,
+														direction: v as "long" | "short",
+													})
 												}
+												value={editForm.direction}
 											>
 												<TabsList className="grid h-9 w-full grid-cols-2">
 													<TabsTrigger
-														value="long"
 														className="text-xs data-[state=active]:bg-profit/20 data-[state=active]:text-profit"
+														value="long"
 													>
 														Long
 													</TabsTrigger>
 													<TabsTrigger
-														value="short"
 														className="text-xs data-[state=active]:bg-loss/20 data-[state=active]:text-loss"
+														value="short"
 													>
 														Short
 													</TabsTrigger>
@@ -690,50 +746,64 @@ export default function TradeDetailPage() {
 										<div className="space-y-2">
 											<Label className="text-xs">Entry Price</Label>
 											<Input
-												type="number"
-												step="any"
 												className="h-9 font-mono"
-												value={editForm.entryPrice}
 												onChange={(e) =>
-													setEditForm({ ...editForm, entryPrice: e.target.value })
+													setEditForm({
+														...editForm,
+														entryPrice: e.target.value,
+													})
 												}
+												step="any"
+												type="number"
+												value={editForm.entryPrice}
 											/>
 										</div>
 										<div className="space-y-2">
 											<Label className="text-xs">
-												{editForm.instrumentType === "futures" ? "Contracts" : "Lot Size"}
+												{editForm.instrumentType === "futures"
+													? "Contracts"
+													: "Lot Size"}
 											</Label>
 											<Input
-												type="number"
-												step="any"
 												className="h-9 font-mono"
-												value={editForm.quantity}
 												onChange={(e) =>
 													setEditForm({ ...editForm, quantity: e.target.value })
 												}
+												step="any"
+												type="number"
+												value={editForm.quantity}
 											/>
 										</div>
 									</>
 								) : (
 									<>
 										<div className="flex items-center justify-between">
-											<span className="text-muted-foreground text-sm">Price</span>
+											<span className="text-muted-foreground text-sm">
+												Price
+											</span>
 											<span className="font-mono font-semibold text-lg">
-												{parseFloat(trade.entryPrice).toLocaleString(undefined, {
-													minimumFractionDigits: 2,
-													maximumFractionDigits: 5,
-												})}
+												{parseFloat(trade.entryPrice).toLocaleString(
+													undefined,
+													{
+														minimumFractionDigits: 2,
+														maximumFractionDigits: 5,
+													},
+												)}
 											</span>
 										</div>
 										<Separator />
 										<div className="flex items-center justify-between">
-											<span className="text-muted-foreground text-sm">Date</span>
+											<span className="text-muted-foreground text-sm">
+												Date
+											</span>
 											<span className="text-sm">
 												{new Date(trade.entryTime).toLocaleDateString()}
 											</span>
 										</div>
 										<div className="flex items-center justify-between">
-											<span className="text-muted-foreground text-sm">Time</span>
+											<span className="text-muted-foreground text-sm">
+												Time
+											</span>
 											<span className="text-sm">
 												{new Date(trade.entryTime).toLocaleTimeString()}
 											</span>
@@ -741,7 +811,9 @@ export default function TradeDetailPage() {
 										<Separator />
 										<div className="flex items-center justify-between">
 											<span className="text-muted-foreground text-sm">
-												{trade.instrumentType === "futures" ? "Contracts" : "Lots"}
+												{trade.instrumentType === "futures"
+													? "Contracts"
+													: "Lots"}
 											</span>
 											<span className="font-medium font-mono">
 												{parseFloat(trade.quantity).toFixed(2)}
@@ -770,7 +842,7 @@ export default function TradeDetailPage() {
 											? parseFloat(trade.exitPrice).toLocaleString(undefined, {
 													minimumFractionDigits: 2,
 													maximumFractionDigits: 5,
-											  })
+												})
 											: "—"}
 									</span>
 								</div>
@@ -795,9 +867,7 @@ export default function TradeDetailPage() {
 								<div className="flex items-center justify-between">
 									<span className="text-muted-foreground text-sm">Fees</span>
 									<span className="font-mono text-sm">
-										{trade.fees
-											? formatCurrency(parseFloat(trade.fees))
-											: "—"}
+										{trade.fees ? formatCurrency(parseFloat(trade.fees)) : "—"}
 									</span>
 								</div>
 							</CardContent>
@@ -819,62 +889,75 @@ export default function TradeDetailPage() {
 										<div className="space-y-2">
 											<Label className="text-xs">Stop Loss</Label>
 											<Input
-												type="number"
-												step="any"
-												placeholder="Not set"
 												className="h-9 font-mono"
-												value={editForm.stopLoss}
 												onChange={(e) =>
 													setEditForm({ ...editForm, stopLoss: e.target.value })
 												}
+												placeholder="Not set"
+												step="any"
+												type="number"
+												value={editForm.stopLoss}
 											/>
 										</div>
 										<div className="space-y-2">
 											<Label className="text-xs">Take Profit</Label>
 											<Input
-												type="number"
-												step="any"
-												placeholder="Not set"
 												className="h-9 font-mono"
-												value={editForm.takeProfit}
 												onChange={(e) =>
-													setEditForm({ ...editForm, takeProfit: e.target.value })
+													setEditForm({
+														...editForm,
+														takeProfit: e.target.value,
+													})
 												}
+												placeholder="Not set"
+												step="any"
+												type="number"
+												value={editForm.takeProfit}
 											/>
 										</div>
 									</>
 								) : (
 									<>
 										<div className="flex items-center justify-between">
-											<span className="text-muted-foreground text-sm">Stop Loss</span>
+											<span className="text-muted-foreground text-sm">
+												Stop Loss
+											</span>
 											<span className="font-medium font-mono text-loss">
 												{trade.stopLoss
-													? parseFloat(trade.stopLoss).toLocaleString(undefined, {
-															minimumFractionDigits: 2,
-															maximumFractionDigits: 5,
-													  })
+													? parseFloat(trade.stopLoss).toLocaleString(
+															undefined,
+															{
+																minimumFractionDigits: 2,
+																maximumFractionDigits: 5,
+															},
+														)
 													: "Not set"}
 											</span>
 										</div>
 										<Separator />
 										<div className="flex items-center justify-between">
-											<span className="text-muted-foreground text-sm">Take Profit</span>
+											<span className="text-muted-foreground text-sm">
+												Take Profit
+											</span>
 											<span className="font-medium font-mono text-profit">
 												{trade.takeProfit
-													? parseFloat(trade.takeProfit).toLocaleString(undefined, {
-															minimumFractionDigits: 2,
-															maximumFractionDigits: 5,
-													  })
+													? parseFloat(trade.takeProfit).toLocaleString(
+															undefined,
+															{
+																minimumFractionDigits: 2,
+																maximumFractionDigits: 5,
+															},
+														)
 													: "Not set"}
 											</span>
 										</div>
 										<Separator />
 										<div className="flex items-center justify-between">
-											<span className="text-muted-foreground text-sm">R:R Ratio</span>
+											<span className="text-muted-foreground text-sm">
+												R:R Ratio
+											</span>
 											<span className="font-medium font-mono">
-												{stats?.rrRatio
-													? `1:${stats.rrRatio.toFixed(2)}`
-													: "—"}
+												{stats?.rrRatio ? `1:${stats.rrRatio.toFixed(2)}` : "—"}
 											</span>
 										</div>
 									</>
@@ -901,10 +984,10 @@ export default function TradeDetailPage() {
 									</Label>
 									{isEditing ? (
 										<Select
-											value={editForm.setupType}
 											onValueChange={(v) =>
 												setEditForm({ ...editForm, setupType: v })
 											}
+											value={editForm.setupType}
 										>
 											<SelectTrigger className="h-9">
 												<SelectValue placeholder="Select setup" />
@@ -930,10 +1013,10 @@ export default function TradeDetailPage() {
 									</Label>
 									{isEditing ? (
 										<Select
-											value={editForm.emotionalState}
 											onValueChange={(v) =>
 												setEditForm({ ...editForm, emotionalState: v })
 											}
+											value={editForm.emotionalState}
 										>
 											<SelectTrigger className="h-9">
 												<SelectValue placeholder="Select state" />
@@ -957,7 +1040,7 @@ export default function TradeDetailPage() {
 									<Label className="text-muted-foreground text-xs uppercase tracking-wide">
 										Source
 									</Label>
-									<Badge variant="outline" className="capitalize">
+									<Badge className="capitalize" variant="outline">
 										{trade.importSource}
 									</Badge>
 								</div>
@@ -981,12 +1064,12 @@ export default function TradeDetailPage() {
 						<CardContent>
 							{isEditing ? (
 								<Textarea
-									placeholder="What was your reasoning? What patterns did you see? What would you do differently?"
-									rows={6}
-									value={editForm.notes}
 									onChange={(e) =>
 										setEditForm({ ...editForm, notes: e.target.value })
 									}
+									placeholder="What was your reasoning? What patterns did you see? What would you do differently?"
+									rows={6}
+									value={editForm.notes}
 								/>
 							) : trade.notes ? (
 								<p className="whitespace-pre-wrap text-sm leading-relaxed">
@@ -1010,13 +1093,13 @@ export default function TradeDetailPage() {
 								<div className="flex flex-wrap gap-2">
 									{trade.tradeTags.map((tt) => (
 										<Badge
+											className="border"
 											key={tt.tag.id}
-											variant="secondary"
 											style={{
 												backgroundColor: `${tt.tag.color}20`,
 												borderColor: `${tt.tag.color}50`,
 											}}
-											className="border"
+											variant="secondary"
 										>
 											{tt.tag.name}
 										</Badge>
@@ -1028,7 +1111,7 @@ export default function TradeDetailPage() {
 				</TabsContent>
 
 				{/* Chart Tab */}
-				<TabsContent value="chart" className="space-y-6">
+				<TabsContent className="space-y-6" value="chart">
 					<Card>
 						<CardHeader>
 							<CardTitle>Trade Visualization</CardTitle>
@@ -1044,7 +1127,8 @@ export default function TradeDetailPage() {
 										TradingView Lightweight Charts integration coming soon
 									</p>
 									<p className="text-muted-foreground text-xs">
-										Will display candlestick chart with entry ({trade.entryPrice}),
+										Will display candlestick chart with entry (
+										{trade.entryPrice}),
 										{trade.exitPrice && ` exit (${trade.exitPrice}),`}
 										{trade.stopLoss && ` SL (${trade.stopLoss}),`}
 										{trade.takeProfit && ` TP (${trade.takeProfit})`}
@@ -1056,7 +1140,7 @@ export default function TradeDetailPage() {
 				</TabsContent>
 
 				{/* Screenshots Tab */}
-				<TabsContent value="screenshots" className="space-y-6">
+				<TabsContent className="space-y-6" value="screenshots">
 					<Card>
 						<CardHeader>
 							<CardTitle>Trade Screenshots</CardTitle>
@@ -1069,14 +1153,14 @@ export default function TradeDetailPage() {
 								<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 									{trade.screenshots.map((ss) => (
 										<div
-											key={ss.id}
 											className="aspect-video overflow-hidden rounded-lg border bg-muted"
+											key={ss.id}
 										>
-											{/* eslint-disable-next-line @next/next/no-img-element */}
+											{/* biome-ignore lint/performance/noImgElement: External screenshot URLs */}
 											<img
-												src={ss.url}
 												alt={ss.caption || "Trade screenshot"}
 												className="h-full w-full object-cover"
+												src={ss.url}
 											/>
 										</div>
 									))}
@@ -1088,7 +1172,7 @@ export default function TradeDetailPage() {
 										<p className="text-muted-foreground">
 											No screenshots attached
 										</p>
-										<Button variant="outline" size="sm" disabled>
+										<Button disabled size="sm" variant="outline">
 											<Camera className="mr-2 h-4 w-4" />
 											Upload Screenshot (Coming Soon)
 										</Button>

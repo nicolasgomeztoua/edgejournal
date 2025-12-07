@@ -1,34 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import {
+	ArrowDownRight,
+	ArrowUpRight,
+	MoreHorizontal,
+	Plus,
+	RotateCcw,
+	Search,
+	Trash2,
+	X,
+} from "lucide-react";
 import Link from "next/link";
-import { api } from "@/trpc/react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -40,33 +24,64 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import {
-	ArrowDownRight,
-	ArrowUpRight,
-	MoreHorizontal,
-	Plus,
-	RotateCcw,
-	Search,
-	Trash2,
-	X,
-} from "lucide-react";
-import { formatCurrency, formatDateTime, getPnLColorClass, cn } from "@/lib/utils";
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAccount } from "@/contexts/account-context";
-import { toast } from "sonner";
+import {
+	cn,
+	formatCurrency,
+	formatDateTime,
+	getPnLColorClass,
+} from "@/lib/utils";
+import { api } from "@/trpc/react";
 
 export default function JournalPage() {
 	const { selectedAccountId, selectedAccount } = useAccount();
 	const [tab, setTab] = useState<"trades" | "trash">("trades");
-	
+
 	// Filters
-	const [statusFilter, setStatusFilter] = useState<"all" | "open" | "closed">("all");
-	const [directionFilter, setDirectionFilter] = useState<"all" | "long" | "short">("all");
+	const [statusFilter, setStatusFilter] = useState<"all" | "open" | "closed">(
+		"all",
+	);
+	const [directionFilter, setDirectionFilter] = useState<
+		"all" | "long" | "short"
+	>("all");
 	const [symbolFilter, setSymbolFilter] = useState("");
 	const [search, setSearch] = useState("");
 	const [debouncedSearch, setDebouncedSearch] = useState("");
-	
+
 	// Selection for bulk actions
 	const [selectedTrades, setSelectedTrades] = useState<Set<number>>(new Set());
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -81,28 +96,40 @@ export default function JournalPage() {
 	}, [search]);
 
 	// Main trades query
-	const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } =
-		api.trades.getAll.useInfiniteQuery(
-			{
-				limit: 30,
-				status: statusFilter !== "all" ? statusFilter : undefined,
-				tradeDirection: directionFilter !== "all" ? (directionFilter as "long" | "short") : undefined,
-				symbol: symbolFilter || undefined,
-				search: debouncedSearch || undefined,
-				accountId: selectedAccountId ?? undefined,
-			},
-			{
-				getNextPageParam: (lastPage) => lastPage.nextCursor,
-				enabled: tab === "trades",
-			}
-		);
+	const {
+		data,
+		isLoading,
+		fetchNextPage,
+		hasNextPage,
+		isFetchingNextPage,
+		refetch,
+	} = api.trades.getAll.useInfiniteQuery(
+		{
+			limit: 30,
+			status: statusFilter !== "all" ? statusFilter : undefined,
+			tradeDirection:
+				directionFilter !== "all"
+					? (directionFilter as "long" | "short")
+					: undefined,
+			symbol: symbolFilter || undefined,
+			search: debouncedSearch || undefined,
+			accountId: selectedAccountId ?? undefined,
+		},
+		{
+			getNextPageParam: (lastPage) => lastPage.nextCursor,
+			enabled: tab === "trades",
+		},
+	);
 
 	// Deleted trades query
-	const { data: deletedTrades, isLoading: loadingDeleted, refetch: refetchDeleted } =
-		api.trades.getDeleted.useQuery(
-			{ accountId: selectedAccountId ?? undefined },
-			{ enabled: tab === "trash" }
-		);
+	const {
+		data: deletedTrades,
+		isLoading: loadingDeleted,
+		refetch: refetchDeleted,
+	} = api.trades.getDeleted.useQuery(
+		{ accountId: selectedAccountId ?? undefined },
+		{ enabled: tab === "trash" },
+	);
 
 	// Mutations
 	const deleteTrade = api.trades.delete.useMutation({
@@ -152,7 +179,7 @@ export default function JournalPage() {
 
 	const handleSelectAll = (checked: boolean) => {
 		if (checked) {
-			setSelectedTrades(new Set(allTrades.map(t => t.id)));
+			setSelectedTrades(new Set(allTrades.map((t) => t.id)));
 		} else {
 			setSelectedTrades(new Set());
 		}
@@ -188,7 +215,11 @@ export default function JournalPage() {
 		setSearch("");
 	};
 
-	const hasActiveFilters = statusFilter !== "all" || directionFilter !== "all" || symbolFilter || search;
+	const hasActiveFilters =
+		statusFilter !== "all" ||
+		directionFilter !== "all" ||
+		symbolFilter ||
+		search;
 
 	return (
 		<div className="space-y-6">
@@ -198,7 +229,10 @@ export default function JournalPage() {
 					<h1 className="font-bold text-3xl tracking-tight">Trades</h1>
 					<p className="text-muted-foreground">
 						{selectedAccount ? (
-							<>Trades for <span className="font-medium">{selectedAccount.name}</span></>
+							<>
+								Trades for{" "}
+								<span className="font-medium">{selectedAccount.name}</span>
+							</>
 						) : (
 							"View and manage all your trades"
 						)}
@@ -206,21 +240,21 @@ export default function JournalPage() {
 				</div>
 			</div>
 
-			<Tabs value={tab} onValueChange={(v) => setTab(v as "trades" | "trash")}>
+			<Tabs onValueChange={(v) => setTab(v as "trades" | "trash")} value={tab}>
 				<TabsList>
 					<TabsTrigger value="trades">All Trades</TabsTrigger>
-					<TabsTrigger value="trash" className="gap-2">
+					<TabsTrigger className="gap-2" value="trash">
 						<Trash2 className="h-4 w-4" />
 						Trash
 						{deletedTrades && deletedTrades.length > 0 && (
-							<Badge variant="secondary" className="ml-1 h-5 px-1.5">
+							<Badge className="ml-1 h-5 px-1.5" variant="secondary">
 								{deletedTrades.length}
 							</Badge>
 						)}
 					</TabsTrigger>
 				</TabsList>
 
-				<TabsContent value="trades" className="space-y-4">
+				<TabsContent className="space-y-4" value="trades">
 					{/* Filters */}
 					<Card>
 						<CardContent className="pt-6">
@@ -229,17 +263,19 @@ export default function JournalPage() {
 								<div className="relative min-w-[200px] flex-1">
 									<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
 									<Input
+										className="pl-9"
+										onChange={(e) => setSearch(e.target.value)}
 										placeholder="Search symbol, setup, notes..."
 										value={search}
-										onChange={(e) => setSearch(e.target.value)}
-										className="pl-9"
 									/>
 								</div>
 
 								{/* Status Filter */}
 								<Select
+									onValueChange={(value) =>
+										setStatusFilter(value as "all" | "open" | "closed")
+									}
 									value={statusFilter}
-									onValueChange={(value) => setStatusFilter(value as "all" | "open" | "closed")}
 								>
 									<SelectTrigger className="w-[130px]">
 										<SelectValue placeholder="Status" />
@@ -253,8 +289,10 @@ export default function JournalPage() {
 
 								{/* Direction Filter */}
 								<Select
+									onValueChange={(value) =>
+										setDirectionFilter(value as "all" | "long" | "short")
+									}
 									value={directionFilter}
-									onValueChange={(value) => setDirectionFilter(value as "all" | "long" | "short")}
 								>
 									<SelectTrigger className="w-[130px]">
 										<SelectValue placeholder="Direction" />
@@ -268,15 +306,17 @@ export default function JournalPage() {
 
 								{/* Symbol Filter */}
 								<Input
+									className="w-[120px] font-mono"
+									onChange={(e) =>
+										setSymbolFilter(e.target.value.toUpperCase())
+									}
 									placeholder="Symbol..."
 									value={symbolFilter}
-									onChange={(e) => setSymbolFilter(e.target.value.toUpperCase())}
-									className="w-[120px] font-mono"
 								/>
 
 								{/* Clear Filters */}
 								{hasActiveFilters && (
-									<Button variant="ghost" size="icon" onClick={clearFilters}>
+									<Button onClick={clearFilters} size="icon" variant="ghost">
 										<X className="h-4 w-4" />
 									</Button>
 								)}
@@ -289,18 +329,18 @@ export default function JournalPage() {
 										{selectedTrades.size} selected
 									</span>
 									<Button
-										variant="destructive"
-										size="sm"
-										onClick={handleBulkDelete}
 										disabled={deleteMany.isPending}
+										onClick={handleBulkDelete}
+										size="sm"
+										variant="destructive"
 									>
 										<Trash2 className="mr-2 h-4 w-4" />
 										Delete Selected
 									</Button>
 									<Button
-										variant="ghost"
-										size="sm"
 										onClick={() => setSelectedTrades(new Set())}
+										size="sm"
+										variant="ghost"
 									>
 										Cancel
 									</Button>
@@ -315,7 +355,10 @@ export default function JournalPage() {
 							{isLoading ? (
 								<div className="space-y-4 p-6">
 									{[...Array(5)].map((_, i) => (
-										<div key={i} className="flex items-center gap-4">
+										<div
+											className="flex items-center gap-4"
+											key={`skeleton-${i.toString()}`}
+										>
 											<Skeleton className="h-4 w-4" />
 											<Skeleton className="h-10 flex-1" />
 										</div>
@@ -345,7 +388,10 @@ export default function JournalPage() {
 											<TableRow>
 												<TableHead className="w-[40px]">
 													<Checkbox
-														checked={selectedTrades.size === allTrades.length && allTrades.length > 0}
+														checked={
+															selectedTrades.size === allTrades.length &&
+															allTrades.length > 0
+														}
 														onCheckedChange={handleSelectAll}
 													/>
 												</TableHead>
@@ -362,98 +408,120 @@ export default function JournalPage() {
 										<TableBody>
 											{allTrades.map((trade) => (
 												<TableRow
-													key={trade.id}
 													className={cn(
 														"cursor-pointer hover:bg-muted/50",
-														selectedTrades.has(trade.id) && "bg-muted/30"
+														selectedTrades.has(trade.id) && "bg-muted/30",
 													)}
+													key={trade.id}
 												>
 													<TableCell onClick={(e) => e.stopPropagation()}>
 														<Checkbox
 															checked={selectedTrades.has(trade.id)}
-															onCheckedChange={(checked) => handleSelectTrade(trade.id, !!checked)}
+															onCheckedChange={(checked) =>
+																handleSelectTrade(trade.id, !!checked)
+															}
 														/>
 													</TableCell>
-													<TableCell
-														className="font-mono font-semibold"
-														onClick={() => window.location.href = `/journal/${trade.id}`}
-													>
-														{trade.symbol}
+													<TableCell className="font-mono font-semibold">
+														<Link href={`/journal/${trade.id}`}>
+															{trade.symbol}
+														</Link>
 													</TableCell>
-													<TableCell onClick={() => window.location.href = `/journal/${trade.id}`}>
-														<Badge
-															variant="outline"
-															className={cn(
-																trade.direction === "long"
-																	? "border-profit/50 text-profit"
-																	: "border-loss/50 text-loss"
-															)}
-														>
-															{trade.direction === "long" ? (
-																<ArrowUpRight className="mr-1 h-3 w-3" />
+													<TableCell>
+														<Link href={`/journal/${trade.id}`}>
+															<Badge
+																className={cn(
+																	trade.direction === "long"
+																		? "border-profit/50 text-profit"
+																		: "border-loss/50 text-loss",
+																)}
+																variant="outline"
+															>
+																{trade.direction === "long" ? (
+																	<ArrowUpRight className="mr-1 h-3 w-3" />
+																) : (
+																	<ArrowDownRight className="mr-1 h-3 w-3" />
+																)}
+																{trade.direction.toUpperCase()}
+															</Badge>
+														</Link>
+													</TableCell>
+													<TableCell>
+														<Link href={`/journal/${trade.id}`}>
+															<div className="font-mono text-sm">
+																{parseFloat(trade.entryPrice).toFixed(2)}
+															</div>
+															<div className="text-muted-foreground text-xs">
+																{formatDateTime(trade.entryTime)}
+															</div>
+														</Link>
+													</TableCell>
+													<TableCell>
+														<Link href={`/journal/${trade.id}`}>
+															{trade.exitPrice ? (
+																<>
+																	<div className="font-mono text-sm">
+																		{parseFloat(trade.exitPrice).toFixed(2)}
+																	</div>
+																	<div className="text-muted-foreground text-xs">
+																		{formatDateTime(trade.exitTime)}
+																	</div>
+																</>
 															) : (
-																<ArrowDownRight className="mr-1 h-3 w-3" />
+																<span className="text-muted-foreground">-</span>
 															)}
-															{trade.direction.toUpperCase()}
-														</Badge>
+														</Link>
 													</TableCell>
-													<TableCell onClick={() => window.location.href = `/journal/${trade.id}`}>
-														<div className="font-mono text-sm">
-															{parseFloat(trade.entryPrice).toFixed(2)}
-														</div>
-														<div className="text-muted-foreground text-xs">
-															{formatDateTime(trade.entryTime)}
-														</div>
+													<TableCell className="font-mono">
+														<Link href={`/journal/${trade.id}`}>
+															{parseFloat(trade.quantity).toFixed(2)}
+														</Link>
 													</TableCell>
-													<TableCell onClick={() => window.location.href = `/journal/${trade.id}`}>
-														{trade.exitPrice ? (
-															<>
-																<div className="font-mono text-sm">
-																	{parseFloat(trade.exitPrice).toFixed(2)}
-																</div>
-																<div className="text-muted-foreground text-xs">
-																	{formatDateTime(trade.exitTime)}
-																</div>
-															</>
-														) : (
-															<span className="text-muted-foreground">-</span>
-														)}
+													<TableCell>
+														<Link href={`/journal/${trade.id}`}>
+															<span
+																className={cn(
+																	"font-mono font-semibold",
+																	trade.netPnl
+																		? getPnLColorClass(trade.netPnl)
+																		: "text-muted-foreground",
+																)}
+															>
+																{trade.netPnl
+																	? formatCurrency(parseFloat(trade.netPnl))
+																	: "-"}
+															</span>
+														</Link>
 													</TableCell>
-													<TableCell
-														className="font-mono"
-														onClick={() => window.location.href = `/journal/${trade.id}`}
-													>
-														{parseFloat(trade.quantity).toFixed(2)}
-													</TableCell>
-													<TableCell onClick={() => window.location.href = `/journal/${trade.id}`}>
-														<span
-															className={cn(
-																"font-mono font-semibold",
-																trade.netPnl
-																	? getPnLColorClass(trade.netPnl)
-																	: "text-muted-foreground"
-															)}
-														>
-															{trade.netPnl
-																? formatCurrency(parseFloat(trade.netPnl))
-																: "-"}
-														</span>
-													</TableCell>
-													<TableCell onClick={() => window.location.href = `/journal/${trade.id}`}>
-														<Badge variant={trade.status === "open" ? "secondary" : "default"}>
-															{trade.status}
-														</Badge>
+													<TableCell>
+														<Link href={`/journal/${trade.id}`}>
+															<Badge
+																variant={
+																	trade.status === "open"
+																		? "secondary"
+																		: "default"
+																}
+															>
+																{trade.status}
+															</Badge>
+														</Link>
 													</TableCell>
 													<TableCell onClick={(e) => e.stopPropagation()}>
 														<DropdownMenu>
 															<DropdownMenuTrigger asChild>
-																<Button variant="ghost" size="icon" className="h-8 w-8">
+																<Button
+																	className="h-8 w-8"
+																	size="icon"
+																	variant="ghost"
+																>
 																	<MoreHorizontal className="h-4 w-4" />
 																</Button>
 															</DropdownMenuTrigger>
 															<DropdownMenuContent align="end">
 																<DropdownMenuItem asChild>
-																	<Link href={`/journal/${trade.id}`}>View Details</Link>
+																	<Link href={`/journal/${trade.id}`}>
+																		View Details
+																	</Link>
 																</DropdownMenuItem>
 																<DropdownMenuSeparator />
 																<DropdownMenuItem
@@ -477,9 +545,9 @@ export default function JournalPage() {
 									{hasNextPage && (
 										<div className="flex justify-center border-t p-4">
 											<Button
-												variant="outline"
-												onClick={() => fetchNextPage()}
 												disabled={isFetchingNextPage}
+												onClick={() => fetchNextPage()}
+												variant="outline"
 											>
 												{isFetchingNextPage ? "Loading..." : "Load More"}
 											</Button>
@@ -491,7 +559,7 @@ export default function JournalPage() {
 					</Card>
 				</TabsContent>
 
-				<TabsContent value="trash" className="space-y-4">
+				<TabsContent className="space-y-4" value="trash">
 					<Card>
 						<CardHeader>
 							<CardTitle className="text-lg">Deleted Trades</CardTitle>
@@ -503,7 +571,10 @@ export default function JournalPage() {
 							{loadingDeleted ? (
 								<div className="space-y-4 p-6">
 									{[...Array(3)].map((_, i) => (
-										<Skeleton key={i} className="h-12 w-full" />
+										<Skeleton
+											className="h-12 w-full"
+											key={`skeleton-${i.toString()}`}
+										/>
 									))}
 								</div>
 							) : !deletedTrades || deletedTrades.length === 0 ? (
@@ -534,12 +605,12 @@ export default function JournalPage() {
 												</TableCell>
 												<TableCell>
 													<Badge
-														variant="outline"
 														className={cn(
 															trade.direction === "long"
 																? "border-profit/50 text-profit"
-																: "border-loss/50 text-loss"
+																: "border-loss/50 text-loss",
 														)}
+														variant="outline"
 													>
 														{trade.direction.toUpperCase()}
 													</Badge>
@@ -558,7 +629,7 @@ export default function JournalPage() {
 															"font-mono font-semibold",
 															trade.netPnl
 																? getPnLColorClass(trade.netPnl)
-																: "text-muted-foreground"
+																: "text-muted-foreground",
 														)}
 													>
 														{trade.netPnl
@@ -574,26 +645,32 @@ export default function JournalPage() {
 												<TableCell>
 													<div className="flex items-center gap-1">
 														<Button
-															variant="ghost"
-															size="icon"
 															className="h-8 w-8"
-															onClick={() => restoreTrade.mutate({ id: trade.id })}
 															disabled={restoreTrade.isPending}
+															onClick={() =>
+																restoreTrade.mutate({ id: trade.id })
+															}
+															size="icon"
 															title="Restore"
+															variant="ghost"
 														>
 															<RotateCcw className="h-4 w-4" />
 														</Button>
 														<Button
-															variant="ghost"
-															size="icon"
 															className="h-8 w-8 text-destructive hover:text-destructive"
+															disabled={permanentDelete.isPending}
 															onClick={() => {
-																if (confirm("Permanently delete this trade? This cannot be undone.")) {
+																if (
+																	confirm(
+																		"Permanently delete this trade? This cannot be undone.",
+																	)
+																) {
 																	permanentDelete.mutate({ id: trade.id });
 																}
 															}}
-															disabled={permanentDelete.isPending}
+															size="icon"
 															title="Delete permanently"
+															variant="ghost"
 														>
 															<Trash2 className="h-4 w-4" />
 														</Button>
@@ -610,19 +687,20 @@ export default function JournalPage() {
 			</Tabs>
 
 			{/* Delete Confirmation Dialog */}
-			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+			<AlertDialog onOpenChange={setDeleteDialogOpen} open={deleteDialogOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>Delete Trade</AlertDialogTitle>
 						<AlertDialogDescription>
-							This will move the trade to trash. You can restore it later if needed.
+							This will move the trade to trash. You can restore it later if
+							needed.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
 						<AlertDialogCancel>Cancel</AlertDialogCancel>
 						<AlertDialogAction
-							onClick={handleDeleteTrade}
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+							onClick={handleDeleteTrade}
 						>
 							Delete
 						</AlertDialogAction>

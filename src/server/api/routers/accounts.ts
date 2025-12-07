@@ -1,5 +1,5 @@
+import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { eq, and, desc } from "drizzle-orm";
 
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { accounts, trades } from "@/server/db/schema";
@@ -50,10 +50,7 @@ export const accountsRouter = createTRPCRouter({
 	// Get active accounts only
 	getActive: protectedProcedure.query(async ({ ctx }) => {
 		const userAccounts = await ctx.db.query.accounts.findMany({
-			where: and(
-				eq(accounts.userId, ctx.user.id),
-				eq(accounts.isActive, true)
-			),
+			where: and(eq(accounts.userId, ctx.user.id), eq(accounts.isActive, true)),
 			orderBy: [desc(accounts.isDefault), desc(accounts.createdAt)],
 		});
 
@@ -65,7 +62,7 @@ export const accountsRouter = createTRPCRouter({
 		const defaultAccount = await ctx.db.query.accounts.findFirst({
 			where: and(
 				eq(accounts.userId, ctx.user.id),
-				eq(accounts.isDefault, true)
+				eq(accounts.isDefault, true),
 			),
 		});
 
@@ -74,7 +71,7 @@ export const accountsRouter = createTRPCRouter({
 			return ctx.db.query.accounts.findFirst({
 				where: and(
 					eq(accounts.userId, ctx.user.id),
-					eq(accounts.isActive, true)
+					eq(accounts.isActive, true),
 				),
 				orderBy: [desc(accounts.createdAt)],
 			});
@@ -88,10 +85,7 @@ export const accountsRouter = createTRPCRouter({
 		.input(z.object({ id: z.number() }))
 		.query(async ({ ctx, input }) => {
 			const account = await ctx.db.query.accounts.findFirst({
-				where: and(
-					eq(accounts.id, input.id),
-					eq(accounts.userId, ctx.user.id)
-				),
+				where: and(eq(accounts.id, input.id), eq(accounts.userId, ctx.user.id)),
 			});
 
 			if (!account) {
@@ -170,10 +164,7 @@ export const accountsRouter = createTRPCRouter({
 		.mutation(async ({ ctx, input }) => {
 			// Verify ownership
 			const existingAccount = await ctx.db.query.accounts.findFirst({
-				where: and(
-					eq(accounts.id, input.id),
-					eq(accounts.userId, ctx.user.id)
-				),
+				where: and(eq(accounts.id, input.id), eq(accounts.userId, ctx.user.id)),
 			});
 
 			if (!existingAccount) {
@@ -201,10 +192,7 @@ export const accountsRouter = createTRPCRouter({
 		.input(z.object({ id: z.number() }))
 		.mutation(async ({ ctx, input }) => {
 			const existingAccount = await ctx.db.query.accounts.findFirst({
-				where: and(
-					eq(accounts.id, input.id),
-					eq(accounts.userId, ctx.user.id)
-				),
+				where: and(eq(accounts.id, input.id), eq(accounts.userId, ctx.user.id)),
 			});
 
 			if (!existingAccount) {
@@ -219,7 +207,7 @@ export const accountsRouter = createTRPCRouter({
 			if (associatedTrades) {
 				// Option 1: Prevent deletion
 				// throw new Error("Cannot delete account with associated trades");
-				
+
 				// Option 2: Unassign trades from this account (set accountId to null)
 				await ctx.db
 					.update(trades)
@@ -234,7 +222,7 @@ export const accountsRouter = createTRPCRouter({
 				const anotherAccount = await ctx.db.query.accounts.findFirst({
 					where: and(
 						eq(accounts.userId, ctx.user.id),
-						eq(accounts.isActive, true)
+						eq(accounts.isActive, true),
 					),
 				});
 
@@ -255,10 +243,7 @@ export const accountsRouter = createTRPCRouter({
 		.query(async ({ ctx, input }) => {
 			// Verify ownership
 			const account = await ctx.db.query.accounts.findFirst({
-				where: and(
-					eq(accounts.id, input.id),
-					eq(accounts.userId, ctx.user.id)
-				),
+				where: and(eq(accounts.id, input.id), eq(accounts.userId, ctx.user.id)),
 			});
 
 			if (!account) {
@@ -267,23 +252,20 @@ export const accountsRouter = createTRPCRouter({
 
 			// Get all closed trades for this account
 			const accountTrades = await ctx.db.query.trades.findMany({
-				where: and(
-					eq(trades.accountId, input.id),
-					eq(trades.status, "closed")
-				),
+				where: and(eq(trades.accountId, input.id), eq(trades.status, "closed")),
 			});
 
 			const totalTrades = accountTrades.length;
 			const wins = accountTrades.filter(
-				(t) => t.netPnl && parseFloat(t.netPnl) > 0
+				(t) => t.netPnl && parseFloat(t.netPnl) > 0,
 			).length;
 			const losses = accountTrades.filter(
-				(t) => t.netPnl && parseFloat(t.netPnl) < 0
+				(t) => t.netPnl && parseFloat(t.netPnl) < 0,
 			).length;
 
 			const totalPnl = accountTrades.reduce(
 				(sum, t) => sum + (t.netPnl ? parseFloat(t.netPnl) : 0),
-				0
+				0,
 			);
 
 			const currentBalance =
@@ -300,4 +282,3 @@ export const accountsRouter = createTRPCRouter({
 			};
 		}),
 });
-

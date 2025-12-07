@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import {
+	createContext,
+	type ReactNode,
+	useContext,
+	useEffect,
+	useState,
+} from "react";
 import { api } from "@/trpc/react";
 
 interface Account {
@@ -27,9 +33,15 @@ interface AccountContextType {
 const AccountContext = createContext<AccountContextType | undefined>(undefined);
 
 export function AccountProvider({ children }: { children: ReactNode }) {
-	const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
+	const [selectedAccountId, setSelectedAccountId] = useState<number | null>(
+		null,
+	);
 
-	const { data: accounts = [], isLoading, refetch } = api.accounts.getActive.useQuery();
+	const {
+		data: accounts = [],
+		isLoading,
+		refetch,
+	} = api.accounts.getActive.useQuery();
 
 	// Set default account on initial load
 	useEffect(() => {
@@ -61,7 +73,8 @@ export function AccountProvider({ children }: { children: ReactNode }) {
 		}
 	}, [accounts]);
 
-	const selectedAccount = accounts.find((a) => a.id === selectedAccountId) ?? null;
+	const selectedAccount =
+		accounts.find((a) => a.id === selectedAccountId) ?? null;
 
 	return (
 		<AccountContext.Provider
@@ -86,4 +99,3 @@ export function useAccount() {
 	}
 	return context;
 }
-

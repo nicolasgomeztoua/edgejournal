@@ -1,7 +1,7 @@
-import { tradesRouter } from "@/server/api/routers/trades";
-import { marketDataRouter } from "@/server/api/routers/marketData";
 import { accountsRouter } from "@/server/api/routers/accounts";
+import { marketDataRouter } from "@/server/api/routers/marketData";
 import { settingsRouter } from "@/server/api/routers/settings";
+import { tradesRouter } from "@/server/api/routers/trades";
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 
 /**

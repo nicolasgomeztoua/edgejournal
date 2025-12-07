@@ -1,15 +1,15 @@
+import { relations } from "drizzle-orm";
 import {
+	boolean,
+	decimal,
+	index,
+	integer,
+	pgEnum,
 	pgTableCreator,
+	primaryKey,
 	text,
 	timestamp,
-	integer,
-	decimal,
-	boolean,
-	pgEnum,
-	index,
-	primaryKey,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
 
 /**
  * Multi-project schema prefix
@@ -22,7 +22,10 @@ export const createTable = pgTableCreator((name) => `edgejournal_${name}`);
 // ============================================================================
 
 export const userRoleEnum = pgEnum("user_role", ["user", "admin"]);
-export const instrumentTypeEnum = pgEnum("instrument_type", ["futures", "forex"]);
+export const instrumentTypeEnum = pgEnum("instrument_type", [
+	"futures",
+	"forex",
+]);
 export const tradeDirectionEnum = pgEnum("trade_direction", ["long", "short"]);
 export const tradeStatusEnum = pgEnum("trade_status", ["open", "closed"]);
 export const executionTypeEnum = pgEnum("execution_type", [
@@ -41,13 +44,17 @@ export const emotionalStateEnum = pgEnum("emotional_state", [
 	"anxious",
 ]);
 export const importSourceEnum = pgEnum("import_source", ["manual", "csv"]);
-export const accountTypeEnum = pgEnum("account_type", ["live", "demo", "paper"]);
+export const accountTypeEnum = pgEnum("account_type", [
+	"live",
+	"demo",
+	"paper",
+]);
 export const tradingPlatformEnum = pgEnum("trading_platform", [
-	"mt4",        // MetaTrader 4
-	"mt5",        // MetaTrader 5
-	"projectx",   // ProjectX
+	"mt4", // MetaTrader 4
+	"mt5", // MetaTrader 5
+	"projectx", // ProjectX
 	"ninjatrader", // NinjaTrader (future)
-	"other",      // Manual/Other
+	"other", // Manual/Other
 ]);
 
 // ============================================================================
@@ -67,10 +74,10 @@ export const users = createTable(
 			.notNull()
 			.$defaultFn(() => new Date()),
 		updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
-			() => new Date()
+			() => new Date(),
 		),
 	},
-	(t) => [index("user_clerk_id_idx").on(t.clerkId)]
+	(t) => [index("user_clerk_id_idx").on(t.clerkId)],
 );
 
 // ============================================================================
@@ -84,38 +91,41 @@ export const accounts = createTable(
 		userId: integer("user_id")
 			.notNull()
 			.references(() => users.id, { onDelete: "cascade" }),
-		
+
 		name: text("name").notNull(), // e.g., "Main Account", "Prop Firm"
 		broker: text("broker"), // e.g., "IBKR", "Oanda", "ICMarkets"
 		platform: tradingPlatformEnum("platform").notNull().default("other"), // Trading platform for CSV parsing
 		accountType: accountTypeEnum("account_type").notNull().default("live"),
-		
+
 		// Balance tracking
-		initialBalance: decimal("initial_balance", { precision: 20, scale: 2 }).default("0"),
+		initialBalance: decimal("initial_balance", {
+			precision: 20,
+			scale: 2,
+		}).default("0"),
 		currency: text("currency").default("USD"),
-		
+
 		// Account identifiers
 		accountNumber: text("account_number"), // Optional external account number
-		
+
 		// Status
 		isActive: boolean("is_active").default(true),
 		isDefault: boolean("is_default").default(false), // Default account for new trades
-		
+
 		// Metadata
 		notes: text("notes"),
 		color: text("color").default("#6366f1"), // For UI distinction
-		
+
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.$defaultFn(() => new Date()),
 		updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
-			() => new Date()
+			() => new Date(),
 		),
 	},
 	(t) => [
 		index("account_user_id_idx").on(t.userId),
 		index("account_is_default_idx").on(t.isDefault),
-	]
+	],
 );
 
 // ============================================================================
@@ -129,59 +139,60 @@ export const trades = createTable(
 		userId: integer("user_id")
 			.notNull()
 			.references(() => users.id, { onDelete: "cascade" }),
-		accountId: integer("account_id")
-			.references(() => accounts.id, { onDelete: "set null" }),
-		
+		accountId: integer("account_id").references(() => accounts.id, {
+			onDelete: "set null",
+		}),
+
 		// Instrument info
 		symbol: text("symbol").notNull(), // e.g., "ES", "NQ", "EUR/USD"
 		instrumentType: instrumentTypeEnum("instrument_type").notNull(),
-		
+
 		// Trade direction and status
 		direction: tradeDirectionEnum("direction").notNull(),
 		status: tradeStatusEnum("status").notNull().default("open"),
-		
+
 		// Entry details
 		entryPrice: decimal("entry_price", { precision: 20, scale: 8 }).notNull(),
 		entryTime: timestamp("entry_time", { withTimezone: true }).notNull(),
-		
+
 		// Exit details (null if trade is still open)
 		exitPrice: decimal("exit_price", { precision: 20, scale: 8 }),
 		exitTime: timestamp("exit_time", { withTimezone: true }),
-		
+
 		// Position size
 		quantity: decimal("quantity", { precision: 20, scale: 8 }).notNull(), // lots or contracts
-		
+
 		// Risk management levels (planned)
 		stopLoss: decimal("stop_loss", { precision: 20, scale: 8 }),
 		takeProfit: decimal("take_profit", { precision: 20, scale: 8 }),
-		
+
 		// Actual outcome
 		stopLossHit: boolean("stop_loss_hit").default(false),
 		takeProfitHit: boolean("take_profit_hit").default(false),
-		
+
 		// P&L
 		realizedPnl: decimal("realized_pnl", { precision: 20, scale: 2 }),
 		fees: decimal("fees", { precision: 20, scale: 2 }).default("0"),
 		netPnl: decimal("net_pnl", { precision: 20, scale: 2 }),
-		
+
 		// Trade metadata
 		setupType: text("setup_type"), // e.g., "breakout", "reversal", "trend_continuation"
 		emotionalState: emotionalStateEnum("emotional_state"),
 		notes: text("notes"),
-		
+
 		// Import tracking
 		importSource: importSourceEnum("import_source").notNull().default("manual"),
 		externalId: text("external_id"), // For tracking imported trades
-		
+
 		// Soft delete
 		deletedAt: timestamp("deleted_at", { withTimezone: true }),
-		
+
 		// Timestamps
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.$defaultFn(() => new Date()),
 		updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
-			() => new Date()
+			() => new Date(),
 		),
 	},
 	(t) => [
@@ -191,7 +202,7 @@ export const trades = createTable(
 		index("trade_entry_time_idx").on(t.entryTime),
 		index("trade_status_idx").on(t.status),
 		index("trade_deleted_at_idx").on(t.deletedAt),
-	]
+	],
 );
 
 // ============================================================================
@@ -205,18 +216,18 @@ export const tradeExecutions = createTable(
 		tradeId: integer("trade_id")
 			.notNull()
 			.references(() => trades.id, { onDelete: "cascade" }),
-		
+
 		executionType: executionTypeEnum("execution_type").notNull(),
 		price: decimal("price", { precision: 20, scale: 8 }).notNull(),
 		quantity: decimal("quantity", { precision: 20, scale: 8 }).notNull(),
 		executedAt: timestamp("executed_at", { withTimezone: true }).notNull(),
 		fees: decimal("fees", { precision: 20, scale: 2 }).default("0"),
-		
+
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.$defaultFn(() => new Date()),
 	},
-	(t) => [index("execution_trade_id_idx").on(t.tradeId)]
+	(t) => [index("execution_trade_id_idx").on(t.tradeId)],
 );
 
 // ============================================================================
@@ -236,7 +247,7 @@ export const tags = createTable(
 			.notNull()
 			.$defaultFn(() => new Date()),
 	},
-	(t) => [index("tag_user_id_idx").on(t.userId)]
+	(t) => [index("tag_user_id_idx").on(t.userId)],
 );
 
 // ============================================================================
@@ -257,7 +268,7 @@ export const tradeTags = createTable(
 		primaryKey({ columns: [t.tradeId, t.tagId] }),
 		index("trade_tag_trade_id_idx").on(t.tradeId),
 		index("trade_tag_tag_id_idx").on(t.tagId),
-	]
+	],
 );
 
 // ============================================================================
@@ -277,7 +288,7 @@ export const tradeScreenshots = createTable(
 			.notNull()
 			.$defaultFn(() => new Date()),
 	},
-	(t) => [index("screenshot_trade_id_idx").on(t.tradeId)]
+	(t) => [index("screenshot_trade_id_idx").on(t.tradeId)],
 );
 
 // ============================================================================
@@ -290,28 +301,33 @@ export const userSettings = createTable("user_settings", {
 		.notNull()
 		.unique()
 		.references(() => users.id, { onDelete: "cascade" }),
-	
+
 	// AI Provider API Keys (encrypted in application layer)
 	openaiApiKey: text("openai_api_key"),
 	anthropicApiKey: text("anthropic_api_key"),
 	googleApiKey: text("google_api_key"),
-	
+
 	// Preferred AI provider
 	preferredAiProvider: text("preferred_ai_provider").default("openai"),
-	
+
 	// Trading preferences
-	defaultInstrumentType: instrumentTypeEnum("default_instrument_type").default("futures"),
+	defaultInstrumentType: instrumentTypeEnum("default_instrument_type").default(
+		"futures",
+	),
 	timezone: text("timezone").default("UTC"),
-	breakevenThreshold: decimal("breakeven_threshold", { precision: 10, scale: 2 }).default("3.00"), // P&L within ±$X is considered breakeven
-	
+	breakevenThreshold: decimal("breakeven_threshold", {
+		precision: 10,
+		scale: 2,
+	}).default("3.00"), // P&L within ±$X is considered breakeven
+
 	// Display preferences
 	currency: text("currency").default("USD"),
-	
+
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.notNull()
 		.$defaultFn(() => new Date()),
 	updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
-		() => new Date()
+		() => new Date(),
 	),
 });
 
@@ -331,10 +347,10 @@ export const aiConversations = createTable(
 			.notNull()
 			.$defaultFn(() => new Date()),
 		updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
-			() => new Date()
+			() => new Date(),
 		),
 	},
-	(t) => [index("conversation_user_id_idx").on(t.userId)]
+	(t) => [index("conversation_user_id_idx").on(t.userId)],
 );
 
 // ============================================================================
@@ -354,7 +370,7 @@ export const aiMessages = createTable(
 			.notNull()
 			.$defaultFn(() => new Date()),
 	},
-	(t) => [index("message_conversation_id_idx").on(t.conversationId)]
+	(t) => [index("message_conversation_id_idx").on(t.conversationId)],
 );
 
 // ============================================================================
@@ -391,12 +407,15 @@ export const tradesRelations = relations(trades, ({ one, many }) => ({
 	screenshots: many(tradeScreenshots),
 }));
 
-export const tradeExecutionsRelations = relations(tradeExecutions, ({ one }) => ({
-	trade: one(trades, {
-		fields: [tradeExecutions.tradeId],
-		references: [trades.id],
+export const tradeExecutionsRelations = relations(
+	tradeExecutions,
+	({ one }) => ({
+		trade: one(trades, {
+			fields: [tradeExecutions.tradeId],
+			references: [trades.id],
+		}),
 	}),
-}));
+);
 
 export const tagsRelations = relations(tags, ({ one, many }) => ({
 	user: one(users, {
@@ -417,12 +436,15 @@ export const tradeTagsRelations = relations(tradeTags, ({ one }) => ({
 	}),
 }));
 
-export const tradeScreenshotsRelations = relations(tradeScreenshots, ({ one }) => ({
-	trade: one(trades, {
-		fields: [tradeScreenshots.tradeId],
-		references: [trades.id],
+export const tradeScreenshotsRelations = relations(
+	tradeScreenshots,
+	({ one }) => ({
+		trade: one(trades, {
+			fields: [tradeScreenshots.tradeId],
+			references: [trades.id],
+		}),
 	}),
-}));
+);
 
 export const userSettingsRelations = relations(userSettings, ({ one }) => ({
 	user: one(users, {
@@ -431,13 +453,16 @@ export const userSettingsRelations = relations(userSettings, ({ one }) => ({
 	}),
 }));
 
-export const aiConversationsRelations = relations(aiConversations, ({ one, many }) => ({
-	user: one(users, {
-		fields: [aiConversations.userId],
-		references: [users.id],
+export const aiConversationsRelations = relations(
+	aiConversations,
+	({ one, many }) => ({
+		user: one(users, {
+			fields: [aiConversations.userId],
+			references: [users.id],
+		}),
+		messages: many(aiMessages),
 	}),
-	messages: many(aiMessages),
-}));
+);
 
 export const aiMessagesRelations = relations(aiMessages, ({ one }) => ({
 	conversation: one(aiConversations, {

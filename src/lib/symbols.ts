@@ -15,78 +15,366 @@ export interface SymbolInfo {
 
 export interface ContractSpec {
 	symbol: string;
-	pointValue: number;      // Dollar value per 1 point move
-	tickSize: number;        // Minimum price increment
-	tickValue: number;       // Dollar value per tick
-	currency: string;        // Settlement currency
+	pointValue: number; // Dollar value per 1 point move
+	tickSize: number; // Minimum price increment
+	tickValue: number; // Dollar value per tick
+	currency: string; // Settlement currency
 }
 
 // Futures contract specifications (CME/CBOT/NYMEX/COMEX)
 export const FUTURES_CONTRACT_SPECS: Record<string, ContractSpec> = {
 	// === EQUITIES ===
-	ES:  { symbol: "ES",  pointValue: 50,    tickSize: 0.25,   tickValue: 12.50,  currency: "USD" },
-	NQ:  { symbol: "NQ",  pointValue: 20,    tickSize: 0.25,   tickValue: 5.00,   currency: "USD" },
-	YM:  { symbol: "YM",  pointValue: 5,     tickSize: 1,      tickValue: 5.00,   currency: "USD" },
-	RTY: { symbol: "RTY", pointValue: 50,    tickSize: 0.1,    tickValue: 5.00,   currency: "USD" },
+	ES: {
+		symbol: "ES",
+		pointValue: 50,
+		tickSize: 0.25,
+		tickValue: 12.5,
+		currency: "USD",
+	},
+	NQ: {
+		symbol: "NQ",
+		pointValue: 20,
+		tickSize: 0.25,
+		tickValue: 5.0,
+		currency: "USD",
+	},
+	YM: {
+		symbol: "YM",
+		pointValue: 5,
+		tickSize: 1,
+		tickValue: 5.0,
+		currency: "USD",
+	},
+	RTY: {
+		symbol: "RTY",
+		pointValue: 50,
+		tickSize: 0.1,
+		tickValue: 5.0,
+		currency: "USD",
+	},
 	// Micro Equities (1/10th of standard)
-	MES: { symbol: "MES", pointValue: 5,     tickSize: 0.25,   tickValue: 1.25,   currency: "USD" },
-	MNQ: { symbol: "MNQ", pointValue: 2,     tickSize: 0.25,   tickValue: 0.50,   currency: "USD" },
-	MYM: { symbol: "MYM", pointValue: 0.5,   tickSize: 1,      tickValue: 0.50,   currency: "USD" },
-	M2K: { symbol: "M2K", pointValue: 5,     tickSize: 0.1,    tickValue: 0.50,   currency: "USD" },
+	MES: {
+		symbol: "MES",
+		pointValue: 5,
+		tickSize: 0.25,
+		tickValue: 1.25,
+		currency: "USD",
+	},
+	MNQ: {
+		symbol: "MNQ",
+		pointValue: 2,
+		tickSize: 0.25,
+		tickValue: 0.5,
+		currency: "USD",
+	},
+	MYM: {
+		symbol: "MYM",
+		pointValue: 0.5,
+		tickSize: 1,
+		tickValue: 0.5,
+		currency: "USD",
+	},
+	M2K: {
+		symbol: "M2K",
+		pointValue: 5,
+		tickSize: 0.1,
+		tickValue: 0.5,
+		currency: "USD",
+	},
 	// International
-	NKD: { symbol: "NKD", pointValue: 5,     tickSize: 5,      tickValue: 25.00,  currency: "USD" },
+	NKD: {
+		symbol: "NKD",
+		pointValue: 5,
+		tickSize: 5,
+		tickValue: 25.0,
+		currency: "USD",
+	},
 
 	// === ENERGY ===
-	CL:  { symbol: "CL",  pointValue: 1000,  tickSize: 0.01,   tickValue: 10.00,  currency: "USD" },
-	MCL: { symbol: "MCL", pointValue: 100,   tickSize: 0.01,   tickValue: 1.00,   currency: "USD" },
-	NG:  { symbol: "NG",  pointValue: 10000, tickSize: 0.001,  tickValue: 10.00,  currency: "USD" },
-	MNG: { symbol: "MNG", pointValue: 1000,  tickSize: 0.001,  tickValue: 1.00,   currency: "USD" },
+	CL: {
+		symbol: "CL",
+		pointValue: 1000,
+		tickSize: 0.01,
+		tickValue: 10.0,
+		currency: "USD",
+	},
+	MCL: {
+		symbol: "MCL",
+		pointValue: 100,
+		tickSize: 0.01,
+		tickValue: 1.0,
+		currency: "USD",
+	},
+	NG: {
+		symbol: "NG",
+		pointValue: 10000,
+		tickSize: 0.001,
+		tickValue: 10.0,
+		currency: "USD",
+	},
+	MNG: {
+		symbol: "MNG",
+		pointValue: 1000,
+		tickSize: 0.001,
+		tickValue: 1.0,
+		currency: "USD",
+	},
 
 	// === METALS ===
-	GC:  { symbol: "GC",  pointValue: 100,   tickSize: 0.1,    tickValue: 10.00,  currency: "USD" },
-	MGC: { symbol: "MGC", pointValue: 10,    tickSize: 0.1,    tickValue: 1.00,   currency: "USD" },
-	SI:  { symbol: "SI",  pointValue: 5000,  tickSize: 0.005,  tickValue: 25.00,  currency: "USD" },
-	SIL: { symbol: "SIL", pointValue: 1000,  tickSize: 0.005,  tickValue: 5.00,   currency: "USD" },
+	GC: {
+		symbol: "GC",
+		pointValue: 100,
+		tickSize: 0.1,
+		tickValue: 10.0,
+		currency: "USD",
+	},
+	MGC: {
+		symbol: "MGC",
+		pointValue: 10,
+		tickSize: 0.1,
+		tickValue: 1.0,
+		currency: "USD",
+	},
+	SI: {
+		symbol: "SI",
+		pointValue: 5000,
+		tickSize: 0.005,
+		tickValue: 25.0,
+		currency: "USD",
+	},
+	SIL: {
+		symbol: "SIL",
+		pointValue: 1000,
+		tickSize: 0.005,
+		tickValue: 5.0,
+		currency: "USD",
+	},
 
 	// === CURRENCIES (Futures) ===
-	"6A": { symbol: "6A", pointValue: 100000, tickSize: 0.0001,  tickValue: 10.00,  currency: "USD" },
-	"6B": { symbol: "6B", pointValue: 62500,  tickSize: 0.0001,  tickValue: 6.25,   currency: "USD" },
-	"6C": { symbol: "6C", pointValue: 100000, tickSize: 0.0001,  tickValue: 10.00,  currency: "USD" },
-	"6E": { symbol: "6E", pointValue: 125000, tickSize: 0.0001,  tickValue: 12.50,  currency: "USD" },
-	"6J": { symbol: "6J", pointValue: 12500000, tickSize: 0.0000005, tickValue: 6.25, currency: "USD" },
-	"6M": { symbol: "6M", pointValue: 500000, tickSize: 0.00001, tickValue: 5.00,   currency: "USD" },
-	"6N": { symbol: "6N", pointValue: 100000, tickSize: 0.0001,  tickValue: 10.00,  currency: "USD" },
-	"6S": { symbol: "6S", pointValue: 125000, tickSize: 0.0001,  tickValue: 12.50,  currency: "USD" },
+	"6A": {
+		symbol: "6A",
+		pointValue: 100000,
+		tickSize: 0.0001,
+		tickValue: 10.0,
+		currency: "USD",
+	},
+	"6B": {
+		symbol: "6B",
+		pointValue: 62500,
+		tickSize: 0.0001,
+		tickValue: 6.25,
+		currency: "USD",
+	},
+	"6C": {
+		symbol: "6C",
+		pointValue: 100000,
+		tickSize: 0.0001,
+		tickValue: 10.0,
+		currency: "USD",
+	},
+	"6E": {
+		symbol: "6E",
+		pointValue: 125000,
+		tickSize: 0.0001,
+		tickValue: 12.5,
+		currency: "USD",
+	},
+	"6J": {
+		symbol: "6J",
+		pointValue: 12500000,
+		tickSize: 0.0000005,
+		tickValue: 6.25,
+		currency: "USD",
+	},
+	"6M": {
+		symbol: "6M",
+		pointValue: 500000,
+		tickSize: 0.00001,
+		tickValue: 5.0,
+		currency: "USD",
+	},
+	"6N": {
+		symbol: "6N",
+		pointValue: 100000,
+		tickSize: 0.0001,
+		tickValue: 10.0,
+		currency: "USD",
+	},
+	"6S": {
+		symbol: "6S",
+		pointValue: 125000,
+		tickSize: 0.0001,
+		tickValue: 12.5,
+		currency: "USD",
+	},
 	// Micro Currencies
-	M6A: { symbol: "M6A", pointValue: 10000,  tickSize: 0.0001,  tickValue: 1.00,   currency: "USD" },
-	M6B: { symbol: "M6B", pointValue: 6250,   tickSize: 0.0001,  tickValue: 0.625,  currency: "USD" },
-	M6E: { symbol: "M6E", pointValue: 12500,  tickSize: 0.0001,  tickValue: 1.25,   currency: "USD" },
-	MCD: { symbol: "MCD", pointValue: 10000,  tickSize: 0.0001,  tickValue: 1.00,   currency: "USD" },
-	MSF: { symbol: "MSF", pointValue: 12500,  tickSize: 0.0001,  tickValue: 1.25,   currency: "USD" },
-	MBT: { symbol: "MBT", pointValue: 0.1,    tickSize: 5,       tickValue: 0.50,   currency: "USD" }, // 0.1 BTC
+	M6A: {
+		symbol: "M6A",
+		pointValue: 10000,
+		tickSize: 0.0001,
+		tickValue: 1.0,
+		currency: "USD",
+	},
+	M6B: {
+		symbol: "M6B",
+		pointValue: 6250,
+		tickSize: 0.0001,
+		tickValue: 0.625,
+		currency: "USD",
+	},
+	M6E: {
+		symbol: "M6E",
+		pointValue: 12500,
+		tickSize: 0.0001,
+		tickValue: 1.25,
+		currency: "USD",
+	},
+	MCD: {
+		symbol: "MCD",
+		pointValue: 10000,
+		tickSize: 0.0001,
+		tickValue: 1.0,
+		currency: "USD",
+	},
+	MSF: {
+		symbol: "MSF",
+		pointValue: 12500,
+		tickSize: 0.0001,
+		tickValue: 1.25,
+		currency: "USD",
+	},
+	MBT: {
+		symbol: "MBT",
+		pointValue: 0.1,
+		tickSize: 5,
+		tickValue: 0.5,
+		currency: "USD",
+	}, // 0.1 BTC
 
 	// === INTEREST RATES ===
-	ZB: { symbol: "ZB", pointValue: 1000, tickSize: 0.03125, tickValue: 31.25, currency: "USD" }, // 1/32
-	ZN: { symbol: "ZN", pointValue: 1000, tickSize: 0.015625, tickValue: 15.625, currency: "USD" }, // 1/64
-	ZF: { symbol: "ZF", pointValue: 1000, tickSize: 0.0078125, tickValue: 7.8125, currency: "USD" }, // 1/128
-	ZT: { symbol: "ZT", pointValue: 2000, tickSize: 0.0078125, tickValue: 15.625, currency: "USD" },
-	TN: { symbol: "TN", pointValue: 1000, tickSize: 0.015625, tickValue: 15.625, currency: "USD" },
-	UB: { symbol: "UB", pointValue: 1000, tickSize: 0.03125, tickValue: 31.25, currency: "USD" },
+	ZB: {
+		symbol: "ZB",
+		pointValue: 1000,
+		tickSize: 0.03125,
+		tickValue: 31.25,
+		currency: "USD",
+	}, // 1/32
+	ZN: {
+		symbol: "ZN",
+		pointValue: 1000,
+		tickSize: 0.015625,
+		tickValue: 15.625,
+		currency: "USD",
+	}, // 1/64
+	ZF: {
+		symbol: "ZF",
+		pointValue: 1000,
+		tickSize: 0.0078125,
+		tickValue: 7.8125,
+		currency: "USD",
+	}, // 1/128
+	ZT: {
+		symbol: "ZT",
+		pointValue: 2000,
+		tickSize: 0.0078125,
+		tickValue: 15.625,
+		currency: "USD",
+	},
+	TN: {
+		symbol: "TN",
+		pointValue: 1000,
+		tickSize: 0.015625,
+		tickValue: 15.625,
+		currency: "USD",
+	},
+	UB: {
+		symbol: "UB",
+		pointValue: 1000,
+		tickSize: 0.03125,
+		tickValue: 31.25,
+		currency: "USD",
+	},
 
 	// === AGRICULTURE ===
-	ZC: { symbol: "ZC", pointValue: 50,   tickSize: 0.25,   tickValue: 12.50,  currency: "USD" }, // Corn
-	XC: { symbol: "XC", pointValue: 10,   tickSize: 0.125,  tickValue: 1.25,   currency: "USD" }, // Mini Corn
-	ZW: { symbol: "ZW", pointValue: 50,   tickSize: 0.25,   tickValue: 12.50,  currency: "USD" }, // Wheat
-	ZO: { symbol: "ZO", pointValue: 50,   tickSize: 0.25,   tickValue: 12.50,  currency: "USD" }, // Oats
-	ZR: { symbol: "ZR", pointValue: 20,   tickSize: 0.005,  tickValue: 0.10,   currency: "USD" }, // Rough Rice
-	ZS: { symbol: "ZS", pointValue: 50,   tickSize: 0.25,   tickValue: 12.50,  currency: "USD" }, // Soybeans
-	ZL: { symbol: "ZL", pointValue: 600,  tickSize: 0.01,   tickValue: 6.00,   currency: "USD" }, // Soybean Oil
-	ZM: { symbol: "ZM", pointValue: 100,  tickSize: 0.1,    tickValue: 10.00,  currency: "USD" }, // Soybean Meal
+	ZC: {
+		symbol: "ZC",
+		pointValue: 50,
+		tickSize: 0.25,
+		tickValue: 12.5,
+		currency: "USD",
+	}, // Corn
+	XC: {
+		symbol: "XC",
+		pointValue: 10,
+		tickSize: 0.125,
+		tickValue: 1.25,
+		currency: "USD",
+	}, // Mini Corn
+	ZW: {
+		symbol: "ZW",
+		pointValue: 50,
+		tickSize: 0.25,
+		tickValue: 12.5,
+		currency: "USD",
+	}, // Wheat
+	ZO: {
+		symbol: "ZO",
+		pointValue: 50,
+		tickSize: 0.25,
+		tickValue: 12.5,
+		currency: "USD",
+	}, // Oats
+	ZR: {
+		symbol: "ZR",
+		pointValue: 20,
+		tickSize: 0.005,
+		tickValue: 0.1,
+		currency: "USD",
+	}, // Rough Rice
+	ZS: {
+		symbol: "ZS",
+		pointValue: 50,
+		tickSize: 0.25,
+		tickValue: 12.5,
+		currency: "USD",
+	}, // Soybeans
+	ZL: {
+		symbol: "ZL",
+		pointValue: 600,
+		tickSize: 0.01,
+		tickValue: 6.0,
+		currency: "USD",
+	}, // Soybean Oil
+	ZM: {
+		symbol: "ZM",
+		pointValue: 100,
+		tickSize: 0.1,
+		tickValue: 10.0,
+		currency: "USD",
+	}, // Soybean Meal
 
 	// === LIVESTOCK ===
-	LE: { symbol: "LE", pointValue: 400,  tickSize: 0.025,  tickValue: 10.00,  currency: "USD" }, // Live Cattle
-	GF: { symbol: "GF", pointValue: 500,  tickSize: 0.025,  tickValue: 12.50,  currency: "USD" }, // Feeder Cattle
-	HE: { symbol: "HE", pointValue: 400,  tickSize: 0.025,  tickValue: 10.00,  currency: "USD" }, // Lean Hogs
+	LE: {
+		symbol: "LE",
+		pointValue: 400,
+		tickSize: 0.025,
+		tickValue: 10.0,
+		currency: "USD",
+	}, // Live Cattle
+	GF: {
+		symbol: "GF",
+		pointValue: 500,
+		tickSize: 0.025,
+		tickValue: 12.5,
+		currency: "USD",
+	}, // Feeder Cattle
+	HE: {
+		symbol: "HE",
+		pointValue: 400,
+		tickSize: 0.025,
+		tickValue: 10.0,
+		currency: "USD",
+	}, // Lean Hogs
 };
 
 // Forex specifications
@@ -94,44 +382,212 @@ export const FUTURES_CONTRACT_SPECS: Record<string, ContractSpec> = {
 // Standard lot = 100,000 units, Mini = 10,000, Micro = 1,000
 export interface ForexSpec {
 	symbol: string;
-	pipSize: number;           // Size of 1 pip (0.0001 for most, 0.01 for JPY pairs)
-	pipValuePerLot: number;    // USD value of 1 pip per standard lot (approximate, varies with rates)
+	pipSize: number; // Size of 1 pip (0.0001 for most, 0.01 for JPY pairs)
+	pipValuePerLot: number; // USD value of 1 pip per standard lot (approximate, varies with rates)
 	baseCurrency: string;
 	quoteCurrency: string;
 }
 
 export const FOREX_SPECS: Record<string, ForexSpec> = {
 	// Major pairs (USD quote = fixed pip value)
-	"EUR/USD": { symbol: "EUR/USD", pipSize: 0.0001, pipValuePerLot: 10, baseCurrency: "EUR", quoteCurrency: "USD" },
-	"GBP/USD": { symbol: "GBP/USD", pipSize: 0.0001, pipValuePerLot: 10, baseCurrency: "GBP", quoteCurrency: "USD" },
-	"AUD/USD": { symbol: "AUD/USD", pipSize: 0.0001, pipValuePerLot: 10, baseCurrency: "AUD", quoteCurrency: "USD" },
-	"NZD/USD": { symbol: "NZD/USD", pipSize: 0.0001, pipValuePerLot: 10, baseCurrency: "NZD", quoteCurrency: "USD" },
+	"EUR/USD": {
+		symbol: "EUR/USD",
+		pipSize: 0.0001,
+		pipValuePerLot: 10,
+		baseCurrency: "EUR",
+		quoteCurrency: "USD",
+	},
+	"GBP/USD": {
+		symbol: "GBP/USD",
+		pipSize: 0.0001,
+		pipValuePerLot: 10,
+		baseCurrency: "GBP",
+		quoteCurrency: "USD",
+	},
+	"AUD/USD": {
+		symbol: "AUD/USD",
+		pipSize: 0.0001,
+		pipValuePerLot: 10,
+		baseCurrency: "AUD",
+		quoteCurrency: "USD",
+	},
+	"NZD/USD": {
+		symbol: "NZD/USD",
+		pipSize: 0.0001,
+		pipValuePerLot: 10,
+		baseCurrency: "NZD",
+		quoteCurrency: "USD",
+	},
 	// USD base pairs (pip value varies with exchange rate)
-	"USD/JPY": { symbol: "USD/JPY", pipSize: 0.01, pipValuePerLot: 9.10, baseCurrency: "USD", quoteCurrency: "JPY" },
-	"USD/CHF": { symbol: "USD/CHF", pipSize: 0.0001, pipValuePerLot: 11.20, baseCurrency: "USD", quoteCurrency: "CHF" },
-	"USD/CAD": { symbol: "USD/CAD", pipSize: 0.0001, pipValuePerLot: 7.40, baseCurrency: "USD", quoteCurrency: "CAD" },
+	"USD/JPY": {
+		symbol: "USD/JPY",
+		pipSize: 0.01,
+		pipValuePerLot: 9.1,
+		baseCurrency: "USD",
+		quoteCurrency: "JPY",
+	},
+	"USD/CHF": {
+		symbol: "USD/CHF",
+		pipSize: 0.0001,
+		pipValuePerLot: 11.2,
+		baseCurrency: "USD",
+		quoteCurrency: "CHF",
+	},
+	"USD/CAD": {
+		symbol: "USD/CAD",
+		pipSize: 0.0001,
+		pipValuePerLot: 7.4,
+		baseCurrency: "USD",
+		quoteCurrency: "CAD",
+	},
 	// Cross pairs
-	"EUR/JPY": { symbol: "EUR/JPY", pipSize: 0.01, pipValuePerLot: 9.10, baseCurrency: "EUR", quoteCurrency: "JPY" },
-	"GBP/JPY": { symbol: "GBP/JPY", pipSize: 0.01, pipValuePerLot: 9.10, baseCurrency: "GBP", quoteCurrency: "JPY" },
-	"AUD/JPY": { symbol: "AUD/JPY", pipSize: 0.01, pipValuePerLot: 9.10, baseCurrency: "AUD", quoteCurrency: "JPY" },
-	"NZD/JPY": { symbol: "NZD/JPY", pipSize: 0.01, pipValuePerLot: 9.10, baseCurrency: "NZD", quoteCurrency: "JPY" },
-	"CAD/JPY": { symbol: "CAD/JPY", pipSize: 0.01, pipValuePerLot: 9.10, baseCurrency: "CAD", quoteCurrency: "JPY" },
-	"CHF/JPY": { symbol: "CHF/JPY", pipSize: 0.01, pipValuePerLot: 9.10, baseCurrency: "CHF", quoteCurrency: "JPY" },
-	"EUR/GBP": { symbol: "EUR/GBP", pipSize: 0.0001, pipValuePerLot: 12.50, baseCurrency: "EUR", quoteCurrency: "GBP" },
-	"EUR/AUD": { symbol: "EUR/AUD", pipSize: 0.0001, pipValuePerLot: 6.50, baseCurrency: "EUR", quoteCurrency: "AUD" },
-	"EUR/CAD": { symbol: "EUR/CAD", pipSize: 0.0001, pipValuePerLot: 7.40, baseCurrency: "EUR", quoteCurrency: "CAD" },
-	"EUR/CHF": { symbol: "EUR/CHF", pipSize: 0.0001, pipValuePerLot: 11.20, baseCurrency: "EUR", quoteCurrency: "CHF" },
-	"EUR/NZD": { symbol: "EUR/NZD", pipSize: 0.0001, pipValuePerLot: 5.90, baseCurrency: "EUR", quoteCurrency: "NZD" },
-	"GBP/AUD": { symbol: "GBP/AUD", pipSize: 0.0001, pipValuePerLot: 6.50, baseCurrency: "GBP", quoteCurrency: "AUD" },
-	"GBP/CAD": { symbol: "GBP/CAD", pipSize: 0.0001, pipValuePerLot: 7.40, baseCurrency: "GBP", quoteCurrency: "CAD" },
-	"GBP/CHF": { symbol: "GBP/CHF", pipSize: 0.0001, pipValuePerLot: 11.20, baseCurrency: "GBP", quoteCurrency: "CHF" },
-	"GBP/NZD": { symbol: "GBP/NZD", pipSize: 0.0001, pipValuePerLot: 5.90, baseCurrency: "GBP", quoteCurrency: "NZD" },
-	"AUD/CAD": { symbol: "AUD/CAD", pipSize: 0.0001, pipValuePerLot: 7.40, baseCurrency: "AUD", quoteCurrency: "CAD" },
-	"AUD/CHF": { symbol: "AUD/CHF", pipSize: 0.0001, pipValuePerLot: 11.20, baseCurrency: "AUD", quoteCurrency: "CHF" },
-	"AUD/NZD": { symbol: "AUD/NZD", pipSize: 0.0001, pipValuePerLot: 5.90, baseCurrency: "AUD", quoteCurrency: "NZD" },
-	"NZD/CAD": { symbol: "NZD/CAD", pipSize: 0.0001, pipValuePerLot: 7.40, baseCurrency: "NZD", quoteCurrency: "CAD" },
-	"NZD/CHF": { symbol: "NZD/CHF", pipSize: 0.0001, pipValuePerLot: 11.20, baseCurrency: "NZD", quoteCurrency: "CHF" },
-	"CAD/CHF": { symbol: "CAD/CHF", pipSize: 0.0001, pipValuePerLot: 11.20, baseCurrency: "CAD", quoteCurrency: "CHF" },
+	"EUR/JPY": {
+		symbol: "EUR/JPY",
+		pipSize: 0.01,
+		pipValuePerLot: 9.1,
+		baseCurrency: "EUR",
+		quoteCurrency: "JPY",
+	},
+	"GBP/JPY": {
+		symbol: "GBP/JPY",
+		pipSize: 0.01,
+		pipValuePerLot: 9.1,
+		baseCurrency: "GBP",
+		quoteCurrency: "JPY",
+	},
+	"AUD/JPY": {
+		symbol: "AUD/JPY",
+		pipSize: 0.01,
+		pipValuePerLot: 9.1,
+		baseCurrency: "AUD",
+		quoteCurrency: "JPY",
+	},
+	"NZD/JPY": {
+		symbol: "NZD/JPY",
+		pipSize: 0.01,
+		pipValuePerLot: 9.1,
+		baseCurrency: "NZD",
+		quoteCurrency: "JPY",
+	},
+	"CAD/JPY": {
+		symbol: "CAD/JPY",
+		pipSize: 0.01,
+		pipValuePerLot: 9.1,
+		baseCurrency: "CAD",
+		quoteCurrency: "JPY",
+	},
+	"CHF/JPY": {
+		symbol: "CHF/JPY",
+		pipSize: 0.01,
+		pipValuePerLot: 9.1,
+		baseCurrency: "CHF",
+		quoteCurrency: "JPY",
+	},
+	"EUR/GBP": {
+		symbol: "EUR/GBP",
+		pipSize: 0.0001,
+		pipValuePerLot: 12.5,
+		baseCurrency: "EUR",
+		quoteCurrency: "GBP",
+	},
+	"EUR/AUD": {
+		symbol: "EUR/AUD",
+		pipSize: 0.0001,
+		pipValuePerLot: 6.5,
+		baseCurrency: "EUR",
+		quoteCurrency: "AUD",
+	},
+	"EUR/CAD": {
+		symbol: "EUR/CAD",
+		pipSize: 0.0001,
+		pipValuePerLot: 7.4,
+		baseCurrency: "EUR",
+		quoteCurrency: "CAD",
+	},
+	"EUR/CHF": {
+		symbol: "EUR/CHF",
+		pipSize: 0.0001,
+		pipValuePerLot: 11.2,
+		baseCurrency: "EUR",
+		quoteCurrency: "CHF",
+	},
+	"EUR/NZD": {
+		symbol: "EUR/NZD",
+		pipSize: 0.0001,
+		pipValuePerLot: 5.9,
+		baseCurrency: "EUR",
+		quoteCurrency: "NZD",
+	},
+	"GBP/AUD": {
+		symbol: "GBP/AUD",
+		pipSize: 0.0001,
+		pipValuePerLot: 6.5,
+		baseCurrency: "GBP",
+		quoteCurrency: "AUD",
+	},
+	"GBP/CAD": {
+		symbol: "GBP/CAD",
+		pipSize: 0.0001,
+		pipValuePerLot: 7.4,
+		baseCurrency: "GBP",
+		quoteCurrency: "CAD",
+	},
+	"GBP/CHF": {
+		symbol: "GBP/CHF",
+		pipSize: 0.0001,
+		pipValuePerLot: 11.2,
+		baseCurrency: "GBP",
+		quoteCurrency: "CHF",
+	},
+	"GBP/NZD": {
+		symbol: "GBP/NZD",
+		pipSize: 0.0001,
+		pipValuePerLot: 5.9,
+		baseCurrency: "GBP",
+		quoteCurrency: "NZD",
+	},
+	"AUD/CAD": {
+		symbol: "AUD/CAD",
+		pipSize: 0.0001,
+		pipValuePerLot: 7.4,
+		baseCurrency: "AUD",
+		quoteCurrency: "CAD",
+	},
+	"AUD/CHF": {
+		symbol: "AUD/CHF",
+		pipSize: 0.0001,
+		pipValuePerLot: 11.2,
+		baseCurrency: "AUD",
+		quoteCurrency: "CHF",
+	},
+	"AUD/NZD": {
+		symbol: "AUD/NZD",
+		pipSize: 0.0001,
+		pipValuePerLot: 5.9,
+		baseCurrency: "AUD",
+		quoteCurrency: "NZD",
+	},
+	"NZD/CAD": {
+		symbol: "NZD/CAD",
+		pipSize: 0.0001,
+		pipValuePerLot: 7.4,
+		baseCurrency: "NZD",
+		quoteCurrency: "CAD",
+	},
+	"NZD/CHF": {
+		symbol: "NZD/CHF",
+		pipSize: 0.0001,
+		pipValuePerLot: 11.2,
+		baseCurrency: "NZD",
+		quoteCurrency: "CHF",
+	},
+	"CAD/CHF": {
+		symbol: "CAD/CHF",
+		pipSize: 0.0001,
+		pipValuePerLot: 11.2,
+		baseCurrency: "CAD",
+		quoteCurrency: "CHF",
+	},
 };
 
 // ============================================
@@ -207,12 +663,36 @@ export const FUTURES_SYMBOLS: SymbolInfo[] = [
 export const FOREX_SYMBOLS: SymbolInfo[] = [
 	// Majors
 	{ value: "EUR/USD", label: "EUR/USD - Euro/US Dollar", category: "Majors" },
-	{ value: "GBP/USD", label: "GBP/USD - British Pound/US Dollar", category: "Majors" },
-	{ value: "USD/JPY", label: "USD/JPY - US Dollar/Japanese Yen", category: "Majors" },
-	{ value: "USD/CHF", label: "USD/CHF - US Dollar/Swiss Franc", category: "Majors" },
-	{ value: "AUD/USD", label: "AUD/USD - Australian Dollar/US Dollar", category: "Majors" },
-	{ value: "USD/CAD", label: "USD/CAD - US Dollar/Canadian Dollar", category: "Majors" },
-	{ value: "NZD/USD", label: "NZD/USD - New Zealand Dollar/US Dollar", category: "Majors" },
+	{
+		value: "GBP/USD",
+		label: "GBP/USD - British Pound/US Dollar",
+		category: "Majors",
+	},
+	{
+		value: "USD/JPY",
+		label: "USD/JPY - US Dollar/Japanese Yen",
+		category: "Majors",
+	},
+	{
+		value: "USD/CHF",
+		label: "USD/CHF - US Dollar/Swiss Franc",
+		category: "Majors",
+	},
+	{
+		value: "AUD/USD",
+		label: "AUD/USD - Australian Dollar/US Dollar",
+		category: "Majors",
+	},
+	{
+		value: "USD/CAD",
+		label: "USD/CAD - US Dollar/Canadian Dollar",
+		category: "Majors",
+	},
+	{
+		value: "NZD/USD",
+		label: "NZD/USD - New Zealand Dollar/US Dollar",
+		category: "Majors",
+	},
 	// JPY Crosses
 	{ value: "EUR/JPY", label: "EUR/JPY - Euro/Yen", category: "JPY Crosses" },
 	{ value: "GBP/JPY", label: "GBP/JPY - Pound/Yen", category: "JPY Crosses" },
@@ -227,17 +707,53 @@ export const FOREX_SYMBOLS: SymbolInfo[] = [
 	{ value: "EUR/CHF", label: "EUR/CHF - Euro/Swissy", category: "EUR Crosses" },
 	{ value: "EUR/NZD", label: "EUR/NZD - Euro/Kiwi", category: "EUR Crosses" },
 	// GBP Crosses
-	{ value: "GBP/AUD", label: "GBP/AUD - Pound/Aussie", category: "GBP Crosses" },
-	{ value: "GBP/CAD", label: "GBP/CAD - Pound/Loonie", category: "GBP Crosses" },
-	{ value: "GBP/CHF", label: "GBP/CHF - Pound/Swissy", category: "GBP Crosses" },
+	{
+		value: "GBP/AUD",
+		label: "GBP/AUD - Pound/Aussie",
+		category: "GBP Crosses",
+	},
+	{
+		value: "GBP/CAD",
+		label: "GBP/CAD - Pound/Loonie",
+		category: "GBP Crosses",
+	},
+	{
+		value: "GBP/CHF",
+		label: "GBP/CHF - Pound/Swissy",
+		category: "GBP Crosses",
+	},
 	{ value: "GBP/NZD", label: "GBP/NZD - Pound/Kiwi", category: "GBP Crosses" },
 	// Other Crosses
-	{ value: "AUD/CAD", label: "AUD/CAD - Aussie/Loonie", category: "Other Crosses" },
-	{ value: "AUD/CHF", label: "AUD/CHF - Aussie/Swissy", category: "Other Crosses" },
-	{ value: "AUD/NZD", label: "AUD/NZD - Aussie/Kiwi", category: "Other Crosses" },
-	{ value: "NZD/CAD", label: "NZD/CAD - Kiwi/Loonie", category: "Other Crosses" },
-	{ value: "NZD/CHF", label: "NZD/CHF - Kiwi/Swissy", category: "Other Crosses" },
-	{ value: "CAD/CHF", label: "CAD/CHF - Loonie/Swissy", category: "Other Crosses" },
+	{
+		value: "AUD/CAD",
+		label: "AUD/CAD - Aussie/Loonie",
+		category: "Other Crosses",
+	},
+	{
+		value: "AUD/CHF",
+		label: "AUD/CHF - Aussie/Swissy",
+		category: "Other Crosses",
+	},
+	{
+		value: "AUD/NZD",
+		label: "AUD/NZD - Aussie/Kiwi",
+		category: "Other Crosses",
+	},
+	{
+		value: "NZD/CAD",
+		label: "NZD/CAD - Kiwi/Loonie",
+		category: "Other Crosses",
+	},
+	{
+		value: "NZD/CHF",
+		label: "NZD/CHF - Kiwi/Swissy",
+		category: "Other Crosses",
+	},
+	{
+		value: "CAD/CHF",
+		label: "CAD/CHF - Loonie/Swissy",
+		category: "Other Crosses",
+	},
 ];
 
 // ============================================
@@ -253,13 +769,9 @@ export const ALL_SYMBOLS = [...FUTURES_SYMBOLS, ...FOREX_SYMBOLS];
 
 export const TWELVE_DATA_SYMBOL_MAP: Record<string, string> = {
 	// Futures -> Twelve Data continuous contract format
-	...Object.fromEntries(
-		FUTURES_SYMBOLS.map((s) => [s.value, `${s.value}1!`])
-	),
+	...Object.fromEntries(FUTURES_SYMBOLS.map((s) => [s.value, `${s.value}1!`])),
 	// Forex stays the same
-	...Object.fromEntries(
-		FOREX_SYMBOLS.map((s) => [s.value, s.value])
-	),
+	...Object.fromEntries(FOREX_SYMBOLS.map((s) => [s.value, s.value])),
 };
 
 // ============================================
@@ -304,17 +816,19 @@ export function calculateFuturesPnL(
 	entryPrice: number,
 	exitPrice: number,
 	contracts: number,
-	direction: "long" | "short"
+	direction: "long" | "short",
 ): number {
 	const spec = FUTURES_CONTRACT_SPECS[symbol];
 	if (!spec) {
 		console.warn(`No contract spec found for ${symbol}, using raw calculation`);
 		// Fallback: assume point value of 1
-		const priceDiff = direction === "long" ? exitPrice - entryPrice : entryPrice - exitPrice;
+		const priceDiff =
+			direction === "long" ? exitPrice - entryPrice : entryPrice - exitPrice;
 		return priceDiff * contracts;
 	}
 
-	const priceDiff = direction === "long" ? exitPrice - entryPrice : entryPrice - exitPrice;
+	const priceDiff =
+		direction === "long" ? exitPrice - entryPrice : entryPrice - exitPrice;
 	return priceDiff * spec.pointValue * contracts;
 }
 
@@ -332,16 +846,18 @@ export function calculateForexPnL(
 	entryPrice: number,
 	exitPrice: number,
 	lotSize: number,
-	direction: "long" | "short"
+	direction: "long" | "short",
 ): number {
 	const spec = FOREX_SPECS[symbol];
 	if (!spec) {
 		console.warn(`No forex spec found for ${symbol}, using raw calculation`);
-		const priceDiff = direction === "long" ? exitPrice - entryPrice : entryPrice - exitPrice;
+		const priceDiff =
+			direction === "long" ? exitPrice - entryPrice : entryPrice - exitPrice;
 		return priceDiff * lotSize * 100000; // Assume standard lot size
 	}
 
-	const priceDiff = direction === "long" ? exitPrice - entryPrice : entryPrice - exitPrice;
+	const priceDiff =
+		direction === "long" ? exitPrice - entryPrice : entryPrice - exitPrice;
 	const pips = priceDiff / spec.pipSize;
 	// lotSize of 1 = standard lot (100k units), pip value is per standard lot
 	return pips * spec.pipValuePerLot * lotSize;
@@ -356,19 +872,34 @@ export function calculatePnL(
 	entryPrice: number,
 	exitPrice: number,
 	quantity: number, // contracts for futures, lots for forex
-	direction: "long" | "short"
+	direction: "long" | "short",
 ): number {
 	if (instrumentType === "futures") {
-		return calculateFuturesPnL(symbol, entryPrice, exitPrice, quantity, direction);
+		return calculateFuturesPnL(
+			symbol,
+			entryPrice,
+			exitPrice,
+			quantity,
+			direction,
+		);
 	} else {
-		return calculateForexPnL(symbol, entryPrice, exitPrice, quantity, direction);
+		return calculateForexPnL(
+			symbol,
+			entryPrice,
+			exitPrice,
+			quantity,
+			direction,
+		);
 	}
 }
 
 /**
  * Get the point/pip value for a symbol
  */
-export function getPointValue(symbol: string, instrumentType: "futures" | "forex"): number {
+export function getPointValue(
+	symbol: string,
+	instrumentType: "futures" | "forex",
+): number {
 	if (instrumentType === "futures") {
 		return FUTURES_CONTRACT_SPECS[symbol]?.pointValue ?? 1;
 	} else {
@@ -379,11 +910,13 @@ export function getPointValue(symbol: string, instrumentType: "futures" | "forex
 /**
  * Get tick/pip size for a symbol
  */
-export function getTickSize(symbol: string, instrumentType: "futures" | "forex"): number {
+export function getTickSize(
+	symbol: string,
+	instrumentType: "futures" | "forex",
+): number {
 	if (instrumentType === "futures") {
 		return FUTURES_CONTRACT_SPECS[symbol]?.tickSize ?? 0.01;
 	} else {
 		return FOREX_SPECS[symbol]?.pipSize ?? 0.0001;
 	}
 }
-

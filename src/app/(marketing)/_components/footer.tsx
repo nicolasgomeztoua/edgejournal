@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { TrendingUp } from "lucide-react";
+import Link from "next/link";
 
 const footerLinks = {
 	Product: [
@@ -29,7 +29,7 @@ export function Footer() {
 				<div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
 					{/* Brand column */}
 					<div className="lg:col-span-2">
-						<Link href="/" className="flex items-center gap-2">
+						<Link className="flex items-center gap-2" href="/">
 							<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
 								<TrendingUp className="h-5 w-5 text-primary-foreground" />
 							</div>
@@ -38,8 +38,8 @@ export function Footer() {
 							</span>
 						</Link>
 						<p className="mt-4 max-w-xs text-muted-foreground text-sm">
-							The professional trading journal for futures and forex traders
-							who want to find their edge.
+							The professional trading journal for futures and forex traders who
+							want to find their edge.
 						</p>
 					</div>
 
@@ -51,8 +51,8 @@ export function Footer() {
 								{links.map((link) => (
 									<li key={link.name}>
 										<Link
-											href={link.href}
 											className="text-muted-foreground text-sm transition-colors hover:text-foreground"
+											href={link.href}
 										>
 											{link.name}
 										</Link>
@@ -70,20 +70,20 @@ export function Footer() {
 					</p>
 					<div className="flex items-center gap-4">
 						<Link
-							href="#"
 							className="text-muted-foreground text-sm transition-colors hover:text-foreground"
+							href="#"
 						>
 							Twitter
 						</Link>
 						<Link
-							href="#"
 							className="text-muted-foreground text-sm transition-colors hover:text-foreground"
+							href="#"
 						>
 							Discord
 						</Link>
 						<Link
-							href="#"
 							className="text-muted-foreground text-sm transition-colors hover:text-foreground"
+							href="#"
 						>
 							GitHub
 						</Link>
@@ -93,4 +93,3 @@ export function Footer() {
 		</footer>
 	);
 }
-

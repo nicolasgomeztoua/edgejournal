@@ -1,29 +1,29 @@
 "use client";
 
 import { SignUpButton } from "@clerk/nextjs";
-import { Button } from "@/components/ui/button";
 import { ArrowRight, BarChart3, Brain, LineChart } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export function Hero() {
 	return (
 		<section className="relative min-h-screen overflow-hidden pt-16">
 			{/* Background gradient */}
 			<div className="gradient-trading absolute inset-0" />
-			
+
 			{/* Animated grid background */}
-			<div 
+			<div
 				className="absolute inset-0 opacity-[0.03]"
 				style={{
 					backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
 						linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-					backgroundSize: '60px 60px',
+					backgroundSize: "60px 60px",
 				}}
 			/>
-			
+
 			{/* Glow effects */}
 			<div className="absolute top-1/4 left-1/4 h-96 w-96 rounded-full bg-primary/20 blur-[128px]" />
 			<div className="absolute right-1/4 bottom-1/4 h-96 w-96 rounded-full bg-chart-2/20 blur-[128px]" />
-			
+
 			<div className="container relative mx-auto flex min-h-screen flex-col items-center justify-center px-4 text-center">
 				{/* Badge */}
 				<div className="mb-8 inline-flex items-center gap-2 rounded-full border border-border/50 bg-card/50 px-4 py-2 text-sm backdrop-blur-sm">
@@ -44,20 +44,20 @@ export function Hero() {
 
 				{/* Subheadline */}
 				<p className="mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-					The professional trading journal for Futures and Forex traders. 
-					Track your trades, analyze patterns, and get AI-driven insights 
-					to improve your edge.
+					The professional trading journal for Futures and Forex traders. Track
+					your trades, analyze patterns, and get AI-driven insights to improve
+					your edge.
 				</p>
 
 				{/* CTA buttons */}
 				<div className="mt-10 flex flex-col items-center gap-4 sm:flex-row">
 					<SignUpButton mode="modal">
-						<Button size="lg" className="gap-2 text-base">
+						<Button className="gap-2 text-base" size="lg">
 							Start Free Trial
 							<ArrowRight className="h-4 w-4" />
 						</Button>
 					</SignUpButton>
-					<Button variant="outline" size="lg" className="text-base" asChild>
+					<Button asChild className="text-base" size="lg" variant="outline">
 						<a href="#features">See How It Works</a>
 					</Button>
 				</div>
@@ -116,4 +116,3 @@ export function Hero() {
 		</section>
 	);
 }
-

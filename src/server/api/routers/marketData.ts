@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { env } from "@/env";
 import { TWELVE_DATA_SYMBOL_MAP } from "@/lib/symbols";
+import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 
 // Use the shared symbol map for Twelve Data API
 const SYMBOL_MAP = TWELVE_DATA_SYMBOL_MAP;
@@ -34,10 +34,18 @@ export const marketDataRouter = createTRPCRouter({
 		.input(
 			z.object({
 				symbol: z.string(),
-				interval: z.enum(["1min", "5min", "15min", "30min", "1h", "4h", "1day"]),
+				interval: z.enum([
+					"1min",
+					"5min",
+					"15min",
+					"30min",
+					"1h",
+					"4h",
+					"1day",
+				]),
 				startDate: z.string().datetime(),
 				endDate: z.string().datetime(),
-			})
+			}),
 		)
 		.query(async ({ input }) => {
 			const apiKey = env.TWELVE_DATA_API_KEY;
@@ -62,14 +70,14 @@ export const marketDataRouter = createTRPCRouter({
 			const params = new URLSearchParams({
 				symbol: mappedSymbol,
 				interval: intervalMap[input.interval] || "1h",
-				start_date: input.startDate.split("T")[0]!,
-				end_date: input.endDate.split("T")[0]!,
+				start_date: input.startDate.split("T")[0] ?? "",
+				end_date: input.endDate.split("T")[0] ?? "",
 				apikey: apiKey,
 				format: "JSON",
 			});
 
 			const response = await fetch(
-				`https://api.twelvedata.com/time_series?${params.toString()}`
+				`https://api.twelvedata.com/time_series?${params.toString()}`,
 			);
 
 			if (!response.ok) {
@@ -114,7 +122,7 @@ export const marketDataRouter = createTRPCRouter({
 				stopLoss: z.number().optional(),
 				takeProfit: z.number().optional(),
 				direction: z.enum(["long", "short"]),
-			})
+			}),
 		)
 		.query(async ({ input }) => {
 			const apiKey = env.TWELVE_DATA_API_KEY;
@@ -133,23 +141,21 @@ export const marketDataRouter = createTRPCRouter({
 			const startDate = new Date(input.entryTime);
 			startDate.setHours(startDate.getHours() - 2); // 2 hour buffer before
 
-			const endDate = input.exitTime
-				? new Date(input.exitTime)
-				: new Date();
+			const endDate = input.exitTime ? new Date(input.exitTime) : new Date();
 			endDate.setHours(endDate.getHours() + 24); // 24 hour buffer after (for post-exit analysis)
 
 			const params = new URLSearchParams({
 				symbol: mappedSymbol,
 				interval: "1h",
-				start_date: startDate.toISOString().split("T")[0]!,
-				end_date: endDate.toISOString().split("T")[0]!,
+				start_date: startDate.toISOString().split("T")[0] ?? "",
+				end_date: endDate.toISOString().split("T")[0] ?? "",
 				apikey: apiKey,
 				format: "JSON",
 			});
 
 			try {
 				const response = await fetch(
-					`https://api.twelvedata.com/time_series?${params.toString()}`
+					`https://api.twelvedata.com/time_series?${params.toString()}`,
 				);
 
 				if (!response.ok) {
@@ -159,7 +165,10 @@ export const marketDataRouter = createTRPCRouter({
 				const data = (await response.json()) as TwelveDataResponse;
 
 				if (!data.values || data.values.length === 0) {
-					return { available: false, message: "No market data available for this period" };
+					return {
+						available: false,
+						message: "No market data available for this period",
+					};
 				}
 
 				const bars = data.values.map((bar) => ({
@@ -237,12 +246,18 @@ export const marketDataRouter = createTRPCRouter({
 
 						if (input.direction === "long") {
 							// For a losing long that got stopped out, did price go back above entry?
-							if (input.exitPrice < input.entryPrice && bar.high > input.entryPrice) {
+							if (
+								input.exitPrice < input.entryPrice &&
+								bar.high > input.entryPrice
+							) {
 								wouldHaveRecovered = true;
 							}
 						} else {
 							// For a losing short, did price go back below entry?
-							if (input.exitPrice > input.entryPrice && bar.low < input.entryPrice) {
+							if (
+								input.exitPrice > input.entryPrice &&
+								bar.low < input.entryPrice
+							) {
 								wouldHaveRecovered = true;
 							}
 						}
@@ -267,4 +282,3 @@ export const marketDataRouter = createTRPCRouter({
 			}
 		}),
 });
-

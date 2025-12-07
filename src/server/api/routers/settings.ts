@@ -1,10 +1,7 @@
-import { z } from "zod";
 import { eq } from "drizzle-orm";
+import { z } from "zod";
 
-import {
-	createTRPCRouter,
-	protectedProcedure,
-} from "@/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { userSettings } from "@/server/db/schema";
 
 export const settingsRouter = createTRPCRouter({
@@ -40,7 +37,7 @@ export const settingsRouter = createTRPCRouter({
 				timezone: z.string().optional(),
 				currency: z.string().optional(),
 				breakevenThreshold: z.string().optional(), // Dollar amount for breakeven threshold
-			})
+			}),
 		)
 		.mutation(async ({ ctx, input }) => {
 			// Check if settings exist
@@ -81,4 +78,3 @@ export const settingsRouter = createTRPCRouter({
 		return parseFloat(settings?.breakevenThreshold ?? "3.00");
 	}),
 });
-

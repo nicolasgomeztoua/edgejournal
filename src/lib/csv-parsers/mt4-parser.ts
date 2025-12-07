@@ -1,8 +1,8 @@
-import type { CSVParser, ParseResult, } from "./types";
+import type { CSVParser, ParseResult } from "./types";
 
 /**
  * MetaTrader 4 CSV Parser
- * 
+ *
  * MT4 exports trade history in a specific format. Common columns include:
  * - Ticket: Trade ID
  * - Open Time: Entry timestamp
@@ -13,11 +13,11 @@ import type { CSVParser, ParseResult, } from "./types";
  * - S/L: Stop Loss
  * - T/P: Take Profit
  * - Close Time: Exit timestamp
- * - Close Price: Exit price  
+ * - Close Price: Exit price
  * - Commission: Trading commission
  * - Swap: Overnight swap fees
  * - Profit: Realized profit
- * 
+ *
  * TODO: Implement based on actual MT4 CSV export format
  */
 export const mt4Parser: CSVParser = {
@@ -46,11 +46,18 @@ export const mt4Parser: CSVParser = {
 	validateHeaders(headers: string[]): boolean {
 		// TODO: Implement header validation
 		// Check if required columns exist (case-insensitive)
-		const requiredColumns = ["ticket", "open time", "type", "size", "item", "price"];
+		const requiredColumns = [
+			"ticket",
+			"open time",
+			"type",
+			"size",
+			"item",
+			"price",
+		];
 		const normalizedHeaders = headers.map((h) => h.toLowerCase().trim());
-		
-		return requiredColumns.every((col) => 
-			normalizedHeaders.some((h) => h.includes(col))
+
+		return requiredColumns.every((col) =>
+			normalizedHeaders.some((h) => h.includes(col)),
 		);
 	},
 
@@ -66,16 +73,19 @@ export const mt4Parser: CSVParser = {
 		//    d. Determine instrumentType from symbol
 		//    e. Handle commission + swap as fees
 		// 4. Return ParseResult with trades array
-		
+
 		console.log("[MT4 Parser] Parsing not yet implemented");
-		
+
 		return {
 			success: false,
 			trades: [],
-			errors: [{
-				row: 0,
-				message: "MT4 parser not yet implemented. Awaiting CSV format specification.",
-			}],
+			errors: [
+				{
+					row: 0,
+					message:
+						"MT4 parser not yet implemented. Awaiting CSV format specification.",
+				},
+			],
 			warnings: [],
 			totalRows: 0,
 			parsedRows: 0,
@@ -86,13 +96,13 @@ export const mt4Parser: CSVParser = {
 
 /**
  * MetaTrader 5 CSV Parser
- * 
+ *
  * MT5 has a similar but slightly different format than MT4.
  * Main differences:
  * - Additional fields like "Profit in pips"
  * - Different date format options
  * - Position ID instead of just Ticket
- * 
+ *
  * TODO: Implement based on actual MT5 CSV export format
  */
 export const mt5Parser: CSVParser = {
@@ -120,27 +130,37 @@ export const mt5Parser: CSVParser = {
 
 	validateHeaders(headers: string[]): boolean {
 		// TODO: Implement header validation
-		const requiredColumns = ["position", "time", "type", "volume", "symbol", "price"];
+		const requiredColumns = [
+			"position",
+			"time",
+			"type",
+			"volume",
+			"symbol",
+			"price",
+		];
 		const normalizedHeaders = headers.map((h) => h.toLowerCase().trim());
-		
-		return requiredColumns.every((col) => 
-			normalizedHeaders.some((h) => h.includes(col))
+
+		return requiredColumns.every((col) =>
+			normalizedHeaders.some((h) => h.includes(col)),
 		);
 	},
 
 	async parse(_csvContent: string): Promise<ParseResult> {
 		// TODO: Implement actual parsing logic
 		// Similar to MT4 but with MT5-specific field mappings
-		
+
 		console.log("[MT5 Parser] Parsing not yet implemented");
-		
+
 		return {
 			success: false,
 			trades: [],
-			errors: [{
-				row: 0,
-				message: "MT5 parser not yet implemented. Awaiting CSV format specification.",
-			}],
+			errors: [
+				{
+					row: 0,
+					message:
+						"MT5 parser not yet implemented. Awaiting CSV format specification.",
+				},
+			],
 			warnings: [],
 			totalRows: 0,
 			parsedRows: 0,
@@ -148,4 +168,3 @@ export const mt5Parser: CSVParser = {
 		};
 	},
 };
-

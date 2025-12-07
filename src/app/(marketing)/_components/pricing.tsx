@@ -1,10 +1,17 @@
 "use client";
 
 import { SignUpButton } from "@clerk/nextjs";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Check, Key, Sparkles, Zap } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 
 const plans = [
 	{
@@ -60,7 +67,7 @@ const plans = [
 
 export function Pricing() {
 	return (
-		<section id="pricing" className="relative py-24">
+		<section className="relative py-24" id="pricing">
 			<div className="container mx-auto px-4">
 				{/* Section header */}
 				<div className="mx-auto max-w-2xl text-center">
@@ -89,12 +96,12 @@ export function Pricing() {
 				<div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 					{plans.map((plan) => (
 						<Card
-							key={plan.name}
 							className={`relative flex flex-col ${
 								plan.popular
 									? "border-primary/50 shadow-lg shadow-primary/10"
 									: "border-border/50"
 							}`}
+							key={plan.name}
 						>
 							{plan.popular && (
 								<Badge className="-top-3 -translate-x-1/2 absolute left-1/2 gap-1">
@@ -121,7 +128,7 @@ export function Pricing() {
 
 								<ul className="space-y-3">
 									{plan.features.map((feature) => (
-										<li key={feature} className="flex items-start gap-3">
+										<li className="flex items-start gap-3" key={feature}>
 											<Check className="mt-0.5 h-4 w-4 shrink-0 text-profit" />
 											<span className="text-muted-foreground text-sm">
 												{feature}
@@ -133,7 +140,7 @@ export function Pricing() {
 
 							<CardFooter>
 								{plan.name === "Team" ? (
-									<Button variant="outline" className="w-full">
+									<Button className="w-full" variant="outline">
 										{plan.cta}
 									</Button>
 								) : (
@@ -160,4 +167,3 @@ export function Pricing() {
 		</section>
 	);
 }
-
