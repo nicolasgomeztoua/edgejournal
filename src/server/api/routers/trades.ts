@@ -830,6 +830,193 @@ export const tradesRouter = createTRPCRouter({
 			};
 		}),
 
+	// Get daily P&L for calendar view
+	getDailyPnL: protectedProcedure
+		.input(
+			z
+				.object({
+					year: z.number(),
+					month: z.number().min(1).max(12).optional(), // If not provided, get full year
+					accountId: z.number().optional(),
+				})
+				.optional(),
+		)
+		.query(async ({ ctx, input }) => {
+			const year = input?.year ?? new Date().getFullYear();
+
+			// Build date range
+			let startDate: Date;
+			let endDate: Date;
+
+			if (input?.month) {
+				startDate = new Date(year, input.month - 1, 1);
+				endDate = new Date(year, input.month, 0, 23, 59, 59);
+			} else {
+				startDate = new Date(year, 0, 1);
+				endDate = new Date(year, 11, 31, 23, 59, 59);
+			}
+
+			const conditions = [
+				eq(trades.userId, ctx.user.id),
+				eq(trades.status, "closed"),
+				isNull(trades.deletedAt),
+				gte(trades.exitTime, startDate),
+				lte(trades.exitTime, endDate),
+			];
+
+			if (input?.accountId) {
+				conditions.push(eq(trades.accountId, input.accountId));
+			}
+
+			const closedTrades = await ctx.db.query.trades.findMany({
+				where: and(...conditions),
+				columns: {
+					id: true,
+					exitTime: true,
+					netPnl: true,
+					symbol: true,
+					direction: true,
+				},
+			});
+
+			// Group by date
+			const dailyData: Record<
+				string,
+				{ pnl: number; trades: number; wins: number; losses: number }
+			> = {};
+
+			closedTrades.forEach((trade) => {
+				if (!trade.exitTime || !trade.netPnl) return;
+
+				const dateKey = trade.exitTime.toISOString().split("T")[0];
+				if (!dateKey) return;
+
+				if (!dailyData[dateKey]) {
+					dailyData[dateKey] = { pnl: 0, trades: 0, wins: 0, losses: 0 };
+				}
+
+				const pnl = parseFloat(trade.netPnl);
+				dailyData[dateKey].pnl += pnl;
+				dailyData[dateKey].trades += 1;
+				if (pnl > 0) dailyData[dateKey].wins += 1;
+				else if (pnl < 0) dailyData[dateKey].losses += 1;
+			});
+
+			return {
+				year,
+				month: input?.month,
+				days: dailyData,
+			};
+		}),
+
+	// Get analytics breakdown by various dimensions
+	getAnalyticsBreakdown: protectedProcedure
+		.input(
+			z
+				.object({
+					dimension: z.enum([
+						"dayOfWeek",
+						"hour",
+						"symbol",
+						"setupType",
+						"month",
+					]),
+					accountId: z.number().optional(),
+					startDate: z.string().datetime().optional(),
+					endDate: z.string().datetime().optional(),
+				})
+				.optional(),
+		)
+		.query(async ({ ctx, input }) => {
+			const conditions = [
+				eq(trades.userId, ctx.user.id),
+				eq(trades.status, "closed"),
+				isNull(trades.deletedAt),
+			];
+
+			if (input?.accountId) {
+				conditions.push(eq(trades.accountId, input.accountId));
+			}
+			if (input?.startDate) {
+				conditions.push(gte(trades.entryTime, new Date(input.startDate)));
+			}
+			if (input?.endDate) {
+				conditions.push(lte(trades.entryTime, new Date(input.endDate)));
+			}
+
+			const closedTrades = await ctx.db.query.trades.findMany({
+				where: and(...conditions),
+			});
+
+			const dimension = input?.dimension ?? "dayOfWeek";
+			const breakdown: Record<
+				string,
+				{
+					pnl: number;
+					trades: number;
+					wins: number;
+					losses: number;
+					avgPnl: number;
+				}
+			> = {};
+
+			closedTrades.forEach((trade) => {
+				let key: string;
+
+				switch (dimension) {
+					case "dayOfWeek":
+						key =
+							[
+								"Sunday",
+								"Monday",
+								"Tuesday",
+								"Wednesday",
+								"Thursday",
+								"Friday",
+								"Saturday",
+							][trade.entryTime.getDay()] ?? "Unknown";
+						break;
+					case "hour":
+						key = `${trade.entryTime.getHours().toString().padStart(2, "0")}:00`;
+						break;
+					case "symbol":
+						key = trade.symbol;
+						break;
+					case "setupType":
+						key = trade.setupType || "Unclassified";
+						break;
+					case "month":
+						key = trade.entryTime.toLocaleString("default", { month: "short" });
+						break;
+					default:
+						key = "Unknown";
+				}
+
+				if (!breakdown[key]) {
+					breakdown[key] = { pnl: 0, trades: 0, wins: 0, losses: 0, avgPnl: 0 };
+				}
+
+				const pnl = trade.netPnl ? parseFloat(trade.netPnl) : 0;
+				const entry = breakdown[key];
+				if (entry) {
+					entry.pnl += pnl;
+					entry.trades += 1;
+					if (pnl > 0) entry.wins += 1;
+					else if (pnl < 0) entry.losses += 1;
+				}
+			});
+
+			// Calculate averages
+			Object.keys(breakdown).forEach((key) => {
+				const item = breakdown[key];
+				if (item) {
+					item.avgPnl = item.trades > 0 ? item.pnl / item.trades : 0;
+				}
+			});
+
+			return breakdown;
+		}),
+
 	// ============================================================================
 	// EXECUTION MANAGEMENT (Partial Exits / Scale In/Out)
 	// ============================================================================

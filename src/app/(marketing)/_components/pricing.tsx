@@ -78,8 +78,8 @@ export function Pricing() {
 						<span className="text-primary">pricing</span>
 					</h2>
 					<p className="mx-auto mt-6 max-w-xl font-mono text-base text-muted-foreground">
-						Start free. Upgrade when you need more. Bring your own AI keys
-						for full control.
+						Start free. Upgrade when you need more. Bring your own AI keys for
+						full control.
 					</p>
 				</div>
 
@@ -91,7 +91,8 @@ export function Pricing() {
 							Bring Your Own Key:
 						</span>{" "}
 						<span className="text-muted-foreground">
-							Use your OpenAI, Anthropic, or Google AI key. Your data, your costs, your control.
+							Use your OpenAI, Anthropic, or Google AI key. Your data, your
+							costs, your control.
 						</span>
 					</p>
 				</div>
@@ -109,7 +110,7 @@ export function Pricing() {
 						>
 							{/* Popular badge */}
 							{plan.highlighted && (
-								<div className="-top-3 absolute left-6 flex items-center gap-1 rounded bg-primary px-3 py-1">
+								<div className="absolute -top-3 left-6 flex items-center gap-1 rounded bg-primary px-3 py-1">
 									<Sparkles className="h-3 w-3 text-primary-foreground" />
 									<span className="font-medium font-mono text-primary-foreground text-xs uppercase tracking-wider">
 										Popular
@@ -118,7 +119,7 @@ export function Pricing() {
 							)}
 
 							{/* Plan header */}
-								<div className="mb-6">
+							<div className="mb-6">
 								<h3 className="font-bold text-xl">{plan.name}</h3>
 								<p className="mt-1 font-mono text-muted-foreground text-sm">
 									{plan.tagline}
@@ -133,37 +134,37 @@ export function Pricing() {
 								<span className="font-mono text-muted-foreground text-sm">
 									{plan.period}
 								</span>
-								</div>
+							</div>
 
 							{/* Features */}
 							<ul className="mb-8 flex-1 space-y-4">
-									{plan.features.map((feature) => (
-										<li className="flex items-start gap-3" key={feature}>
+								{plan.features.map((feature) => (
+									<li className="flex items-start gap-3" key={feature}>
 										<Check
 											className={`mt-0.5 h-4 w-4 shrink-0 ${
 												plan.highlighted ? "text-primary" : "text-profit"
 											}`}
 										/>
 										<span className="font-mono text-muted-foreground text-sm">
-												{feature}
-											</span>
-										</li>
-									))}
-								</ul>
+											{feature}
+										</span>
+									</li>
+								))}
+							</ul>
 
 							{/* CTA */}
-								{plan.name === "Team" ? (
+							{plan.name === "Team" ? (
 								<Button
 									className="w-full gap-2 font-mono text-xs uppercase tracking-wider"
 									variant="outline"
 								>
-										{plan.cta}
+									{plan.cta}
 									<ArrowRight className="h-4 w-4" />
-									</Button>
-								) : (
+								</Button>
+							) : (
 								<>
 									<SignedOut>
-									<SignUpButton mode="modal">
+										<SignUpButton mode="modal">
 											<Button
 												className="w-full gap-2 font-mono text-xs uppercase tracking-wider"
 												variant={plan.highlighted ? "default" : "outline"}
@@ -179,14 +180,16 @@ export function Pricing() {
 											className="w-full gap-2 font-mono text-xs uppercase tracking-wider"
 											variant={plan.highlighted ? "default" : "outline"}
 										>
-											<Link href={plan.highlighted ? "/settings" : "/dashboard"}>
+											<Link
+												href={plan.highlighted ? "/settings" : "/dashboard"}
+											>
 												{plan.ctaLoggedIn}
 												<ArrowRight className="h-4 w-4" />
 											</Link>
 										</Button>
 									</SignedIn>
 								</>
-								)}
+							)}
 						</div>
 					))}
 				</div>

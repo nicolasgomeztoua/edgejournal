@@ -15,7 +15,7 @@ export function CTA() {
 			<div className="grid-bg absolute inset-0 opacity-30" />
 
 			{/* Glow effect */}
-			<div className="-translate-x-1/2 absolute bottom-0 left-1/2 h-[400px] w-[600px] rounded-full bg-primary/10 blur-[150px]" />
+			<div className="absolute bottom-0 left-1/2 h-[400px] w-[600px] -translate-x-1/2 rounded-full bg-primary/10 blur-[150px]" />
 
 			<div className="relative mx-auto max-w-4xl px-6 text-center">
 				{/* Main content */}
@@ -23,12 +23,14 @@ export function CTA() {
 					<h2 className="font-bold text-4xl leading-tight tracking-tight sm:text-5xl lg:text-6xl">
 						Ready to find your
 						<br />
-						<span className="text-glow-primary text-primary">trading edge?</span>
+						<span className="text-glow-primary text-primary">
+							trading edge?
+						</span>
 					</h2>
 
 					<p className="mx-auto mt-6 max-w-xl font-mono text-base text-muted-foreground">
-						Join thousands of traders who use EdgeJournal to track, analyze,
-						and improve their trading performance.
+						Join thousands of traders who use EdgeJournal to track, analyze, and
+						improve their trading performance.
 					</p>
 
 					{/* CTA buttons */}
@@ -56,7 +58,9 @@ export function CTA() {
 					<h2 className="font-bold text-4xl leading-tight tracking-tight sm:text-5xl lg:text-6xl">
 						Ready to continue
 						<br />
-						<span className="text-glow-primary text-primary">your journey?</span>
+						<span className="text-glow-primary text-primary">
+							your journey?
+						</span>
 					</h2>
 
 					<p className="mx-auto mt-6 max-w-xl font-mono text-base text-muted-foreground">

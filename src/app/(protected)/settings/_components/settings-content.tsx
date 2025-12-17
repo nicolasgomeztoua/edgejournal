@@ -13,6 +13,7 @@ import {
 	Shield,
 	Sparkles,
 	Star,
+	Tag,
 	Trash2,
 	Wallet,
 } from "lucide-react";
@@ -115,6 +116,14 @@ export function SettingsContent() {
 		color: "#6366f1",
 	});
 
+	// Tag management state
+	const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
+	const [editingTag, setEditingTag] = useState<number | null>(null);
+	const [tagForm, setTagForm] = useState({
+		name: "",
+		color: "#6366f1",
+	});
+
 	const { refetchAccounts } = useAccount();
 	const {
 		data: accounts = [],
@@ -171,11 +180,53 @@ export function SettingsContent() {
 		},
 	});
 
+	// Tags queries and mutations
+	const {
+		data: userTags = [],
+		isLoading: loadingTags,
+		refetch: refetchTags,
+	} = api.tags.getAll.useQuery();
+
+	const createTag = api.tags.create.useMutation({
+		onSuccess: () => {
+			toast.success("Tag created");
+			setIsTagDialogOpen(false);
+			resetTagForm();
+			refetchTags();
+		},
+		onError: (error) => {
+			toast.error(error.message || "Failed to create tag");
+		},
+	});
+
+	const updateTag = api.tags.update.useMutation({
+		onSuccess: () => {
+			toast.success("Tag updated");
+			setIsTagDialogOpen(false);
+			setEditingTag(null);
+			resetTagForm();
+			refetchTags();
+		},
+		onError: (error) => {
+			toast.error(error.message || "Failed to update tag");
+		},
+	});
+
+	const deleteTag = api.tags.delete.useMutation({
+		onSuccess: () => {
+			toast.success("Tag deleted");
+			refetchTags();
+		},
+		onError: (error) => {
+			toast.error(error.message || "Failed to delete tag");
+		},
+	});
+
 	// Check URL params for tab
 	useEffect(() => {
 		const tab = searchParams.get("tab");
-		if (tab === "accounts") {
-			setActiveTab("accounts");
+		if (tab === "accounts" || tab === "tags" || tab === "ai") {
+			setActiveTab(tab);
 		}
 	}, [searchParams]);
 
@@ -232,6 +283,38 @@ export function SettingsContent() {
 			notes: "",
 			color: "#6366f1",
 		});
+	};
+
+	const resetTagForm = () => {
+		setTagForm({
+			name: "",
+			color: "#6366f1",
+		});
+	};
+
+	const openEditTag = (tag: (typeof userTags)[0]) => {
+		setEditingTag(tag.id);
+		setTagForm({
+			name: tag.name,
+			color: tag.color ?? "#6366f1",
+		});
+		setIsTagDialogOpen(true);
+	};
+
+	const handleTagSubmit = () => {
+		if (!tagForm.name.trim()) {
+			toast.error("Tag name is required");
+			return;
+		}
+
+		if (editingTag) {
+			updateTag.mutate({
+				id: editingTag,
+				...tagForm,
+			});
+		} else {
+			createTag.mutate(tagForm);
+		}
 	};
 
 	const openEditAccount = (account: (typeof accounts)[0]) => {
@@ -297,10 +380,11 @@ export function SettingsContent() {
 			</div>
 
 			<Tabs onValueChange={setActiveTab} value={activeTab}>
-				<TabsList className="grid w-full grid-cols-3">
+				<TabsList className="grid w-full grid-cols-4">
 					<TabsTrigger value="general">General</TabsTrigger>
-					<TabsTrigger value="accounts">Trading Accounts</TabsTrigger>
-					<TabsTrigger value="ai">AI Providers</TabsTrigger>
+					<TabsTrigger value="accounts">Accounts</TabsTrigger>
+					<TabsTrigger value="tags">Tags</TabsTrigger>
+					<TabsTrigger value="ai">AI</TabsTrigger>
 				</TabsList>
 
 				{/* General Tab */}
@@ -775,6 +859,193 @@ export function SettingsContent() {
 					</Card>
 				</TabsContent>
 
+				{/* Tags Tab */}
+				<TabsContent className="space-y-6" value="tags">
+					<Card>
+						<CardHeader>
+							<div className="flex items-center justify-between">
+								<div>
+									<CardTitle className="flex items-center gap-2">
+										<Tag className="h-5 w-5" />
+										Trade Tags
+									</CardTitle>
+									<CardDescription>
+										Create tags to categorize and filter your trades
+									</CardDescription>
+								</div>
+								<Dialog
+									onOpenChange={(open) => {
+										setIsTagDialogOpen(open);
+										if (!open) {
+											setEditingTag(null);
+											resetTagForm();
+										}
+									}}
+									open={isTagDialogOpen}
+								>
+									<DialogTrigger asChild>
+										<Button>
+											<Plus className="mr-2 h-4 w-4" />
+											Add Tag
+										</Button>
+									</DialogTrigger>
+									<DialogContent>
+										<DialogHeader>
+											<DialogTitle>
+												{editingTag ? "Edit Tag" : "Create Tag"}
+											</DialogTitle>
+											<DialogDescription>
+												{editingTag
+													? "Update your tag details"
+													: "Add a new tag to organize your trades"}
+											</DialogDescription>
+										</DialogHeader>
+										<div className="space-y-4">
+											<div className="space-y-2">
+												<Label>Tag Name *</Label>
+												<Input
+													onChange={(e) =>
+														setTagForm({
+															...tagForm,
+															name: e.target.value,
+														})
+													}
+													placeholder="e.g., Breakout, Trend, News"
+													value={tagForm.name}
+												/>
+											</div>
+											<div className="space-y-2">
+												<Label>Color</Label>
+												<div className="flex items-center gap-3">
+													<input
+														className="h-10 w-16 cursor-pointer rounded border-none bg-transparent"
+														onChange={(e) =>
+															setTagForm({
+																...tagForm,
+																color: e.target.value,
+															})
+														}
+														type="color"
+														value={tagForm.color}
+													/>
+													<Input
+														className="flex-1 font-mono"
+														onChange={(e) =>
+															setTagForm({
+																...tagForm,
+																color: e.target.value,
+															})
+														}
+														placeholder="#6366f1"
+														value={tagForm.color}
+													/>
+												</div>
+											</div>
+											<div className="space-y-2">
+												<Label>Preview</Label>
+												<div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-4">
+													<Badge
+														style={{
+															backgroundColor: tagForm.color,
+															color: "#fff",
+														}}
+													>
+														{tagForm.name || "Tag Name"}
+													</Badge>
+												</div>
+											</div>
+										</div>
+										<DialogFooter>
+											<Button
+												onClick={() => {
+													setIsTagDialogOpen(false);
+													setEditingTag(null);
+													resetTagForm();
+												}}
+												variant="outline"
+											>
+												Cancel
+											</Button>
+											<Button
+												disabled={createTag.isPending || updateTag.isPending}
+												onClick={handleTagSubmit}
+											>
+												{(createTag.isPending || updateTag.isPending) && (
+													<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+												)}
+												{editingTag ? "Update" : "Create"}
+											</Button>
+										</DialogFooter>
+									</DialogContent>
+								</Dialog>
+							</div>
+						</CardHeader>
+						<CardContent>
+							{loadingTags ? (
+								<div className="flex items-center justify-center py-8">
+									<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+								</div>
+							) : userTags.length === 0 ? (
+								<div className="flex flex-col items-center justify-center py-8 text-center">
+									<Tag className="h-12 w-12 text-muted-foreground/50" />
+									<h3 className="mt-4 font-semibold">No tags yet</h3>
+									<p className="text-muted-foreground text-sm">
+										Create tags to organize and filter your trades
+									</p>
+								</div>
+							) : (
+								<div className="space-y-3">
+									{userTags.map((tag) => (
+										<div
+											className="flex items-center justify-between rounded-lg border p-4"
+											key={tag.id}
+										>
+											<div className="flex items-center gap-3">
+												<div
+													className="h-4 w-4 rounded"
+													style={{ backgroundColor: tag.color ?? "#6366f1" }}
+												/>
+												<div>
+													<span className="font-medium">{tag.name}</span>
+													<p className="text-muted-foreground text-sm">
+														{tag.tradeCount} trade
+														{tag.tradeCount !== 1 ? "s" : ""}
+													</p>
+												</div>
+											</div>
+											<div className="flex items-center gap-2">
+												<Button
+													onClick={() => openEditTag(tag)}
+													size="sm"
+													variant="ghost"
+												>
+													<Edit className="h-4 w-4" />
+												</Button>
+												<Button
+													disabled={deleteTag.isPending}
+													onClick={() => {
+														if (
+															confirm(
+																"Are you sure you want to delete this tag? It will be removed from all trades.",
+															)
+														) {
+															deleteTag.mutate({ id: tag.id });
+														}
+													}}
+													size="sm"
+													variant="ghost"
+												>
+													<Trash2 className="h-4 w-4 text-destructive" />
+												</Button>
+											</div>
+										</div>
+									))}
+								</div>
+							)}
+						</CardContent>
+					</Card>
+				</TabsContent>
+
 				{/* AI Providers Tab */}
 				<TabsContent className="space-y-6" value="ai">
 					<Card>
@@ -861,7 +1132,7 @@ export function SettingsContent() {
 											}
 										/>
 										<Button
-											className="-translate-y-1/2 absolute top-1/2 right-1 h-8 w-8"
+											className="absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2"
 											onClick={() => toggleShowKey(provider.id)}
 											size="icon"
 											type="button"

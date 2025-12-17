@@ -14,13 +14,14 @@ import {
 	Plus,
 	Save,
 	Shield,
+	Tag,
 	Target,
 	Trash2,
 	TrendingDown,
 	TrendingUp,
+	X,
 	XCircle,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -569,6 +570,24 @@ export default function TradeDetailPage() {
 		{ enabled: !Number.isNaN(tradeId) },
 	);
 
+	// Tags
+	const { data: allTags = [] } = api.tags.getAll.useQuery();
+	const { data: tradeTags = [], refetch: refetchTradeTags } =
+		api.tags.getForTrade.useQuery(
+			{ tradeId },
+			{ enabled: !Number.isNaN(tradeId) },
+		);
+	const addTagToTrade = api.tags.addToTrade.useMutation({
+		onSuccess: () => {
+			refetchTradeTags();
+		},
+	});
+	const removeTagFromTrade = api.tags.removeFromTrade.useMutation({
+		onSuccess: () => {
+			refetchTradeTags();
+		},
+	});
+
 	useEffect(() => {
 		if (trade) {
 			setEditForm({
@@ -965,7 +984,7 @@ export default function TradeDetailPage() {
 					{/* Decorative glow */}
 					<div
 						className={cn(
-							"-top-20 -right-20 pointer-events-none absolute h-40 w-40 rounded-full blur-3xl",
+							"pointer-events-none absolute -top-20 -right-20 h-40 w-40 rounded-full blur-3xl",
 							parseFloat(trade.netPnl) >= 0 ? "bg-profit/20" : "bg-loss/20",
 						)}
 					/>
@@ -1568,6 +1587,110 @@ export default function TradeDetailPage() {
 												{trade.importSource}
 											</Badge>
 										</div>
+										{/* Tags */}
+										<div className="rounded-lg bg-white/[0.04] p-4 transition-colors hover:bg-white/[0.06]">
+											<p className="mb-2 text-muted-foreground text-xs">Tags</p>
+											<div className="flex flex-wrap gap-2">
+												{tradeTags.map((tag) => (
+													<Badge
+														className="group gap-1 pr-1"
+														key={tag.id}
+														style={{
+															backgroundColor: tag.color ?? "#6366f1",
+															color: "#fff",
+														}}
+													>
+														{tag.name}
+														<button
+															className="ml-1 rounded-full p-0.5 hover:bg-white/20"
+															onClick={() =>
+																removeTagFromTrade.mutate({
+																	tradeId,
+																	tagId: tag.id,
+																})
+															}
+															type="button"
+														>
+															<X className="h-3 w-3" />
+														</button>
+													</Badge>
+												))}
+												{allTags.filter(
+													(t) => !tradeTags.some((tt) => tt.id === t.id),
+												).length > 0 && (
+													<Dialog>
+														<DialogTrigger asChild>
+															<Button
+																className="h-6 gap-1 px-2"
+																size="sm"
+																variant="outline"
+															>
+																<Plus className="h-3 w-3" />
+																Add
+															</Button>
+														</DialogTrigger>
+														<DialogContent className="max-w-sm">
+															<DialogHeader>
+																<DialogTitle>Add Tags</DialogTitle>
+																<DialogDescription>
+																	Select tags to add to this trade
+																</DialogDescription>
+															</DialogHeader>
+															<div className="flex flex-wrap gap-2 py-4">
+																{allTags
+																	.filter(
+																		(t) =>
+																			!tradeTags.some((tt) => tt.id === t.id),
+																	)
+																	.map((tag) => (
+																		<Button
+																			className="gap-2"
+																			key={tag.id}
+																			onClick={() =>
+																				addTagToTrade.mutate({
+																					tradeId,
+																					tagId: tag.id,
+																				})
+																			}
+																			size="sm"
+																			variant="outline"
+																		>
+																			<div
+																				className="h-3 w-3 rounded"
+																				style={{
+																					backgroundColor:
+																						tag.color ?? "#6366f1",
+																				}}
+																			/>
+																			{tag.name}
+																		</Button>
+																	))}
+															</div>
+															{allTags.length === 0 && (
+																<p className="py-4 text-center text-muted-foreground text-sm">
+																	No tags yet.{" "}
+																	<Link
+																		className="text-primary underline"
+																		href="/settings?tab=tags"
+																	>
+																		Create tags in Settings
+																	</Link>
+																</p>
+															)}
+														</DialogContent>
+													</Dialog>
+												)}
+												{tradeTags.length === 0 && allTags.length === 0 && (
+													<Link
+														className="text-muted-foreground text-xs hover:text-primary"
+														href="/settings?tab=tags"
+													>
+														<Tag className="mr-1 inline h-3 w-3" />
+														Create tags
+													</Link>
+												)}
+											</div>
+										</div>
 									</div>
 								</div>
 
@@ -1621,10 +1744,11 @@ export default function TradeDetailPage() {
 						<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 							{trade.screenshots.map((ss) => (
 								<div
-									className="aspect-video overflow-hidden rounded border border-white/10"
+									className="relative aspect-video overflow-hidden rounded border border-white/10"
 									key={ss.id}
 								>
-									<Image
+									{/* eslint-disable-next-line @next/next/no-img-element */}
+									<img
 										alt={ss.caption || "Trade screenshot"}
 										className="h-full w-full object-cover"
 										src={ss.url}

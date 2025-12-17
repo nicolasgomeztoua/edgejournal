@@ -5,13 +5,16 @@ import {
 	BarChart3,
 	BookOpen,
 	Brain,
+	Calendar,
 	Check,
 	ChevronsUpDown,
 	FileSpreadsheet,
 	LayoutDashboard,
+	NotebookPen,
 	Plus,
 	PlusCircle,
 	Settings,
+	TrendingDown,
 	TrendingUp,
 	Wallet,
 } from "lucide-react";
@@ -37,8 +40,10 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAccount } from "@/contexts/account-context";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
+import { api } from "@/trpc/react";
 
 const mainNavItems = [
 	{
@@ -52,9 +57,19 @@ const mainNavItems = [
 		icon: BookOpen,
 	},
 	{
+		title: "Calendar",
+		href: "/calendar",
+		icon: Calendar,
+	},
+	{
 		title: "Analytics",
 		href: "/analytics",
 		icon: BarChart3,
+	},
+	{
+		title: "Playbook",
+		href: "/playbook",
+		icon: NotebookPen,
 	},
 	{
 		title: "AI Insights",
@@ -70,6 +85,72 @@ const ACCOUNT_TYPE_COLORS = {
 	demo: "bg-blue-500",
 	paper: "bg-amber-500",
 };
+
+function QuickStats() {
+	const { selectedAccountId } = useAccount();
+	const { data: stats, isLoading } = api.trades.getStats.useQuery({
+		accountId: selectedAccountId ?? undefined,
+	});
+
+	if (isLoading) {
+		return (
+			<div className="space-y-3 rounded-lg border border-sidebar-border bg-sidebar-accent/30 p-3">
+				<Skeleton className="h-4 w-16" />
+				<div className="space-y-2">
+					<Skeleton className="h-6 w-24" />
+					<Skeleton className="h-4 w-20" />
+				</div>
+			</div>
+		);
+	}
+
+	if (!stats || stats.totalTrades === 0) {
+		return null;
+	}
+
+	return (
+		<div className="rounded-lg border border-sidebar-border bg-sidebar-accent/30 p-3">
+			<p className="mb-2 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+				Quick Stats
+			</p>
+			<div className="space-y-2">
+				<div className="flex items-center justify-between">
+					<span className="text-muted-foreground text-xs">Total P&L</span>
+					<span
+						className={cn(
+							"font-bold font-mono text-sm",
+							stats.totalPnl >= 0 ? "text-profit" : "text-loss",
+						)}
+					>
+						{stats.totalPnl >= 0 ? (
+							<TrendingUp className="mr-1 inline h-3 w-3" />
+						) : (
+							<TrendingDown className="mr-1 inline h-3 w-3" />
+						)}
+						{formatCurrency(stats.totalPnl)}
+					</span>
+				</div>
+				<div className="flex items-center justify-between">
+					<span className="text-muted-foreground text-xs">Win Rate</span>
+					<span
+						className={cn(
+							"font-mono text-sm",
+							stats.winRate >= 50 ? "text-profit" : "text-loss",
+						)}
+					>
+						{stats.winRate.toFixed(1)}%
+					</span>
+				</div>
+				<div className="flex items-center justify-between">
+					<span className="text-muted-foreground text-xs">Trades</span>
+					<span className="font-mono text-muted-foreground text-sm">
+						{stats.totalTrades}
+					</span>
+				</div>
+			</div>
+		</div>
+	);
+}
 
 export function AppSidebar() {
 	const pathname = usePathname();
@@ -219,6 +300,13 @@ export function AppSidebar() {
 								</SidebarMenuItem>
 							))}
 						</SidebarMenu>
+					</SidebarGroupContent>
+				</SidebarGroup>
+
+				{/* Quick Stats */}
+				<SidebarGroup>
+					<SidebarGroupContent className="px-2">
+						<QuickStats />
 					</SidebarGroupContent>
 				</SidebarGroup>
 			</SidebarContent>

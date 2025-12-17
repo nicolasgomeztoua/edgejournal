@@ -1,7 +1,24 @@
 "use client";
 
-import { Info, TrendingDown, TrendingUp } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AgCharts } from "ag-charts-react";
+import {
+	ArrowRight,
+	Calendar,
+	Info,
+	TrendingDown,
+	TrendingUp,
+} from "lucide-react";
+import Link from "next/link";
+import { useMemo } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAccount } from "@/contexts/account-context";
 import { cn, formatCurrency, getPnLColorClass } from "@/lib/utils";
@@ -315,6 +332,287 @@ function PerformanceSummary() {
 	);
 }
 
+function EquityCurve() {
+	const { selectedAccountId } = useAccount();
+	const { data, isLoading } = api.trades.getAll.useQuery({
+		status: "closed",
+		limit: 200,
+		accountId: selectedAccountId ?? undefined,
+	});
+
+	const chartOptions = useMemo(() => {
+		if (!data?.items) return {};
+
+		let cumulative = 0;
+		const trades = data.items
+			.filter((t) => t.netPnl)
+			.reverse()
+			.map((t) => {
+				cumulative += parseFloat(t.netPnl ?? "0");
+				return {
+					date: t.exitTime ? new Date(t.exitTime) : new Date(),
+					pnl: cumulative,
+				};
+			});
+
+		if (trades.length === 0) return {};
+
+		return {
+			background: { fill: "transparent" },
+			data: trades,
+			series: [
+				{
+					type: "area" as const,
+					xKey: "date",
+					yKey: "pnl",
+					fill: cumulative >= 0 ? "#10b98120" : "#ef444420",
+					stroke: cumulative >= 0 ? "#10b981" : "#ef4444",
+					strokeWidth: 2,
+					marker: { enabled: false },
+				},
+			],
+			axes: [
+				{
+					type: "time" as const,
+					position: "bottom" as const,
+					label: { color: "#94a3b8", format: "%b %d" },
+					line: { color: "#334155" },
+				},
+				{
+					type: "number" as const,
+					position: "left" as const,
+					label: {
+						color: "#94a3b8",
+						formatter: (params: { value: number }) =>
+							`$${params.value.toLocaleString()}`,
+					},
+					line: { color: "#334155" },
+					gridLine: { style: [{ stroke: "#1e293b" }] },
+				},
+			],
+		};
+	}, [data]);
+
+	if (isLoading) {
+		return <Skeleton className="h-[200px] w-full" />;
+	}
+
+	if (!data?.items || data.items.length === 0) {
+		return (
+			<div className="flex h-[200px] items-center justify-center text-muted-foreground">
+				<div className="text-center">
+					<TrendingUp className="mx-auto mb-2 h-8 w-8 opacity-30" />
+					<p>No trade data yet</p>
+				</div>
+			</div>
+		);
+	}
+
+	// biome-ignore lint/suspicious/noExplicitAny: ag-charts has complex typing
+	return <AgCharts options={chartOptions as any} style={{ height: 200 }} />;
+}
+
+function RecentTrades() {
+	const { selectedAccountId } = useAccount();
+	const { data, isLoading } = api.trades.getAll.useQuery({
+		status: "closed",
+		limit: 5,
+		accountId: selectedAccountId ?? undefined,
+	});
+
+	if (isLoading) {
+		return (
+			<div className="space-y-3">
+				{[...Array(5)].map((_, i) => (
+					<Skeleton
+						className="h-12 w-full"
+						key={`skeleton-trade-${i.toString()}`}
+					/>
+				))}
+			</div>
+		);
+	}
+
+	if (!data?.items || data.items.length === 0) {
+		return (
+			<div className="flex h-[200px] items-center justify-center text-muted-foreground">
+				<div className="text-center">
+					<Calendar className="mx-auto mb-2 h-8 w-8 opacity-30" />
+					<p>No trades yet</p>
+					<Button asChild className="mt-4" size="sm" variant="outline">
+						<Link href="/import">Import your first trades</Link>
+					</Button>
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<div className="space-y-2">
+			{data.items.map((trade) => {
+				const pnl = parseFloat(trade.netPnl ?? "0");
+				return (
+					<Link
+						className="group flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] p-3 transition-colors hover:bg-white/[0.05]"
+						href={`/journal/${trade.id}`}
+						key={trade.id}
+					>
+						<div className="flex items-center gap-3">
+							<Badge
+								className="font-mono text-xs"
+								variant={trade.direction === "long" ? "default" : "secondary"}
+							>
+								{trade.direction === "long" ? "L" : "S"}
+							</Badge>
+							<div>
+								<span className="font-medium font-mono">{trade.symbol}</span>
+								<p className="text-muted-foreground text-xs">
+									{trade.exitTime
+										? new Date(trade.exitTime).toLocaleDateString()
+										: "-"}
+								</p>
+							</div>
+						</div>
+						<div className="flex items-center gap-2">
+							<span
+								className={cn(
+									"font-bold font-mono",
+									pnl >= 0 ? "text-profit" : "text-loss",
+								)}
+							>
+								{pnl >= 0 ? "+" : ""}
+								{formatCurrency(pnl)}
+							</span>
+							<ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+						</div>
+					</Link>
+				);
+			})}
+			<Button asChild className="mt-4 w-full" size="sm" variant="ghost">
+				<Link href="/journal">View all trades →</Link>
+			</Button>
+		</div>
+	);
+}
+
+function TodaySummary() {
+	const { selectedAccountId } = useAccount();
+	const today = new Date();
+	const { data, isLoading } = api.trades.getDailyPnL.useQuery({
+		year: today.getFullYear(),
+		month: today.getMonth() + 1,
+		accountId: selectedAccountId ?? undefined,
+	});
+
+	const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+	const todayData = data?.days?.[todayString];
+
+	// Calculate week's data
+	const weekStart = new Date(today);
+	weekStart.setDate(today.getDate() - today.getDay());
+	const weekData = useMemo(() => {
+		if (!data?.days) return { pnl: 0, trades: 0, wins: 0, losses: 0 };
+		return Object.entries(data.days).reduce(
+			(acc, [dateStr, dayData]) => {
+				const date = new Date(dateStr);
+				if (date >= weekStart && date <= today) {
+					acc.pnl += dayData.pnl;
+					acc.trades += dayData.trades;
+					acc.wins += dayData.wins;
+					acc.losses += dayData.losses;
+				}
+				return acc;
+			},
+			{ pnl: 0, trades: 0, wins: 0, losses: 0 },
+		);
+	}, [data, weekStart, today]);
+
+	// Calculate month's data
+	const monthData = useMemo(() => {
+		if (!data?.days) return { pnl: 0, trades: 0, wins: 0, losses: 0 };
+		return Object.values(data.days).reduce(
+			(acc, dayData) => {
+				acc.pnl += dayData.pnl;
+				acc.trades += dayData.trades;
+				acc.wins += dayData.wins;
+				acc.losses += dayData.losses;
+				return acc;
+			},
+			{ pnl: 0, trades: 0, wins: 0, losses: 0 },
+		);
+	}, [data]);
+
+	if (isLoading) {
+		return (
+			<div className="space-y-4">
+				<Skeleton className="h-20 w-full" />
+				<Skeleton className="h-20 w-full" />
+				<Skeleton className="h-20 w-full" />
+			</div>
+		);
+	}
+
+	const periods = [
+		{
+			label: "Today",
+			pnl: todayData?.pnl ?? 0,
+			trades: todayData?.trades ?? 0,
+			wins: todayData?.wins ?? 0,
+			losses: todayData?.losses ?? 0,
+		},
+		{
+			label: "This Week",
+			...weekData,
+		},
+		{
+			label: "This Month",
+			...monthData,
+		},
+	];
+
+	return (
+		<div className="space-y-3">
+			{periods.map((period) => (
+				<div
+					className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] p-4"
+					key={period.label}
+				>
+					<div>
+						<p className="font-medium text-sm">{period.label}</p>
+						<p className="text-muted-foreground text-xs">
+							{period.trades} trade{period.trades !== 1 ? "s" : ""} ·{" "}
+							{period.wins}W / {period.losses}L
+						</p>
+					</div>
+					<div className="text-right">
+						<p
+							className={cn(
+								"font-bold font-mono text-lg",
+								period.pnl >= 0 ? "text-profit" : "text-loss",
+							)}
+						>
+							{period.pnl >= 0 ? "+" : ""}
+							{formatCurrency(period.pnl)}
+						</p>
+						{period.trades > 0 && (
+							<p
+								className={cn(
+									"font-mono text-xs",
+									period.wins / period.trades >= 0.5
+										? "text-profit/70"
+										: "text-loss/70",
+								)}
+							>
+								{((period.wins / period.trades) * 100).toFixed(0)}% WR
+							</p>
+						)}
+					</div>
+				</div>
+			))}
+		</div>
+	);
+}
+
 export default function DashboardPage() {
 	const { selectedAccount } = useAccount();
 
@@ -341,9 +639,50 @@ export default function DashboardPage() {
 			{/* Stats Row */}
 			<StatsGrid />
 
-			{/* Performance Summary */}
-			<div className="grid gap-6 lg:grid-cols-2">
+			{/* Equity Curve */}
+			<Card>
+				<CardHeader className="flex flex-row items-center justify-between pb-2">
+					<div>
+						<CardTitle className="text-base">Equity Curve</CardTitle>
+						<CardDescription>Account performance over time</CardDescription>
+					</div>
+					<Button asChild size="sm" variant="outline">
+						<Link href="/analytics">
+							View Analytics <ArrowRight className="ml-2 h-4 w-4" />
+						</Link>
+					</Button>
+				</CardHeader>
+				<CardContent>
+					<EquityCurve />
+				</CardContent>
+			</Card>
+
+			{/* Three Column Grid */}
+			<div className="grid gap-6 lg:grid-cols-3">
+				{/* Performance Summary */}
 				<PerformanceSummary />
+
+				{/* Today Summary */}
+				<Card>
+					<CardHeader>
+						<CardTitle className="text-base">Period Summary</CardTitle>
+						<CardDescription>Performance by time period</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<TodaySummary />
+					</CardContent>
+				</Card>
+
+				{/* Recent Trades */}
+				<Card>
+					<CardHeader>
+						<CardTitle className="text-base">Recent Trades</CardTitle>
+						<CardDescription>Your latest closed positions</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<RecentTrades />
+					</CardContent>
+				</Card>
 			</div>
 		</div>
 	);

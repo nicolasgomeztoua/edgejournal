@@ -71,7 +71,13 @@ instead of discretionary exits.`,
 	},
 ];
 
-function TypewriterText({ text, speed = 15 }: { text: string; speed?: number }) {
+function TypewriterText({
+	text,
+	speed = 15,
+}: {
+	text: string;
+	speed?: number;
+}) {
 	const [displayedText, setDisplayedText] = useState("");
 	const [isComplete, setIsComplete] = useState(false);
 
@@ -125,7 +131,7 @@ export function AIShowcase() {
 					<div className="mb-6 inline-flex items-center gap-2 rounded-none border border-accent/20 bg-accent/5 px-4 py-2">
 						<Sparkles className="h-4 w-4 text-accent" />
 						<span className="font-mono text-accent text-xs uppercase tracking-wider">
-						AI-Powered
+							AI-Powered
 						</span>
 					</div>
 					<h2 className="font-bold text-4xl leading-tight tracking-tight sm:text-5xl lg:text-6xl">
@@ -134,8 +140,8 @@ export function AIShowcase() {
 						<span className="text-accent text-glow-accent">your trading</span>
 					</h2>
 					<p className="mt-6 max-w-xl font-mono text-base text-muted-foreground">
-						Natural language queries powered by your choice of AI.
-						Get insights that would take hours to analyze manually.
+						Natural language queries powered by your choice of AI. Get insights
+						that would take hours to analyze manually.
 					</p>
 				</div>
 
@@ -226,7 +232,7 @@ export function AIShowcase() {
 							<div className="flex items-center justify-between">
 								<span className="font-mono text-muted-foreground text-xs">
 									Powered by your API key
-							</span>
+								</span>
 								<div className="flex items-center gap-4 font-mono text-muted-foreground text-xs">
 									<span>OpenAI</span>
 									<span>Anthropic</span>

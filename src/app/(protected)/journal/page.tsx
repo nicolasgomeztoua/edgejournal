@@ -1,6 +1,7 @@
 "use client";
 
 import {
+	Download,
 	Loader2,
 	MoreHorizontal,
 	Plus,
@@ -213,6 +214,76 @@ export default function JournalPage() {
 		}
 	};
 
+	const handleExportCSV = () => {
+		if (allTrades.length === 0) {
+			toast.error("No trades to export");
+			return;
+		}
+
+		// Define CSV headers
+		const headers = [
+			"ID",
+			"Symbol",
+			"Direction",
+			"Status",
+			"Entry Price",
+			"Exit Price",
+			"Entry Time",
+			"Exit Time",
+			"Quantity",
+			"Stop Loss",
+			"Take Profit",
+			"Realized P&L",
+			"Fees",
+			"Net P&L",
+			"Setup Type",
+			"Emotional State",
+			"Notes",
+			"Import Source",
+		];
+
+		// Map trades to CSV rows
+		const rows = allTrades.map((trade) => [
+			trade.id,
+			trade.symbol,
+			trade.direction,
+			trade.status,
+			trade.entryPrice,
+			trade.exitPrice ?? "",
+			trade.entryTime ? new Date(trade.entryTime).toISOString() : "",
+			trade.exitTime ? new Date(trade.exitTime).toISOString() : "",
+			trade.quantity,
+			trade.stopLoss ?? "",
+			trade.takeProfit ?? "",
+			trade.realizedPnl ?? "",
+			trade.fees ?? "",
+			trade.netPnl ?? "",
+			trade.setupType ?? "",
+			trade.emotionalState ?? "",
+			(trade.notes ?? "").replace(/"/g, '""'), // Escape quotes
+			trade.importSource,
+		]);
+
+		// Build CSV content
+		const csvContent = [
+			headers.join(","),
+			...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
+		].join("\n");
+
+		// Create and download file
+		const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement("a");
+		link.href = url;
+		link.download = `trades_export_${new Date().toISOString().split("T")[0]}.csv`;
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+		URL.revokeObjectURL(url);
+
+		toast.success(`Exported ${allTrades.length} trades`);
+	};
+
 	const clearFilters = () => {
 		setStatusFilter("all");
 		setDirectionFilter("all");
@@ -264,7 +335,7 @@ export default function JournalPage() {
 					<div className="flex flex-wrap items-center gap-3">
 						{/* Search */}
 						<div className="relative min-w-[200px] flex-1">
-							<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+							<Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 							<Input
 								className="pl-9"
 								onChange={(e) => setSearch(e.target.value)}
@@ -322,6 +393,18 @@ export default function JournalPage() {
 								Clear
 							</Button>
 						)}
+
+						{/* Export */}
+						<Button
+							className="ml-auto"
+							disabled={allTrades.length === 0}
+							onClick={handleExportCSV}
+							size="sm"
+							variant="outline"
+						>
+							<Download className="mr-2 h-3.5 w-3.5" />
+							Export CSV
+						</Button>
 					</div>
 
 					{/* Bulk Actions */}

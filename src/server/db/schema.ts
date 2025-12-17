@@ -177,17 +177,20 @@ export const trades = createTable(
 		// Actual outcome
 		stopLossHit: boolean("stop_loss_hit").default(false),
 		takeProfitHit: boolean("take_profit_hit").default(false),
-		
+
 		// Trailing stop support
 		trailedStopLoss: decimal("trailed_stop_loss", { precision: 20, scale: 8 }), // Final trailed SL (if different from original)
 		wasTrailed: boolean("was_trailed").default(false), // Whether SL was trailed during the trade
-		
+
 		// Exit reason tracking
 		exitReason: exitReasonEnum("exit_reason"), // How the trade was closed
-		
+
 		// Partial exit tracking
 		isPartiallyExited: boolean("is_partially_exited").default(false), // Has partial exits
-		remainingQuantity: decimal("remaining_quantity", { precision: 20, scale: 8 }), // Remaining position after partials
+		remainingQuantity: decimal("remaining_quantity", {
+			precision: 20,
+			scale: 8,
+		}), // Remaining position after partials
 
 		// P&L
 		realizedPnl: decimal("realized_pnl", { precision: 20, scale: 2 }),
@@ -241,10 +244,10 @@ export const tradeExecutions = createTable(
 		quantity: decimal("quantity", { precision: 20, scale: 8 }).notNull(),
 		executedAt: timestamp("executed_at", { withTimezone: true }).notNull(),
 		fees: decimal("fees", { precision: 20, scale: 2 }).default("0"),
-		
+
 		// P&L for this specific execution (for partial exits)
 		realizedPnl: decimal("realized_pnl", { precision: 20, scale: 2 }),
-		
+
 		// Notes for this execution
 		notes: text("notes"),
 
@@ -357,6 +360,65 @@ export const userSettings = createTable("user_settings", {
 });
 
 // ============================================================================
+// DAILY JOURNAL ENTRIES TABLE
+// ============================================================================
+
+export const dailyJournalEntries = createTable(
+	"daily_journal_entry",
+	{
+		id: integer().primaryKey().generatedByDefaultAsIdentity(),
+		userId: integer("user_id")
+			.notNull()
+			.references(() => users.id, { onDelete: "cascade" }),
+		date: timestamp("date", { withTimezone: true }).notNull(), // The date this entry is for
+		preMarketNotes: text("pre_market_notes"), // Pre-market analysis & plan
+		postMarketNotes: text("post_market_notes"), // Post-market recap
+		lessonsLearned: text("lessons_learned"), // Key takeaways
+		emotionalState: emotionalStateEnum("emotional_state"), // Overall emotional state for the day
+		rating: integer("rating"), // Day rating 1-5
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.$defaultFn(() => new Date()),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+			() => new Date(),
+		),
+	},
+	(t) => [
+		index("daily_journal_user_id_idx").on(t.userId),
+		index("daily_journal_date_idx").on(t.date),
+	],
+);
+
+// ============================================================================
+// PLAYBOOK STRATEGIES TABLE
+// ============================================================================
+
+export const playbookStrategies = createTable(
+	"playbook_strategy",
+	{
+		id: integer().primaryKey().generatedByDefaultAsIdentity(),
+		userId: integer("user_id")
+			.notNull()
+			.references(() => users.id, { onDelete: "cascade" }),
+		name: text("name").notNull(), // e.g., "Morning Gap Fade"
+		description: text("description"), // Strategy description
+		rules: text("rules"), // Entry/exit rules (markdown)
+		riskManagement: text("risk_management"), // Position sizing, stop placement
+		bestConditions: text("best_conditions"), // When to use this strategy
+		worstConditions: text("worst_conditions"), // When to avoid
+		examples: text("examples"), // Trade examples (markdown with screenshots)
+		isActive: boolean("is_active").default(true),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.$defaultFn(() => new Date()),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+			() => new Date(),
+		),
+	},
+	(t) => [index("playbook_user_id_idx").on(t.userId)],
+);
+
+// ============================================================================
 // AI CONVERSATIONS TABLE
 // ============================================================================
 
@@ -408,6 +470,8 @@ export const usersRelations = relations(users, ({ many, one }) => ({
 	tags: many(tags),
 	settings: one(userSettings),
 	aiConversations: many(aiConversations),
+	dailyJournalEntries: many(dailyJournalEntries),
+	playbookStrategies: many(playbookStrategies),
 }));
 
 export const accountsRelations = relations(accounts, ({ one, many }) => ({
@@ -496,6 +560,26 @@ export const aiMessagesRelations = relations(aiMessages, ({ one }) => ({
 	}),
 }));
 
+export const dailyJournalEntriesRelations = relations(
+	dailyJournalEntries,
+	({ one }) => ({
+		user: one(users, {
+			fields: [dailyJournalEntries.userId],
+			references: [users.id],
+		}),
+	}),
+);
+
+export const playbookStrategiesRelations = relations(
+	playbookStrategies,
+	({ one }) => ({
+		user: one(users, {
+			fields: [playbookStrategies.userId],
+			references: [users.id],
+		}),
+	}),
+);
+
 // ============================================================================
 // TYPE EXPORTS
 // ============================================================================
@@ -514,3 +598,7 @@ export type TradeScreenshot = typeof tradeScreenshots.$inferSelect;
 export type UserSettings = typeof userSettings.$inferSelect;
 export type AiConversation = typeof aiConversations.$inferSelect;
 export type AiMessage = typeof aiMessages.$inferSelect;
+export type DailyJournalEntry = typeof dailyJournalEntries.$inferSelect;
+export type NewDailyJournalEntry = typeof dailyJournalEntries.$inferInsert;
+export type PlaybookStrategy = typeof playbookStrategies.$inferSelect;
+export type NewPlaybookStrategy = typeof playbookStrategies.$inferInsert;

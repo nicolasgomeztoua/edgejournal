@@ -3,7 +3,7 @@ import "@/styles/globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 import type { Metadata } from "next";
-import { Manrope, JetBrains_Mono } from "next/font/google";
+import { JetBrains_Mono, Manrope } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { TRPCReactProvider } from "@/trpc/react";
 
@@ -40,7 +40,10 @@ export default function RootLayout({
 				},
 			}}
 		>
-			<html className={`${manrope.variable} ${jetbrainsMono.variable}`} lang="en">
+			<html
+				className={`${manrope.variable} ${jetbrainsMono.variable}`}
+				lang="en"
+			>
 				<body>
 					<TRPCReactProvider>{children}</TRPCReactProvider>
 					<Toaster position="top-right" richColors />

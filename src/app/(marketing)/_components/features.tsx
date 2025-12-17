@@ -31,7 +31,9 @@ const features = [
 					</span>
 				</div>
 				<div className="flex items-center gap-4 rounded border border-white/5 bg-white/[0.02] p-3">
-					<span className="font-mono text-muted-foreground text-xs">NQ 03/15</span>
+					<span className="font-mono text-muted-foreground text-xs">
+						NQ 03/15
+					</span>
 					<span className="font-medium font-mono text-sm">SHORT</span>
 					<span className="ml-auto font-mono text-loss text-sm">-$180.00</span>
 				</div>
@@ -56,10 +58,10 @@ const features = [
 		className: "md:col-span-1",
 		visual: (
 			<div className="mt-6 flex h-24 items-end justify-between gap-1">
-				{[35, 55, 42, 78, 65, 88, 72, 95, 82, 68].map((h, i) => (
+				{[35, 55, 42, 78, 65, 88, 72, 95, 82, 68].map((h) => (
 					<div
 						className="flex-1 rounded-t bg-gradient-to-t from-primary/60 to-primary/20"
-						key={`bar-${i}`}
+						key={`bar-height-${h}`}
 						style={{ height: `${h}%` }}
 					/>
 				))}
@@ -69,7 +71,8 @@ const features = [
 	{
 		icon: Brain,
 		title: "AI Insights",
-		description: 'Ask "What\'s my best setup?" and get instant, intelligent answers.',
+		description:
+			'Ask "What\'s my best setup?" and get instant, intelligent answers.',
 		highlight: true,
 		className: "md:col-span-1",
 		visual: (
@@ -214,7 +217,7 @@ export function Features() {
 								className={`mb-4 inline-flex h-10 w-10 items-center justify-center rounded ${
 									feature.highlight ? "bg-primary/10" : "bg-white/5"
 								}`}
-						>
+							>
 								<feature.icon
 									className={`h-5 w-5 ${
 										feature.highlight ? "text-primary" : "text-muted-foreground"
@@ -233,7 +236,7 @@ export function Features() {
 
 							{/* Hover glow effect for highlighted cards */}
 							{feature.highlight && (
-								<div className="-inset-px absolute rounded opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+								<div className="absolute -inset-px rounded opacity-0 transition-opacity duration-300 group-hover:opacity-100">
 									<div className="absolute inset-0 rounded bg-gradient-to-r from-primary/10 via-transparent to-transparent" />
 								</div>
 							)}
