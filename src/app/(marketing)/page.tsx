@@ -1,4 +1,5 @@
 import { AIShowcase } from "./_components/ai-showcase";
+import { CTA } from "./_components/cta";
 import { Features } from "./_components/features";
 import { Hero } from "./_components/hero";
 import { Pricing } from "./_components/pricing";
@@ -10,6 +11,7 @@ export default function LandingPage() {
 			<Features />
 			<AIShowcase />
 			<Pricing />
+			<CTA />
 		</>
 	);
 }

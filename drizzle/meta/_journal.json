@@ -8,6 +8,13 @@
       "when": 1765042009659,
       "tag": "0000_sticky_starfox",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1765979725895,
+      "tag": "0001_add_trailing_partial_support",
+      "breakpoints": true
     }
   ]
 }

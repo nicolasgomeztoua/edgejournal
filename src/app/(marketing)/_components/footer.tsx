@@ -1,4 +1,3 @@
-import { TrendingUp } from "lucide-react";
 import Link from "next/link";
 
 const footerLinks = {
@@ -24,34 +23,59 @@ const footerLinks = {
 
 export function Footer() {
 	return (
-		<footer className="border-border/50 border-t bg-card/30">
-			<div className="container mx-auto px-4 py-12">
-				<div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
+		<footer className="relative border-t border-white/5 bg-black/50">
+			<div className="mx-auto max-w-6xl px-6 py-16">
+				<div className="grid gap-12 lg:grid-cols-5">
 					{/* Brand column */}
 					<div className="lg:col-span-2">
-						<Link className="flex items-center gap-2" href="/">
-							<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-								<TrendingUp className="h-5 w-5 text-primary-foreground" />
-							</div>
-							<span className="font-bold text-xl tracking-tight">
-								EdgeJournal
+						<Link className="group flex items-center gap-3" href="/">
+							{/* Logo */}
+							<svg
+								className="h-8 w-8"
+								fill="none"
+								viewBox="0 0 32 32"
+								xmlns="http://www.w3.org/2000/svg"
+							>
+								<rect
+									className="fill-primary"
+									height="32"
+									rx="2"
+									width="32"
+								/>
+								<path
+									className="fill-primary-foreground"
+									d="M8 8h16v3H11v5h11v3H11v5h13v3H8V8z"
+								/>
+							</svg>
+							<span className="font-mono text-sm font-medium tracking-tight uppercase">
+								Edge<span className="text-primary">Journal</span>
 							</span>
 						</Link>
-						<p className="mt-4 max-w-xs text-muted-foreground text-sm">
-							The professional trading journal for futures and forex traders who
-							want to find their edge.
+						<p className="mt-6 max-w-xs font-mono text-sm leading-relaxed text-muted-foreground">
+							The professional trading journal for futures and forex traders
+							who want to find their edge.
 						</p>
+
+						{/* Status indicator */}
+						<div className="mt-6 inline-flex items-center gap-2 rounded border border-profit/20 bg-profit/5 px-3 py-1.5">
+							<span className="h-2 w-2 rounded-full bg-profit pulse-dot" />
+							<span className="font-mono text-xs text-profit">
+								All systems operational
+							</span>
+						</div>
 					</div>
 
 					{/* Link columns */}
 					{Object.entries(footerLinks).map(([category, links]) => (
 						<div key={category}>
-							<h3 className="font-semibold">{category}</h3>
-							<ul className="mt-4 space-y-2">
+							<h3 className="font-mono text-xs font-medium uppercase tracking-wider text-foreground">
+								{category}
+							</h3>
+							<ul className="mt-6 space-y-4">
 								{links.map((link) => (
 									<li key={link.name}>
 										<Link
-											className="text-muted-foreground text-sm transition-colors hover:text-foreground"
+											className="font-mono text-sm text-muted-foreground transition-colors hover:text-primary"
 											href={link.href}
 										>
 											{link.name}
@@ -64,30 +88,42 @@ export function Footer() {
 				</div>
 
 				{/* Bottom bar */}
-				<div className="mt-12 flex flex-col items-center justify-between gap-4 border-border/50 border-t pt-8 sm:flex-row">
-					<p className="text-muted-foreground text-sm">
+				<div className="mt-16 flex flex-col items-center justify-between gap-6 border-t border-white/5 pt-8 lg:flex-row">
+					<p className="font-mono text-xs text-muted-foreground">
 						© {new Date().getFullYear()} EdgeJournal. All rights reserved.
 					</p>
-					<div className="flex items-center gap-4">
+
+					{/* Social links */}
+					<div className="flex items-center gap-6">
 						<Link
-							className="text-muted-foreground text-sm transition-colors hover:text-foreground"
-							href="#"
+							className="font-mono text-xs text-muted-foreground transition-colors hover:text-primary"
+							href="https://twitter.com"
+							target="_blank"
 						>
 							Twitter
 						</Link>
 						<Link
-							className="text-muted-foreground text-sm transition-colors hover:text-foreground"
-							href="#"
+							className="font-mono text-xs text-muted-foreground transition-colors hover:text-primary"
+							href="https://discord.com"
+							target="_blank"
 						>
 							Discord
 						</Link>
 						<Link
-							className="text-muted-foreground text-sm transition-colors hover:text-foreground"
-							href="#"
+							className="font-mono text-xs text-muted-foreground transition-colors hover:text-primary"
+							href="https://github.com"
+							target="_blank"
 						>
 							GitHub
 						</Link>
 					</div>
+				</div>
+			</div>
+
+			{/* Large background text */}
+			<div className="pointer-events-none absolute bottom-0 left-0 right-0 overflow-hidden">
+				<div className="translate-y-1/2 text-center font-bold text-[20vw] leading-none text-white/[0.02]">
+					EDGE
 				</div>
 			</div>
 		</footer>

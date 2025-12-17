@@ -3,20 +3,27 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ============================================
+   EDGE JOURNAL - "THE TERMINAL" DESIGN SYSTEM
+   ============================================ */
+
 @theme {
+	/* Primary Font: Departure Mono-inspired via JetBrains */
 	--font-sans:
 		var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
 		"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 	--font-mono:
 		var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, "SF Mono", Menlo,
 		Consolas, "Liberation Mono", monospace;
+	--font-display:
+		var(--font-space-grotesk), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
 @theme inline {
-	--radius-sm: calc(var(--radius) - 4px);
-	--radius-md: calc(var(--radius) - 2px);
-	--radius-lg: var(--radius);
-	--radius-xl: calc(var(--radius) + 4px);
+	--radius-sm: 2px;
+	--radius-md: 4px;
+	--radius-lg: 6px;
+	--radius-xl: 8px;
 	--color-background: var(--background);
 	--color-foreground: var(--foreground);
 	--color-card: var(--card);
@@ -48,99 +55,98 @@
 	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
 	--color-sidebar-border: var(--sidebar-border);
 	--color-sidebar-ring: var(--sidebar-ring);
-
-	/* Trading-specific colors */
 	--color-profit: var(--profit);
 	--color-loss: var(--loss);
 	--color-breakeven: var(--breakeven);
 }
 
-/* Dark-first trading theme - this is the default */
+/* THE TERMINAL - Dark First Theme
+   Obsidian Black + Electric Chartreuse + Ice Blue */
 :root {
-	--radius: 0.5rem;
+	--radius: 4px;
 
-	/* Deep slate/navy background */
-	--background: oklch(0.13 0.015 260);
-	--foreground: oklch(0.95 0.01 260);
+	/* Obsidian Black Background */
+	--background: #050505;
+	--foreground: #fafafa;
 
-	/* Cards slightly lighter than background */
-	--card: oklch(0.16 0.015 260);
-	--card-foreground: oklch(0.95 0.01 260);
+	/* Cards - subtle lift */
+	--card: #0a0a0a;
+	--card-foreground: #fafafa;
 
-	/* Popover same as card */
-	--popover: oklch(0.16 0.015 260);
-	--popover-foreground: oklch(0.95 0.01 260);
+	/* Popover */
+	--popover: #0a0a0a;
+	--popover-foreground: #fafafa;
 
-	/* Primary - Emerald accent */
-	--primary: oklch(0.7 0.17 162);
-	--primary-foreground: oklch(0.13 0.015 260);
+	/* Primary - Electric Chartreuse */
+	--primary: #d4ff00;
+	--primary-foreground: #050505;
 
-	/* Secondary - Subtle slate */
-	--secondary: oklch(0.22 0.015 260);
-	--secondary-foreground: oklch(0.9 0.01 260);
+	/* Secondary - Muted surface */
+	--secondary: #141414;
+	--secondary-foreground: #e5e5e5;
 
 	/* Muted - For subtle text */
-	--muted: oklch(0.22 0.015 260);
-	--muted-foreground: oklch(0.6 0.01 260);
+	--muted: #1a1a1a;
+	--muted-foreground: #737373;
 
-	/* Accent - Teal/cyan */
-	--accent: oklch(0.22 0.015 260);
-	--accent-foreground: oklch(0.9 0.01 260);
+	/* Accent - Ice Blue */
+	--accent: #00d4ff;
+	--accent-foreground: #050505;
 
-	/* Destructive - Trading loss red */
-	--destructive: oklch(0.65 0.2 25);
+	/* Destructive - Signal Red */
+	--destructive: #ff3b3b;
 
-	/* Borders */
-	--border: oklch(0.25 0.015 260);
-	--input: oklch(0.22 0.015 260);
-	--ring: oklch(0.7 0.17 162);
+	/* Borders - Very subtle */
+	--border: #1f1f1f;
+	--input: #141414;
+	--ring: #d4ff00;
 
-	/* Chart colors */
-	--chart-1: oklch(0.7 0.17 162);
-	--chart-2: oklch(0.7 0.15 200);
-	--chart-3: oklch(0.7 0.18 280);
-	--chart-4: oklch(0.75 0.15 85);
-	--chart-5: oklch(0.65 0.2 25);
+	/* Chart colors - Terminal palette */
+	--chart-1: #d4ff00;
+	--chart-2: #00d4ff;
+	--chart-3: #ff6b00;
+	--chart-4: #a855f7;
+	--chart-5: #ff3b3b;
 
 	/* Sidebar */
-	--sidebar: oklch(0.11 0.015 260);
-	--sidebar-foreground: oklch(0.9 0.01 260);
-	--sidebar-primary: oklch(0.7 0.17 162);
-	--sidebar-primary-foreground: oklch(0.13 0.015 260);
-	--sidebar-accent: oklch(0.18 0.015 260);
-	--sidebar-accent-foreground: oklch(0.9 0.01 260);
-	--sidebar-border: oklch(0.22 0.015 260);
-	--sidebar-ring: oklch(0.7 0.17 162);
+	--sidebar: #0a0a0a;
+	--sidebar-foreground: #e5e5e5;
+	--sidebar-primary: #d4ff00;
+	--sidebar-primary-foreground: #050505;
+	--sidebar-accent: #141414;
+	--sidebar-accent-foreground: #e5e5e5;
+	--sidebar-border: #1f1f1f;
+	--sidebar-ring: #d4ff00;
 
 	/* Trading specific */
-	--profit: oklch(0.72 0.19 155);
-	--loss: oklch(0.65 0.22 25);
-	--breakeven: oklch(0.7 0.15 85);
+	--profit: #00ff88;
+	--loss: #ff3b3b;
+	--breakeven: #ffd700;
 }
 
-/* Light mode override (optional, but keeping for flexibility) */
+/* Light mode - Clean inversion */
 .light {
-	--background: oklch(0.98 0.005 260);
-	--foreground: oklch(0.15 0.015 260);
-	--card: oklch(1 0 0);
-	--card-foreground: oklch(0.15 0.015 260);
-	--popover: oklch(1 0 0);
-	--popover-foreground: oklch(0.15 0.015 260);
-	--primary: oklch(0.55 0.2 162);
-	--primary-foreground: oklch(0.98 0.005 260);
-	--secondary: oklch(0.94 0.01 260);
-	--secondary-foreground: oklch(0.2 0.015 260);
-	--muted: oklch(0.94 0.01 260);
-	--muted-foreground: oklch(0.45 0.01 260);
-	--accent: oklch(0.94 0.01 260);
-	--accent-foreground: oklch(0.2 0.015 260);
-	--destructive: oklch(0.55 0.25 25);
-	--border: oklch(0.9 0.01 260);
-	--input: oklch(0.9 0.01 260);
-	--ring: oklch(0.55 0.2 162);
-	--profit: oklch(0.55 0.22 155);
-	--loss: oklch(0.55 0.25 25);
-	--breakeven: oklch(0.6 0.18 85);
+	--background: #fafafa;
+	--foreground: #0a0a0a;
+	--card: #ffffff;
+	--card-foreground: #0a0a0a;
+	--popover: #ffffff;
+	--popover-foreground: #0a0a0a;
+	--primary: #0a0a0a;
+	--primary-foreground: #d4ff00;
+	--secondary: #f5f5f5;
+	--secondary-foreground: #171717;
+	--muted: #f5f5f5;
+	--muted-foreground: #737373;
+	--accent: #0a0a0a;
+	--accent-foreground: #00d4ff;
+	--destructive: #dc2626;
+	--border: #e5e5e5;
+	--input: #e5e5e5;
+	--ring: #0a0a0a;
+	--profit: #16a34a;
+	--loss: #dc2626;
+	--breakeven: #ca8a04;
 }
 
 @layer base {
@@ -150,9 +156,38 @@
 	body {
 		@apply bg-background text-foreground antialiased;
 	}
+	
+	/* Fix for font descenders (g, j, p, q, y) - prevent clipping */
+	h1, h2, h3, h4, h5, h6 {
+		line-height: 1.15;
+		padding-bottom: 0.15em;
+		overflow: visible;
 }
 
-/* Custom utility classes for trading */
+	/* Ensure inline text elements have proper line-height for descenders */
+	p {
+		line-height: 1.6;
+	}
+	
+	/* Fix descender clipping in buttons and small text */
+	button, a, span {
+		line-height: 1.5;
+		overflow: visible;
+	}
+	
+	/* Ensure monospace text has room for descenders */
+	.font-mono, code, pre {
+		line-height: 1.6;
+	}
+	
+	/* Selection color */
+	::selection {
+		background-color: var(--primary);
+		color: var(--primary-foreground);
+	}
+}
+
+/* Custom utilities for trading */
 @layer utilities {
 	.text-profit {
 		color: var(--profit);
@@ -175,55 +210,260 @@
 	.font-mono {
 		font-family: var(--font-mono);
 	}
-
-	/* Gradient backgrounds for landing page */
-	.gradient-radial {
-		background: radial-gradient(var(--tw-gradient-stops));
-	}
-	.gradient-trading {
-		background: linear-gradient(
-			135deg,
-			oklch(0.13 0.015 260) 0%,
-			oklch(0.11 0.02 200) 50%,
-			oklch(0.13 0.015 260) 100%
-		);
+	.font-display {
+		font-family: var(--font-display);
 	}
 }
 
-/* Scrollbar styling for dark theme */
+/* ============================================
+   LANDING PAGE SPECIFIC STYLES
+   ============================================ */
+
+/* Noise texture overlay */
+.noise-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+	z-index: 9999;
+	opacity: 0.03;
+	background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+	}
+
+/* Grid background */
+.grid-bg {
+		background-image:
+		linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+	background-size: 80px 80px;
+	}
+
+/* Scan lines effect */
+.scanlines {
+	background: repeating-linear-gradient(
+		0deg,
+			transparent,
+		transparent 2px,
+		rgba(0, 0, 0, 0.03) 2px,
+		rgba(0, 0, 0, 0.03) 4px
+	);
+}
+
+/* Glow effects */
+.glow-primary {
+	box-shadow: 0 0 60px rgba(212, 255, 0, 0.15);
+}
+
+.glow-accent {
+	box-shadow: 0 0 60px rgba(0, 212, 255, 0.15);
+}
+
+.text-glow-primary {
+	text-shadow: 0 0 40px rgba(212, 255, 0, 0.5);
+}
+
+.text-glow-accent {
+	text-shadow: 0 0 40px rgba(0, 212, 255, 0.5);
+}
+
+/* Gradient text */
+.gradient-text {
+	background: linear-gradient(135deg, #d4ff00 0%, #00d4ff 100%);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-clip: text;
+	}
+
+/* Animated gradient border */
+@property --angle {
+	syntax: "<angle>";
+	initial-value: 0deg;
+	inherits: false;
+}
+
+.animated-border {
+	--angle: 0deg;
+	border: 1px solid transparent;
+	background: 
+		linear-gradient(var(--background), var(--background)) padding-box,
+		conic-gradient(from var(--angle), #d4ff00, #00d4ff, #d4ff00) border-box;
+	animation: rotate-border 4s linear infinite;
+}
+
+@keyframes rotate-border {
+	to {
+		--angle: 360deg;
+	}
+}
+
+/* Ticker animation */
+@keyframes ticker {
+	0% {
+		transform: translateX(0);
+	}
+	100% {
+		transform: translateX(-50%);
+	}
+}
+
+.ticker-scroll {
+	animation: ticker 30s linear infinite;
+}
+
+/* Pulse dot */
+@keyframes pulse-dot {
+	0%, 100% {
+		opacity: 1;
+		transform: scale(1);
+	}
+	50% {
+		opacity: 0.5;
+		transform: scale(1.2);
+	}
+}
+
+.pulse-dot {
+	animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* Fade in up animation */
+@keyframes fade-in-up {
+	from {
+		opacity: 0;
+		transform: translateY(20px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.animate-fade-in-up {
+	animation: fade-in-up 0.6s ease-out forwards;
+}
+
+/* Stagger children */
+.stagger-children > * {
+	opacity: 0;
+	animation: fade-in-up 0.6s ease-out forwards;
+}
+
+.stagger-children > *:nth-child(1) { animation-delay: 0.1s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.2s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.3s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.4s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.5s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.6s; }
+.stagger-children > *:nth-child(7) { animation-delay: 0.7s; }
+.stagger-children > *:nth-child(8) { animation-delay: 0.8s; }
+
+/* Typing cursor */
+@keyframes blink {
+	0%, 50% { opacity: 1; }
+	51%, 100% { opacity: 0; }
+}
+
+.cursor-blink::after {
+	content: "▌";
+	animation: blink 1s step-end infinite;
+	color: var(--primary);
+}
+
+/* Glitch effect on hover */
+.glitch-hover {
+	position: relative;
+}
+
+.glitch-hover:hover {
+	animation: glitch 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+@keyframes glitch {
+	0% {
+		transform: translate(0);
+	}
+	20% {
+		transform: translate(-2px, 2px);
+	}
+	40% {
+		transform: translate(-2px, -2px);
+	}
+	60% {
+		transform: translate(2px, 2px);
+	}
+	80% {
+		transform: translate(2px, -2px);
+	}
+	100% {
+		transform: translate(0);
+	}
+}
+
+/* Terminal card style */
+.terminal-card {
+	background: linear-gradient(180deg, rgba(20, 20, 20, 0.8) 0%, rgba(10, 10, 10, 0.9) 100%);
+	border: 1px solid rgba(255, 255, 255, 0.05);
+	backdrop-filter: blur(20px);
+	}
+
+.terminal-card::before {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 1px;
+	background: linear-gradient(90deg, transparent, rgba(212, 255, 0, 0.3), transparent);
+}
+
+/* Scrollbar styling */
 @layer base {
 	::-webkit-scrollbar {
-		width: 8px;
-		height: 8px;
+		width: 6px;
+		height: 6px;
 	}
 	::-webkit-scrollbar-track {
-		background: var(--background);
+		background: transparent;
 	}
 	::-webkit-scrollbar-thumb {
 		background: var(--border);
-		border-radius: 4px;
+		border-radius: 3px;
 	}
 	::-webkit-scrollbar-thumb:hover {
 		background: var(--muted-foreground);
 	}
 }
 
-.dark {
-	--sidebar: hsl(240 5.9% 10%);
-	--sidebar-foreground: hsl(240 4.8% 95.9%);
-	--sidebar-primary: hsl(224.3 76.3% 48%);
-	--sidebar-primary-foreground: hsl(0 0% 100%);
-	--sidebar-accent: hsl(240 3.7% 15.9%);
-	--sidebar-accent-foreground: hsl(240 4.8% 95.9%);
-	--sidebar-border: hsl(240 3.7% 15.9%);
-	--sidebar-ring: hsl(217.2 91.2% 59.8%);
+/* Counter animation - for stats */
+@keyframes count-up {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
 }
 
-@layer base {
-	* {
-		@apply border-border outline-ring/50;
+/* Marquee for partners/logos */
+@keyframes marquee {
+	0% {
+		transform: translateX(0%);
 	}
-	body {
-		@apply bg-background text-foreground;
+	100% {
+		transform: translateX(-100%);
 	}
+}
+
+.animate-marquee {
+	animation: marquee 25s linear infinite;
+}
+
+/* Focus visible styles */
+.focus-ring:focus-visible {
+	outline: 2px solid var(--primary);
+	outline-offset: 2px;
 }

@@ -14,6 +14,7 @@ import {
 	FileText,
 	Loader2,
 	Percent,
+	Plus,
 	Save,
 	Shield,
 	Target,
@@ -85,6 +86,432 @@ const EMOTIONAL_STATES = [
 	{ value: "excited", label: "Excited" },
 	{ value: "anxious", label: "Anxious" },
 ];
+
+const EXIT_REASONS = [
+	{ value: "manual", label: "Manual Exit" },
+	{ value: "stop_loss", label: "Stop Loss Hit" },
+	{ value: "trailing_stop", label: "Trailing Stop" },
+	{ value: "take_profit", label: "Take Profit Hit" },
+	{ value: "time_based", label: "Time-Based Exit" },
+	{ value: "breakeven", label: "Breakeven Stop" },
+];
+
+// Executions Tab Component
+function ExecutionsTab({
+	tradeId,
+	trade,
+	onUpdate,
+}: {
+	tradeId: number;
+	trade: {
+		symbol: string;
+		direction: string;
+		entryPrice: string;
+		quantity: string;
+		exitReason?: string | null;
+		trailedStopLoss?: string | null;
+		wasTrailed?: boolean | null;
+		remainingQuantity?: string | null;
+	};
+	onUpdate: () => void;
+}) {
+	const [isAddingExecution, setIsAddingExecution] = useState(false);
+	const [isSettingTrailingStop, setIsSettingTrailingStop] = useState(false);
+	const [isSettingExitReason, setIsSettingExitReason] = useState(false);
+
+	const [executionForm, setExecutionForm] = useState({
+		executionType: "scale_out" as "entry" | "exit" | "scale_in" | "scale_out",
+		price: "",
+		quantity: "",
+		executedAt: new Date().toISOString().slice(0, 16),
+		fees: "",
+		notes: "",
+	});
+
+	const [trailedStopLoss, setTrailedStopLoss] = useState(trade.trailedStopLoss || "");
+	const [exitReason, setExitReason] = useState(trade.exitReason || "");
+
+	const { data: executions, isLoading, refetch: refetchExecutions } = api.trades.getExecutions.useQuery(
+		{ tradeId },
+	);
+
+	const addExecution = api.trades.addExecution.useMutation({
+		onSuccess: () => {
+			toast.success("Execution added");
+			setIsAddingExecution(false);
+			setExecutionForm({
+				executionType: "scale_out",
+				price: "",
+				quantity: "",
+				executedAt: new Date().toISOString().slice(0, 16),
+				fees: "",
+				notes: "",
+			});
+			refetchExecutions();
+			onUpdate();
+		},
+		onError: (error) => {
+			toast.error(error.message || "Failed to add execution");
+		},
+	});
+
+	const deleteExecution = api.trades.deleteExecution.useMutation({
+		onSuccess: () => {
+			toast.success("Execution deleted");
+			refetchExecutions();
+			onUpdate();
+		},
+		onError: (error) => {
+			toast.error(error.message || "Failed to delete execution");
+		},
+	});
+
+	const updateTrailingStop = api.trades.updateTrailingStop.useMutation({
+		onSuccess: () => {
+			toast.success("Trailing stop updated");
+			setIsSettingTrailingStop(false);
+			onUpdate();
+		},
+		onError: (error) => {
+			toast.error(error.message || "Failed to update trailing stop");
+		},
+	});
+
+	const updateTrade = api.trades.update.useMutation({
+		onSuccess: () => {
+			toast.success("Exit reason updated");
+			setIsSettingExitReason(false);
+			onUpdate();
+		},
+		onError: (error) => {
+			toast.error(error.message || "Failed to update exit reason");
+		},
+	});
+
+	const handleAddExecution = () => {
+		addExecution.mutate({
+			tradeId,
+			executionType: executionForm.executionType,
+			price: executionForm.price,
+			quantity: executionForm.quantity,
+			executedAt: new Date(executionForm.executedAt).toISOString(),
+			fees: executionForm.fees || undefined,
+			notes: executionForm.notes || undefined,
+		});
+	};
+
+	const remainingQty = trade.remainingQuantity
+		? parseFloat(trade.remainingQuantity)
+		: parseFloat(trade.quantity);
+
+	return (
+		<div className="space-y-6">
+			{/* Quick Actions */}
+			<div className="flex flex-wrap gap-3">
+				<Dialog open={isSettingTrailingStop} onOpenChange={setIsSettingTrailingStop}>
+					<DialogTrigger asChild>
+						<Button variant="outline" size="sm">
+							<Target className="mr-2 h-4 w-4" />
+							{trade.wasTrailed ? "Update Trailing Stop" : "Set Trailing Stop"}
+						</Button>
+					</DialogTrigger>
+					<DialogContent>
+						<DialogHeader>
+							<DialogTitle>Trailing Stop Loss</DialogTitle>
+							<DialogDescription>
+								Record the final trailed stop loss level for this trade.
+							</DialogDescription>
+						</DialogHeader>
+						<div className="space-y-4 py-4">
+							<div className="space-y-2">
+								<Label>Original Stop Loss</Label>
+								<p className="font-mono text-sm text-muted-foreground">
+									{trade.trailedStopLoss || "Not set"}
+								</p>
+							</div>
+							<div className="space-y-2">
+								<Label htmlFor="trailedSL">Trailed Stop Loss</Label>
+								<Input
+									id="trailedSL"
+									type="number"
+									step="any"
+									className="font-mono"
+									value={trailedStopLoss}
+									onChange={(e) => setTrailedStopLoss(e.target.value)}
+									placeholder="Enter trailed SL price"
+								/>
+							</div>
+						</div>
+						<DialogFooter>
+							<Button variant="outline" onClick={() => setIsSettingTrailingStop(false)}>
+								Cancel
+							</Button>
+							<Button
+								disabled={!trailedStopLoss || updateTrailingStop.isPending}
+								onClick={() => updateTrailingStop.mutate({ tradeId, trailedStopLoss })}
+							>
+								{updateTrailingStop.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+								Save
+							</Button>
+						</DialogFooter>
+					</DialogContent>
+				</Dialog>
+
+				<Dialog open={isSettingExitReason} onOpenChange={setIsSettingExitReason}>
+					<DialogTrigger asChild>
+						<Button variant="outline" size="sm">
+							<Shield className="mr-2 h-4 w-4" />
+							Set Exit Reason
+						</Button>
+					</DialogTrigger>
+					<DialogContent>
+						<DialogHeader>
+							<DialogTitle>Exit Reason</DialogTitle>
+							<DialogDescription>
+								Record how this trade was closed.
+							</DialogDescription>
+						</DialogHeader>
+						<div className="space-y-4 py-4">
+							<div className="space-y-2">
+								<Label>Exit Reason</Label>
+								<Select value={exitReason} onValueChange={setExitReason}>
+									<SelectTrigger>
+										<SelectValue placeholder="Select exit reason" />
+									</SelectTrigger>
+									<SelectContent>
+										{EXIT_REASONS.map((reason) => (
+											<SelectItem key={reason.value} value={reason.value}>
+												{reason.label}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+						</div>
+						<DialogFooter>
+							<Button variant="outline" onClick={() => setIsSettingExitReason(false)}>
+								Cancel
+							</Button>
+							<Button
+								disabled={!exitReason || updateTrade.isPending}
+								onClick={() => updateTrade.mutate({
+									id: tradeId,
+									exitReason: exitReason as "manual" | "stop_loss" | "trailing_stop" | "take_profit" | "time_based" | "breakeven",
+								})}
+							>
+								{updateTrade.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+								Save
+							</Button>
+						</DialogFooter>
+					</DialogContent>
+				</Dialog>
+
+				<Dialog open={isAddingExecution} onOpenChange={setIsAddingExecution}>
+					<DialogTrigger asChild>
+						<Button size="sm">
+							<Plus className="mr-2 h-4 w-4" />
+							Add Partial Exit
+						</Button>
+					</DialogTrigger>
+					<DialogContent>
+						<DialogHeader>
+							<DialogTitle>Add Execution</DialogTitle>
+							<DialogDescription>
+								Record a partial exit, scale in, or scale out for this trade.
+								Remaining: {remainingQty.toFixed(2)} contracts/lots
+							</DialogDescription>
+						</DialogHeader>
+						<div className="space-y-4 py-4">
+							<div className="space-y-2">
+								<Label>Type</Label>
+								<Select
+									value={executionForm.executionType}
+									onValueChange={(v) =>
+										setExecutionForm({ ...executionForm, executionType: v as typeof executionForm.executionType })
+									}
+								>
+									<SelectTrigger>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="scale_out">Scale Out (Partial Exit)</SelectItem>
+										<SelectItem value="scale_in">Scale In (Add to Position)</SelectItem>
+										<SelectItem value="exit">Full Exit</SelectItem>
+									</SelectContent>
+								</Select>
+							</div>
+							<div className="grid grid-cols-2 gap-4">
+								<div className="space-y-2">
+									<Label>Price</Label>
+									<Input
+										type="number"
+										step="any"
+										className="font-mono"
+										value={executionForm.price}
+										onChange={(e) => setExecutionForm({ ...executionForm, price: e.target.value })}
+										placeholder="0.00"
+									/>
+								</div>
+								<div className="space-y-2">
+									<Label>Quantity</Label>
+									<Input
+										type="number"
+										step="any"
+										className="font-mono"
+										value={executionForm.quantity}
+										onChange={(e) => setExecutionForm({ ...executionForm, quantity: e.target.value })}
+										placeholder="0.00"
+									/>
+								</div>
+							</div>
+							<div className="space-y-2">
+								<Label>Date & Time</Label>
+								<Input
+									type="datetime-local"
+									value={executionForm.executedAt}
+									onChange={(e) => setExecutionForm({ ...executionForm, executedAt: e.target.value })}
+								/>
+							</div>
+							<div className="space-y-2">
+								<Label>Fees (optional)</Label>
+								<Input
+									type="number"
+									step="any"
+									className="font-mono"
+									value={executionForm.fees}
+									onChange={(e) => setExecutionForm({ ...executionForm, fees: e.target.value })}
+									placeholder="0.00"
+								/>
+							</div>
+							<div className="space-y-2">
+								<Label>Notes (optional)</Label>
+								<Textarea
+									value={executionForm.notes}
+									onChange={(e) => setExecutionForm({ ...executionForm, notes: e.target.value })}
+									placeholder="e.g., Took partial profit at resistance"
+									rows={2}
+								/>
+							</div>
+						</div>
+						<DialogFooter>
+							<Button variant="outline" onClick={() => setIsAddingExecution(false)}>
+								Cancel
+							</Button>
+							<Button
+								disabled={!executionForm.price || !executionForm.quantity || addExecution.isPending}
+								onClick={handleAddExecution}
+							>
+								{addExecution.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+								Add Execution
+							</Button>
+						</DialogFooter>
+					</DialogContent>
+				</Dialog>
+			</div>
+
+			{/* Executions List */}
+			<Card>
+				<CardHeader>
+					<CardTitle className="text-base">Execution History</CardTitle>
+					<CardDescription>
+						All entries and exits for this trade
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					{isLoading ? (
+						<div className="space-y-3">
+							{[...Array(3)].map((_, i) => (
+								<Skeleton key={`exec-skeleton-${i}`} className="h-16" />
+							))}
+						</div>
+					) : !executions || executions.length === 0 ? (
+						<div className="py-8 text-center">
+							<ArrowDownRight className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+							<p className="text-muted-foreground text-sm">No additional executions recorded</p>
+							<p className="text-muted-foreground text-xs mt-1">
+								Add partial exits or scale-ins to track complex trades
+							</p>
+						</div>
+					) : (
+						<div className="space-y-3">
+							{executions.map((exec) => {
+								const pnl = exec.realizedPnl ? parseFloat(exec.realizedPnl) : null;
+								const isExit = exec.executionType === "exit" || exec.executionType === "scale_out";
+
+								return (
+									<div
+										key={exec.id}
+										className="flex items-center justify-between rounded-lg border bg-white/[0.02] p-4"
+									>
+										<div className="flex items-center gap-4">
+											<div
+												className={cn(
+													"rounded-md p-2",
+													isExit ? "bg-loss/10" : "bg-profit/10",
+												)}
+											>
+												{isExit ? (
+													<ArrowDownRight className="h-4 w-4 text-loss" />
+												) : (
+													<TrendingUp className="h-4 w-4 text-profit" />
+												)}
+											</div>
+											<div>
+												<div className="flex items-center gap-2">
+													<span className="font-medium capitalize">
+														{exec.executionType.replace("_", " ")}
+													</span>
+													<Badge variant="outline" className="font-mono text-xs">
+														{parseFloat(exec.quantity).toFixed(2)}
+													</Badge>
+												</div>
+												<div className="flex items-center gap-2 text-muted-foreground text-xs">
+													<span>@ {parseFloat(exec.price).toLocaleString()}</span>
+													<span>•</span>
+													<span>{new Date(exec.executedAt).toLocaleString()}</span>
+												</div>
+												{exec.notes && (
+													<p className="mt-1 text-muted-foreground text-xs italic">
+														{exec.notes}
+													</p>
+												)}
+											</div>
+										</div>
+										<div className="flex items-center gap-3">
+											{pnl !== null && (
+												<span
+													className={cn(
+														"font-mono font-semibold",
+														pnl >= 0 ? "text-profit" : "text-loss",
+													)}
+												>
+													{pnl >= 0 ? "+" : ""}
+													{formatCurrency(pnl)}
+												</span>
+											)}
+											<Button
+												variant="ghost"
+												size="icon"
+												className="h-8 w-8"
+												onClick={() => {
+													if (confirm("Delete this execution?")) {
+														deleteExecution.mutate({ executionId: exec.id });
+													}
+												}}
+											>
+												<Trash2 className="h-4 w-4" />
+											</Button>
+										</div>
+									</div>
+								);
+							})}
+						</div>
+					)}
+				</CardContent>
+			</Card>
+		</div>
+	);
+}
 
 export default function TradeDetailPage() {
 	const params = useParams();
@@ -599,21 +1026,65 @@ export default function TradeDetailPage() {
 
 							{/* Status Badges */}
 							<div className="flex flex-col justify-center space-y-2">
-								{trade.stopLossHit && (
+								{/* Exit Reason Badge */}
+								{trade.exitReason === "trailing_stop" && (
+									<Badge className="w-fit border-accent/50 bg-accent/10 text-accent">
+										<Target className="mr-1 h-3 w-3" />
+										Trailing Stop
+									</Badge>
+								)}
+								{trade.exitReason === "stop_loss" && (
 									<Badge className="w-fit" variant="destructive">
 										<AlertTriangle className="mr-1 h-3 w-3" />
 										Stop Loss Hit
 									</Badge>
 								)}
-								{trade.takeProfitHit && (
+								{trade.exitReason === "take_profit" && (
 									<Badge className="w-fit bg-profit text-profit-foreground">
 										<Target className="mr-1 h-3 w-3" />
 										Take Profit Hit
 									</Badge>
 								)}
-								{!trade.stopLossHit && !trade.takeProfitHit && (
+								{trade.exitReason === "breakeven" && (
+									<Badge className="w-fit" variant="secondary">
+										<Shield className="mr-1 h-3 w-3" />
+										Breakeven
+									</Badge>
+								)}
+								{trade.exitReason === "time_based" && (
+									<Badge className="w-fit" variant="secondary">
+										<Clock className="mr-1 h-3 w-3" />
+										Time Exit
+									</Badge>
+								)}
+								{/* Fallback to old logic if no exitReason set */}
+								{!trade.exitReason && trade.stopLossHit && (
+									<Badge className="w-fit" variant="destructive">
+										<AlertTriangle className="mr-1 h-3 w-3" />
+										Stop Loss Hit
+									</Badge>
+								)}
+								{!trade.exitReason && trade.takeProfitHit && (
+									<Badge className="w-fit bg-profit text-profit-foreground">
+										<Target className="mr-1 h-3 w-3" />
+										Take Profit Hit
+									</Badge>
+								)}
+								{!trade.exitReason && !trade.stopLossHit && !trade.takeProfitHit && (
 									<Badge className="w-fit" variant="secondary">
 										Manual Exit
+									</Badge>
+								)}
+								{/* Partial Exit Badge */}
+								{trade.isPartiallyExited && (
+									<Badge className="w-fit border-primary/50 bg-primary/10 text-primary">
+										Partial Exits
+									</Badge>
+								)}
+								{/* Trailed Badge */}
+								{trade.wasTrailed && (
+									<Badge className="w-fit border-accent/50 bg-accent/10 text-accent">
+										Trailed
 									</Badge>
 								)}
 							</div>
@@ -628,6 +1099,10 @@ export default function TradeDetailPage() {
 					<TabsTrigger className="gap-2" value="details">
 						<FileText className="h-4 w-4" />
 						Details
+					</TabsTrigger>
+					<TabsTrigger className="gap-2" value="executions">
+						<ArrowDownRight className="h-4 w-4" />
+						Executions
 					</TabsTrigger>
 					<TabsTrigger className="gap-2" value="chart">
 						<BarChart3 className="h-4 w-4" />
@@ -934,6 +1409,25 @@ export default function TradeDetailPage() {
 													: "Not set"}
 											</span>
 										</div>
+										{/* Trailed Stop Loss */}
+										{trade.wasTrailed && trade.trailedStopLoss && (
+											<>
+												<div className="flex items-center justify-between">
+													<span className="flex items-center gap-1 text-muted-foreground text-sm">
+														<span className="text-accent">→</span> Trailed SL
+													</span>
+													<span className="font-medium font-mono text-accent">
+														{parseFloat(trade.trailedStopLoss).toLocaleString(
+															undefined,
+															{
+																minimumFractionDigits: 2,
+																maximumFractionDigits: 5,
+															},
+														)}
+													</span>
+												</div>
+											</>
+										)}
 										<Separator />
 										<div className="flex items-center justify-between">
 											<span className="text-muted-foreground text-sm">
@@ -1108,6 +1602,11 @@ export default function TradeDetailPage() {
 							</CardContent>
 						</Card>
 					)}
+				</TabsContent>
+
+				{/* Executions Tab */}
+				<TabsContent className="space-y-6" value="executions">
+					<ExecutionsTab tradeId={tradeId} trade={trade} onUpdate={refetch} />
 				</TabsContent>
 
 				{/* Chart Tab */}

@@ -1,22 +1,14 @@
 "use client";
 
-import { SignUpButton } from "@clerk/nextjs";
-import { Check, Key, Sparkles, Zap } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { SignedIn, SignedOut, SignUpButton } from "@clerk/nextjs";
+import { ArrowRight, Check, Key, Sparkles } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardFooter,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
 
 const plans = [
 	{
 		name: "Free",
-		description: "Perfect for getting started",
+		tagline: "Start journaling today",
 		price: "$0",
 		period: "forever",
 		features: [
@@ -27,11 +19,12 @@ const plans = [
 			"7-day data retention",
 		],
 		cta: "Get Started",
-		popular: false,
+		ctaLoggedIn: "Go to Dashboard",
+		highlighted: false,
 	},
 	{
 		name: "Pro",
-		description: "For serious traders",
+		tagline: "For serious traders",
 		price: "$19",
 		period: "/month",
 		features: [
@@ -39,129 +32,169 @@ const plans = [
 			"Advanced analytics",
 			"AI insights (BYOK)",
 			"Priority support",
-			"Unlimited data retention",
+			"Unlimited retention",
 			"Export to CSV/PDF",
 			"Custom tags & setups",
 		],
 		cta: "Start Free Trial",
-		popular: true,
+		ctaLoggedIn: "Upgrade to Pro",
+		highlighted: true,
 	},
 	{
 		name: "Team",
-		description: "For prop firms & groups",
+		tagline: "Prop firms & groups",
 		price: "$49",
 		period: "/user/mo",
 		features: [
 			"Everything in Pro",
-			"Team analytics dashboard",
-			"Managed AI (no keys needed)",
+			"Team dashboard",
+			"Managed AI (no keys)",
 			"Admin controls",
 			"SSO integration",
 			"API access",
 			"Dedicated support",
 		],
 		cta: "Contact Sales",
-		popular: false,
+		ctaLoggedIn: "Contact Sales",
+		highlighted: false,
 	},
 ];
 
 export function Pricing() {
 	return (
-		<section className="relative py-24" id="pricing">
-			<div className="container mx-auto px-4">
-				{/* Section header */}
-				<div className="mx-auto max-w-2xl text-center">
-					<h2 className="font-bold text-3xl tracking-tight sm:text-4xl">
-						Simple, transparent pricing
+		<section className="relative py-32" id="pricing">
+			{/* Background */}
+			<div className="absolute inset-0 grid-bg opacity-30" />
+
+			<div className="relative mx-auto max-w-6xl px-6">
+				{/* Header */}
+				<div className="mb-16 text-center">
+					<span className="mb-4 inline-block font-mono text-xs uppercase tracking-wider text-primary">
+						Pricing
+					</span>
+					<h2 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
+						Simple, transparent
+						<br />
+						<span className="text-primary">pricing</span>
 					</h2>
-					<p className="mt-4 text-lg text-muted-foreground">
-						Start free and scale as you grow. Bring your own AI keys or let us
-						handle it.
+					<p className="mx-auto mt-6 max-w-xl font-mono text-base text-muted-foreground">
+						Start free. Upgrade when you need more. Bring your own AI keys
+						for full control.
 					</p>
 				</div>
 
-				{/* BYOK explanation */}
-				<div className="mx-auto mt-8 flex max-w-2xl items-center justify-center gap-3 rounded-lg border border-border/50 bg-card/50 px-6 py-4">
+				{/* BYOK banner */}
+				<div className="mb-12 flex items-center justify-center gap-4 rounded border border-primary/20 bg-primary/[0.02] px-6 py-4">
 					<Key className="h-5 w-5 text-primary" />
-					<div className="text-sm">
-						<span className="font-medium">Bring Your Own Key (BYOK):</span>{" "}
+					<p className="font-mono text-sm">
+						<span className="font-medium text-foreground">
+							Bring Your Own Key:
+						</span>{" "}
 						<span className="text-muted-foreground">
-							Use your OpenAI, Anthropic, or Google AI key. Your data, your
-							costs, your control.
+							Use your OpenAI, Anthropic, or Google AI key. Your data, your costs, your control.
 						</span>
-					</div>
+					</p>
 				</div>
 
 				{/* Pricing cards */}
-				<div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+				<div className="grid gap-6 lg:grid-cols-3">
 					{plans.map((plan) => (
-						<Card
-							className={`relative flex flex-col ${
-								plan.popular
-									? "border-primary/50 shadow-lg shadow-primary/10"
-									: "border-border/50"
+						<div
+							className={`relative flex flex-col rounded border p-8 transition-all ${
+								plan.highlighted
+									? "border-primary/30 bg-primary/[0.02] shadow-lg shadow-primary/5"
+									: "border-white/10 bg-white/[0.01] hover:border-white/20"
 							}`}
 							key={plan.name}
 						>
-							{plan.popular && (
-								<Badge className="-top-3 -translate-x-1/2 absolute left-1/2 gap-1">
-									<Sparkles className="h-3 w-3" />
-									Most Popular
-								</Badge>
+							{/* Popular badge */}
+							{plan.highlighted && (
+								<div className="absolute -top-3 left-6 flex items-center gap-1 rounded bg-primary px-3 py-1">
+									<Sparkles className="h-3 w-3 text-primary-foreground" />
+									<span className="font-mono text-xs font-medium text-primary-foreground uppercase tracking-wider">
+										Popular
+									</span>
+								</div>
 							)}
 
-							<CardHeader>
-								<CardTitle className="flex items-center gap-2">
-									{plan.name}
-									{plan.name === "Pro" && (
-										<Zap className="h-4 w-4 text-primary" />
-									)}
-								</CardTitle>
-								<CardDescription>{plan.description}</CardDescription>
-							</CardHeader>
-
-							<CardContent className="flex-1">
+							{/* Plan header */}
 								<div className="mb-6">
-									<span className="font-bold text-4xl">{plan.price}</span>
-									<span className="text-muted-foreground">{plan.period}</span>
+								<h3 className="text-xl font-bold">{plan.name}</h3>
+								<p className="mt-1 font-mono text-sm text-muted-foreground">
+									{plan.tagline}
+								</p>
+							</div>
+
+							{/* Price */}
+							<div className="mb-8">
+								<span className="text-5xl font-bold tracking-tight">
+									{plan.price}
+								</span>
+								<span className="font-mono text-sm text-muted-foreground">
+									{plan.period}
+								</span>
 								</div>
 
-								<ul className="space-y-3">
+							{/* Features */}
+							<ul className="mb-8 flex-1 space-y-4">
 									{plan.features.map((feature) => (
 										<li className="flex items-start gap-3" key={feature}>
-											<Check className="mt-0.5 h-4 w-4 shrink-0 text-profit" />
-											<span className="text-muted-foreground text-sm">
+										<Check
+											className={`mt-0.5 h-4 w-4 shrink-0 ${
+												plan.highlighted ? "text-primary" : "text-profit"
+											}`}
+										/>
+										<span className="font-mono text-sm text-muted-foreground">
 												{feature}
 											</span>
 										</li>
 									))}
 								</ul>
-							</CardContent>
 
-							<CardFooter>
+							{/* CTA */}
 								{plan.name === "Team" ? (
-									<Button className="w-full" variant="outline">
+								<Button
+									className="w-full gap-2 font-mono text-xs uppercase tracking-wider"
+									variant="outline"
+								>
 										{plan.cta}
+									<ArrowRight className="h-4 w-4" />
 									</Button>
 								) : (
+								<>
+									<SignedOut>
 									<SignUpButton mode="modal">
+											<Button
+												className="w-full gap-2 font-mono text-xs uppercase tracking-wider"
+												variant={plan.highlighted ? "default" : "outline"}
+											>
+												{plan.cta}
+												<ArrowRight className="h-4 w-4" />
+											</Button>
+										</SignUpButton>
+									</SignedOut>
+									<SignedIn>
 										<Button
-											className="w-full"
-											variant={plan.popular ? "default" : "outline"}
+											asChild
+											className="w-full gap-2 font-mono text-xs uppercase tracking-wider"
+											variant={plan.highlighted ? "default" : "outline"}
 										>
-											{plan.cta}
+											<Link href={plan.highlighted ? "/settings" : "/dashboard"}>
+												{plan.ctaLoggedIn}
+												<ArrowRight className="h-4 w-4" />
+											</Link>
 										</Button>
-									</SignUpButton>
+									</SignedIn>
+								</>
 								)}
-							</CardFooter>
-						</Card>
+						</div>
 					))}
 				</div>
 
-				{/* FAQ-style note */}
-				<p className="mt-8 text-center text-muted-foreground text-sm">
-					All plans include a 14-day free trial of Pro features. No credit card
-					required.
+				{/* Trial note */}
+				<p className="mt-12 text-center font-mono text-sm text-muted-foreground">
+					All plans include a 14-day free trial of Pro features.{" "}
+					<span className="text-foreground">No credit card required.</span>
 				</p>
 			</div>
 		</section>

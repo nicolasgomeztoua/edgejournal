@@ -44,6 +44,14 @@ export const emotionalStateEnum = pgEnum("emotional_state", [
 	"anxious",
 ]);
 export const importSourceEnum = pgEnum("import_source", ["manual", "csv"]);
+export const exitReasonEnum = pgEnum("exit_reason", [
+	"manual", // Manually closed
+	"stop_loss", // Hit original stop loss
+	"trailing_stop", // Hit trailed stop loss
+	"take_profit", // Hit take profit
+	"time_based", // Time-based exit (e.g., end of session)
+	"breakeven", // Moved to breakeven and stopped out
+]);
 export const accountTypeEnum = pgEnum("account_type", [
 	"live",
 	"demo",
@@ -169,6 +177,17 @@ export const trades = createTable(
 		// Actual outcome
 		stopLossHit: boolean("stop_loss_hit").default(false),
 		takeProfitHit: boolean("take_profit_hit").default(false),
+		
+		// Trailing stop support
+		trailedStopLoss: decimal("trailed_stop_loss", { precision: 20, scale: 8 }), // Final trailed SL (if different from original)
+		wasTrailed: boolean("was_trailed").default(false), // Whether SL was trailed during the trade
+		
+		// Exit reason tracking
+		exitReason: exitReasonEnum("exit_reason"), // How the trade was closed
+		
+		// Partial exit tracking
+		isPartiallyExited: boolean("is_partially_exited").default(false), // Has partial exits
+		remainingQuantity: decimal("remaining_quantity", { precision: 20, scale: 8 }), // Remaining position after partials
 
 		// P&L
 		realizedPnl: decimal("realized_pnl", { precision: 20, scale: 2 }),
@@ -222,6 +241,12 @@ export const tradeExecutions = createTable(
 		quantity: decimal("quantity", { precision: 20, scale: 8 }).notNull(),
 		executedAt: timestamp("executed_at", { withTimezone: true }).notNull(),
 		fees: decimal("fees", { precision: 20, scale: 2 }).default("0"),
+		
+		// P&L for this specific execution (for partial exits)
+		realizedPnl: decimal("realized_pnl", { precision: 20, scale: 2 }),
+		
+		// Notes for this execution
+		notes: text("notes"),
 
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()

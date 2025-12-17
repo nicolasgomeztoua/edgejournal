@@ -3,18 +3,18 @@ import "@/styles/globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 import type { Metadata } from "next";
-import { Geist, JetBrains_Mono } from "next/font/google";
+import { Manrope, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { TRPCReactProvider } from "@/trpc/react";
 
 export const metadata: Metadata = {
-	title: "EdgeJournal - Trading Journal with AI Analytics",
+	title: "EdgeJournal - AI Trading Analytics for Serious Traders",
 	description:
-		"Professional trading journal for Futures and Forex with AI-powered insights",
+		"The professional trading journal for Futures and Forex traders. Track trades, analyze patterns, and get AI-driven insights to find your edge.",
 	icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
-const geist = Geist({
+const manrope = Manrope({
 	subsets: ["latin"],
 	variable: "--font-geist-sans",
 });
@@ -32,15 +32,16 @@ export default function RootLayout({
 			appearance={{
 				baseTheme: dark,
 				variables: {
-					colorPrimary: "#10b981",
-					colorBackground: "#0f172a",
-					colorInputBackground: "#1e293b",
-					colorInputText: "#f8fafc",
+					colorPrimary: "#d4ff00",
+					colorBackground: "#050505",
+					colorInputBackground: "#141414",
+					colorInputText: "#fafafa",
+					borderRadius: "4px",
 				},
 			}}
 		>
-			<html className={`${geist.variable} ${jetbrainsMono.variable}`} lang="en">
-				<body className="bg-slate-950 text-slate-100 antialiased">
+			<html className={`${manrope.variable} ${jetbrainsMono.variable}`} lang="en">
+				<body>
 					<TRPCReactProvider>{children}</TRPCReactProvider>
 					<Toaster position="top-right" richColors />
 				</body>

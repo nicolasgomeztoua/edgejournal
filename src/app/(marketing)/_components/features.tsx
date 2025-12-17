@@ -5,105 +5,238 @@ import {
 	Brain,
 	FileSpreadsheet,
 	LineChart,
-	Shield,
+	Lock,
 	Sparkles,
 	Target,
-	TrendingUp,
+	Zap,
 } from "lucide-react";
 
 const features = [
 	{
 		icon: LineChart,
-		title: "Comprehensive Trade Journal",
+		title: "Trade Journal",
 		description:
-			"Log every aspect of your trades including entry/exit prices, position sizing, stop losses, take profits, and detailed notes on your thought process.",
-		color: "text-primary",
+			"Log every trade with entry/exit prices, position sizing, stop losses, take profits, and detailed notes.",
+		highlight: true,
+		className: "md:col-span-2",
+		visual: (
+			<div className="mt-6 space-y-3">
+				<div className="flex items-center gap-4 rounded border border-white/5 bg-white/[0.02] p-3">
+					<span className="font-mono text-xs text-muted-foreground">
+						ES 03/15
+					</span>
+					<span className="font-mono text-sm font-medium">LONG</span>
+					<span className="ml-auto font-mono text-sm text-profit">
+						+$425.00
+					</span>
+				</div>
+				<div className="flex items-center gap-4 rounded border border-white/5 bg-white/[0.02] p-3">
+					<span className="font-mono text-xs text-muted-foreground">NQ 03/15</span>
+					<span className="font-mono text-sm font-medium">SHORT</span>
+					<span className="ml-auto font-mono text-sm text-loss">-$180.00</span>
+				</div>
+				<div className="flex items-center gap-4 rounded border border-white/5 bg-white/[0.02] p-3">
+					<span className="font-mono text-xs text-muted-foreground">
+						EUR/USD
+					</span>
+					<span className="font-mono text-sm font-medium">LONG</span>
+					<span className="ml-auto font-mono text-sm text-profit">
+						+$312.50
+					</span>
+				</div>
+			</div>
+		),
 	},
 	{
 		icon: BarChart3,
-		title: "Advanced Analytics",
+		title: "Analytics",
 		description:
-			"Visualize your performance with equity curves, P&L breakdowns, win rate analysis, time-of-day performance, and risk metrics like Sharpe ratio.",
-		color: "text-chart-2",
+			"Equity curves, P&L breakdowns, win rates, time analysis, and risk metrics.",
+		highlight: false,
+		className: "md:col-span-1",
+		visual: (
+			<div className="mt-6 flex h-24 items-end justify-between gap-1">
+				{[35, 55, 42, 78, 65, 88, 72, 95, 82, 68].map((h, i) => (
+					<div
+						className="flex-1 rounded-t bg-gradient-to-t from-primary/60 to-primary/20"
+						key={`bar-${i}`}
+						style={{ height: `${h}%` }}
+					/>
+				))}
+			</div>
+		),
 	},
 	{
 		icon: Brain,
-		title: "AI-Powered Insights",
-		description:
-			'Ask questions like "Are my stop losses optimal?" or "What\'s my best performing setup?" and get intelligent answers based on your data.',
-		color: "text-chart-3",
+		title: "AI Insights",
+		description: 'Ask "What\'s my best setup?" and get instant, intelligent answers.',
+		highlight: true,
+		className: "md:col-span-1",
+		visual: (
+			<div className="mt-6 space-y-2">
+				<div className="rounded bg-white/[0.02] p-3">
+					<p className="font-mono text-xs text-muted-foreground">
+						&gt; Analyze my morning trades
+					</p>
+				</div>
+				<div className="rounded bg-primary/5 p-3">
+					<p className="font-mono text-xs text-primary">
+						Your morning win rate is 67%...
+					</p>
+				</div>
+			</div>
+		),
 	},
 	{
 		icon: FileSpreadsheet,
 		title: "CSV Import",
 		description:
-			"Easily import your historical trades from any broker using CSV files. Map columns to fields and batch import thousands of trades.",
-		color: "text-chart-4",
+			"Import from any broker. Map columns, batch import thousands of trades.",
+		highlight: false,
+		className: "md:col-span-1",
+		visual: null,
 	},
 	{
 		icon: Target,
-		title: "Risk Management Tracking",
+		title: "Risk Tracking",
 		description:
-			"Track your planned vs actual stop losses and take profits. Analyze how often you hit your targets and optimize your risk-reward ratios.",
-		color: "text-profit",
+			"Track planned vs actual stops. Optimize your risk-reward ratios.",
+		highlight: false,
+		className: "md:col-span-1",
+		visual: (
+			<div className="mt-6 space-y-2">
+				<div className="flex justify-between font-mono text-xs">
+					<span className="text-muted-foreground">RR Target</span>
+					<span className="text-primary">2.5:1</span>
+				</div>
+				<div className="h-2 overflow-hidden rounded-full bg-white/5">
+					<div className="h-full w-3/4 bg-gradient-to-r from-primary to-accent" />
+				</div>
+				<div className="flex justify-between font-mono text-xs">
+					<span className="text-muted-foreground">Actual RR</span>
+					<span>1.8:1</span>
+				</div>
+			</div>
+		),
 	},
 	{
 		icon: Sparkles,
-		title: "Setup Classification",
-		description:
-			"Tag and categorize trades by setup type. See which strategies work best for you and double down on your strengths.",
-		color: "text-chart-1",
+		title: "Setup Tags",
+		description: "Categorize trades by setup. Find what works best for you.",
+		highlight: false,
+		className: "md:col-span-1",
+		visual: (
+			<div className="mt-6 flex flex-wrap gap-2">
+				{["Breakout", "Reversal", "Trend", "Range"].map((tag) => (
+					<span
+						className="rounded border border-white/10 bg-white/[0.02] px-2 py-1 font-mono text-xs"
+						key={tag}
+					>
+						{tag}
+					</span>
+				))}
+			</div>
+		),
 	},
 	{
-		icon: TrendingUp,
-		title: "Futures & Forex Support",
+		icon: Zap,
+		title: "Futures & Forex",
 		description:
-			"Purpose-built for futures (ES, NQ, CL) and forex (EUR/USD, GBP/USD) traders with proper lot sizing and pip calculations.",
-		color: "text-primary",
+			"Built for ES, NQ, CL, EUR/USD, GBP/USD with proper lot sizing.",
+		highlight: false,
+		className: "md:col-span-1",
+		visual: (
+			<div className="mt-6 grid grid-cols-3 gap-2">
+				{["ES", "NQ", "CL", "EUR", "GBP", "JPY"].map((symbol) => (
+					<div
+						className="rounded border border-white/5 bg-white/[0.02] p-2 text-center font-mono text-xs"
+						key={symbol}
+					>
+						{symbol}
+					</div>
+				))}
+			</div>
+		),
 	},
 	{
-		icon: Shield,
-		title: "Your Keys, Your Data",
+		icon: Lock,
+		title: "Your Data, Your Keys",
 		description:
-			"Bring your own AI API keys. Your trading data stays private and is never used to train AI models. Full control, always.",
-		color: "text-muted-foreground",
+			"Bring your own AI API keys. Your trading data stays private. Always.",
+		highlight: true,
+		className: "md:col-span-1",
+		visual: (
+			<div className="mt-6 font-mono text-xs">
+				<div className="rounded border border-profit/20 bg-profit/5 p-3">
+					<span className="text-profit">✓</span>{" "}
+					<span className="text-muted-foreground">Data encrypted at rest</span>
+				</div>
+			</div>
+		),
 	},
 ];
 
 export function Features() {
 	return (
-		<section className="relative py-24" id="features">
-			{/* Subtle gradient */}
-			<div className="absolute inset-0 bg-gradient-to-b from-transparent via-card/30 to-transparent" />
+		<section className="relative py-32" id="features">
+			{/* Background */}
+			<div className="absolute inset-0 grid-bg opacity-50" />
 
-			<div className="container relative mx-auto px-4">
+			<div className="relative mx-auto max-w-6xl px-6">
 				{/* Section header */}
-				<div className="mx-auto max-w-2xl text-center">
-					<h2 className="font-bold text-3xl tracking-tight sm:text-4xl">
+				<div className="mb-20 max-w-2xl">
+					<span className="mb-4 inline-block font-mono text-xs uppercase tracking-wider text-primary">
+						Features
+					</span>
+					<h2 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
 						Everything you need to{" "}
-						<span className="text-primary">level up</span> your trading
+						<span className="text-primary">find your edge</span>
 					</h2>
-					<p className="mt-4 text-lg text-muted-foreground">
-						A complete toolkit designed for serious traders who want to find
-						their edge and consistently improve.
+					<p className="mt-6 font-mono text-base text-muted-foreground">
+						A complete toolkit for serious traders who want to consistently
+						improve.
 					</p>
 				</div>
 
-				{/* Features grid */}
-				<div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-					{features.map((feature, index) => (
+				{/* Bento grid */}
+				<div className="grid gap-4 md:grid-cols-3">
+					{features.map((feature) => (
 						<div
-							className="group relative rounded-xl border border-border/50 bg-card/50 p-6 transition-all hover:border-border hover:bg-card"
+							className={`group relative overflow-hidden rounded border transition-all duration-300 ${
+								feature.highlight
+									? "border-primary/20 bg-primary/[0.02] hover:border-primary/40"
+									: "border-white/5 bg-white/[0.01] hover:border-white/10"
+							} p-6 ${feature.className}`}
 							key={feature.title}
-							style={{
-								animationDelay: `${index * 100}ms`,
-							}}
 						>
-							<feature.icon className={`h-10 w-10 ${feature.color}`} />
-							<h3 className="mt-4 font-semibold">{feature.title}</h3>
-							<p className="mt-2 text-muted-foreground text-sm leading-relaxed">
+							{/* Icon */}
+							<div
+								className={`mb-4 inline-flex h-10 w-10 items-center justify-center rounded ${
+									feature.highlight ? "bg-primary/10" : "bg-white/5"
+								}`}
+						>
+								<feature.icon
+									className={`h-5 w-5 ${
+										feature.highlight ? "text-primary" : "text-muted-foreground"
+									}`}
+								/>
+							</div>
+
+							{/* Content */}
+							<h3 className="font-semibold text-lg">{feature.title}</h3>
+							<p className="mt-2 font-mono text-sm text-muted-foreground leading-relaxed">
 								{feature.description}
 							</p>
+
+							{/* Visual element */}
+							{feature.visual}
+
+							{/* Hover glow effect for highlighted cards */}
+							{feature.highlight && (
+								<div className="absolute -inset-px rounded opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+									<div className="absolute inset-0 rounded bg-gradient-to-r from-primary/10 via-transparent to-transparent" />
+								</div>
+							)}
 						</div>
 					))}
 				</div>

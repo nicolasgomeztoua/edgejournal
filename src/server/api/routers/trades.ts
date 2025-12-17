@@ -13,7 +13,7 @@ import {
 import { z } from "zod";
 import { calculatePnL } from "@/lib/symbols";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
-import { trades, tradeTags, userSettings } from "@/server/db/schema";
+import { trades, tradeTags, tradeExecutions, userSettings } from "@/server/db/schema";
 
 // Input schemas
 const createTradeSchema = z.object({
@@ -80,6 +80,31 @@ const updateTradeSchema = z.object({
 		.optional(),
 	notes: z.string().optional(),
 	status: z.enum(["open", "closed"]).optional(),
+	// Trailing stop fields
+	trailedStopLoss: z.string().optional(),
+	wasTrailed: z.boolean().optional(),
+	// Exit reason
+	exitReason: z
+		.enum([
+			"manual",
+			"stop_loss",
+			"trailing_stop",
+			"take_profit",
+			"time_based",
+			"breakeven",
+		])
+		.optional(),
+});
+
+// Schema for adding a partial exit / execution
+const addExecutionSchema = z.object({
+	tradeId: z.number(),
+	executionType: z.enum(["entry", "exit", "scale_in", "scale_out"]),
+	price: z.string(),
+	quantity: z.string(),
+	executedAt: z.string().datetime(),
+	fees: z.string().optional(),
+	notes: z.string().optional(),
 });
 
 // Batch import schema for CSV imports
@@ -167,12 +192,12 @@ export const tradesRouter = createTRPCRouter({
 				}
 			}
 			if (input?.cursor) {
-				conditions.push(lte(trades.id, input.cursor));
+				conditions.push(sql`${trades.id} < ${input.cursor}`);
 			}
 
 			const items = await ctx.db.query.trades.findMany({
 				where: and(...conditions),
-				orderBy: [desc(trades.entryTime)],
+				orderBy: [desc(trades.id)],
 				limit: limit + 1,
 				with: {
 					tradeTags: {
@@ -777,5 +802,178 @@ export const tradesRouter = createTRPCRouter({
 				avgLoss,
 				breakevenThreshold: beThreshold,
 			};
+		}),
+
+	// ============================================================================
+	// EXECUTION MANAGEMENT (Partial Exits / Scale In/Out)
+	// ============================================================================
+
+	// Get all executions for a trade
+	getExecutions: protectedProcedure
+		.input(z.object({ tradeId: z.number() }))
+		.query(async ({ ctx, input }) => {
+			// Verify trade ownership
+			const trade = await ctx.db.query.trades.findFirst({
+				where: and(eq(trades.id, input.tradeId), eq(trades.userId, ctx.user.id)),
+			});
+
+			if (!trade) {
+				throw new Error("Trade not found");
+			}
+
+			const executions = await ctx.db.query.tradeExecutions.findMany({
+				where: eq(tradeExecutions.tradeId, input.tradeId),
+				orderBy: [desc(tradeExecutions.executedAt)],
+			});
+
+			return executions;
+		}),
+
+	// Add a new execution (partial exit, scale in/out)
+	addExecution: protectedProcedure
+		.input(addExecutionSchema)
+		.mutation(async ({ ctx, input }) => {
+			// Verify trade ownership
+			const trade = await ctx.db.query.trades.findFirst({
+				where: and(eq(trades.id, input.tradeId), eq(trades.userId, ctx.user.id)),
+			});
+
+			if (!trade) {
+				throw new Error("Trade not found");
+			}
+
+			// Calculate P&L for this execution if it's an exit
+			let realizedPnl: string | undefined;
+			if (input.executionType === "exit" || input.executionType === "scale_out") {
+				const pnl = calculatePnL(
+					trade.symbol,
+					trade.instrumentType,
+					parseFloat(trade.entryPrice),
+					parseFloat(input.price),
+					parseFloat(input.quantity),
+					trade.direction,
+				);
+				realizedPnl = pnl.toFixed(2);
+			}
+
+			const [execution] = await ctx.db
+				.insert(tradeExecutions)
+				.values({
+					tradeId: input.tradeId,
+					executionType: input.executionType,
+					price: input.price,
+					quantity: input.quantity,
+					executedAt: new Date(input.executedAt),
+					fees: input.fees ?? "0",
+					realizedPnl,
+					notes: input.notes,
+				})
+				.returning();
+
+			// If this is a partial exit, update the trade's remaining quantity
+			if (input.executionType === "exit" || input.executionType === "scale_out") {
+				const currentRemaining = trade.remainingQuantity
+					? parseFloat(trade.remainingQuantity)
+					: parseFloat(trade.quantity);
+				const newRemaining = currentRemaining - parseFloat(input.quantity);
+
+				await ctx.db
+					.update(trades)
+					.set({
+						isPartiallyExited: true,
+						remainingQuantity: newRemaining.toString(),
+					})
+					.where(eq(trades.id, input.tradeId));
+			}
+
+			// If this is a scale in, update the trade's quantity
+			if (input.executionType === "scale_in") {
+				const currentQty = parseFloat(trade.quantity);
+				const newQty = currentQty + parseFloat(input.quantity);
+
+				await ctx.db
+					.update(trades)
+					.set({
+						quantity: newQty.toString(),
+						remainingQuantity: newQty.toString(),
+					})
+					.where(eq(trades.id, input.tradeId));
+			}
+
+			return execution;
+		}),
+
+	// Delete an execution
+	deleteExecution: protectedProcedure
+		.input(z.object({ executionId: z.number() }))
+		.mutation(async ({ ctx, input }) => {
+			// Get the execution and verify trade ownership
+			const execution = await ctx.db.query.tradeExecutions.findFirst({
+				where: eq(tradeExecutions.id, input.executionId),
+				with: { trade: true },
+			});
+
+			if (!execution || execution.trade.userId !== ctx.user.id) {
+				throw new Error("Execution not found");
+			}
+
+			await ctx.db.delete(tradeExecutions).where(eq(tradeExecutions.id, input.executionId));
+
+			// Recalculate remaining quantity
+			const remainingExecutions = await ctx.db.query.tradeExecutions.findMany({
+				where: and(
+					eq(tradeExecutions.tradeId, execution.tradeId),
+					or(
+						eq(tradeExecutions.executionType, "exit"),
+						eq(tradeExecutions.executionType, "scale_out"),
+					),
+				),
+			});
+
+			const totalExited = remainingExecutions.reduce(
+				(sum, e) => sum + parseFloat(e.quantity),
+				0,
+			);
+			const originalQty = parseFloat(execution.trade.quantity);
+
+			await ctx.db
+				.update(trades)
+				.set({
+					isPartiallyExited: remainingExecutions.length > 0,
+					remainingQuantity: (originalQty - totalExited).toString(),
+				})
+				.where(eq(trades.id, execution.tradeId));
+
+			return { success: true };
+		}),
+
+	// Update trailing stop on a trade
+	updateTrailingStop: protectedProcedure
+		.input(
+			z.object({
+				tradeId: z.number(),
+				trailedStopLoss: z.string(),
+			}),
+		)
+		.mutation(async ({ ctx, input }) => {
+			// Verify ownership
+			const trade = await ctx.db.query.trades.findFirst({
+				where: and(eq(trades.id, input.tradeId), eq(trades.userId, ctx.user.id)),
+			});
+
+			if (!trade) {
+				throw new Error("Trade not found");
+			}
+
+			const [updated] = await ctx.db
+				.update(trades)
+				.set({
+					trailedStopLoss: input.trailedStopLoss,
+					wasTrailed: true,
+				})
+				.where(eq(trades.id, input.tradeId))
+				.returning();
+
+			return updated;
 		}),
 });

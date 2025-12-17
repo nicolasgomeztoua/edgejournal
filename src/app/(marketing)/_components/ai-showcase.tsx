@@ -1,169 +1,255 @@
 "use client";
 
-import { Brain, Send, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { Brain, ChevronRight, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 
-const exampleQueries = [
-	"Are my breakevens optimal?",
-	"What's my best time to trade?",
-	"How often do I cut winners early?",
-	"Which setups have the best win rate?",
+const queries = [
+	{
+		question: "What's my best time to trade?",
+		response: `Based on 847 trades over 6 months:
+
+**Peak Performance Window**
+→ 09:30 - 11:00 EST (Win Rate: 71%)
+→ Avg profit: $412/trade
+
+**Avoid Trading**
+→ 12:00 - 14:00 EST (Win Rate: 38%)
+→ Avg loss: -$156/trade
+
+Your morning sessions show 2.3x better
+risk-adjusted returns than afternoons.`,
+	},
+	{
+		question: "Are my stop losses optimal?",
+		response: `Analyzing your stop loss patterns:
+
+**The Problem**
+→ 47% of trades hit SL within 3 pts of reversal
+→ Estimated missed gains: $12,400/month
+
+**Recommendation**
+Consider a 2-tier stop approach:
+1. Initial SL at 8 pts (current: 5 pts)
+2. Move to BE after +6 pts gain
+
+Backtested improvement: +23% win rate.`,
+	},
+	{
+		question: "Which setups have the best win rate?",
+		response: `**Top 3 Setups (by Win Rate)**
+
+1. Opening Range Breakout
+   → Win Rate: 78% | Avg RR: 2.1
+   → Best on: ES, NQ
+
+2. VWAP Reversal
+   → Win Rate: 65% | Avg RR: 1.8
+   → Best on: CL
+
+3. Gap Fill
+   → Win Rate: 61% | Avg RR: 2.4
+   → Best on: NQ
+
+Focus on ORB setups in the first hour.`,
+	},
+	{
+		question: "Why am I cutting winners early?",
+		response: `**Pattern Detected: Premature Exits**
+
+→ 62% of winning trades closed before TP
+→ Avg missed profit per trade: $287
+
+**Root Cause Analysis**
+Your exit timing correlates with:
+1. After 15+ minutes in trade (anxiety)
+2. When up exactly 1R (satisfaction)
+
+**Suggested Fix**
+Use a mechanical trail stop at 0.5R
+instead of discretionary exits.`,
+	},
 ];
 
-const exampleResponse = `Based on your last 200 trades, I've analyzed your breakeven patterns:
+function TypewriterText({ text, speed = 15 }: { text: string; speed?: number }) {
+	const [displayedText, setDisplayedText] = useState("");
+	const [isComplete, setIsComplete] = useState(false);
 
-**Breakeven Analysis:**
-- You move to breakeven on 34% of your winning trades
-- 47% of these trades would have hit your original take profit
-- Average missed profit per premature BE: $127
-
-**Recommendation:**
-Consider a scaled exit approach - move to BE after securing 1R profit, but keep a runner for the full target. Your win rate on trades you let run is 23% higher than your overall average.`;
-
-export function AIShowcase() {
-	const [selectedQuery, setSelectedQuery] = useState(exampleQueries[0]);
-	const [showResponse, setShowResponse] = useState(false);
+	useEffect(() => {
+		setDisplayedText("");
+		setIsComplete(false);
+		let index = 0;
+		const timer = setInterval(() => {
+			if (index < text.length) {
+				setDisplayedText(text.slice(0, index + 1));
+				index++;
+			} else {
+				setIsComplete(true);
+				clearInterval(timer);
+			}
+		}, speed);
+		return () => clearInterval(timer);
+	}, [text, speed]);
 
 	return (
-		<section className="relative py-24" id="ai">
-			{/* Background effects */}
-			<div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent" />
-			<div className="-translate-y-1/2 absolute top-1/2 left-1/3 h-64 w-64 rounded-full bg-chart-3/10 blur-[100px]" />
+		<span>
+			{displayedText}
+			{!isComplete && <span className="animate-pulse text-primary">▌</span>}
+		</span>
+	);
+}
 
-			<div className="container relative mx-auto px-4">
-				{/* Section header */}
-				<div className="mx-auto max-w-2xl text-center">
-					<div className="mb-4 inline-flex items-center gap-2 rounded-full border border-chart-3/30 bg-chart-3/10 px-4 py-1.5 text-chart-3 text-sm">
-						<Sparkles className="h-4 w-4" />
+export function AIShowcase() {
+	const [activeIndex, setActiveIndex] = useState(0);
+	const [showResponse, setShowResponse] = useState(false);
+	const [key, setKey] = useState(0);
+
+	const handleQuerySelect = (index: number) => {
+		if (index === activeIndex && showResponse) return;
+		setActiveIndex(index);
+		setShowResponse(false);
+		setTimeout(() => {
+			setShowResponse(true);
+			setKey((prev) => prev + 1);
+		}, 300);
+	};
+
+	return (
+		<section className="relative py-32" id="ai">
+			{/* Background */}
+			<div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/[0.02] to-transparent" />
+
+			<div className="relative mx-auto max-w-6xl px-6">
+				{/* Header */}
+				<div className="mb-16 flex flex-col items-center text-center">
+					<div className="mb-6 inline-flex items-center gap-2 rounded-none border border-accent/20 bg-accent/5 px-4 py-2">
+						<Sparkles className="h-4 w-4 text-accent" />
+						<span className="font-mono text-xs uppercase tracking-wider text-accent">
 						AI-Powered
+						</span>
 					</div>
-					<h2 className="font-bold text-3xl tracking-tight sm:text-4xl">
-						Ask anything about your trading
+					<h2 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
+						Ask anything about
+						<br />
+						<span className="text-accent text-glow-accent">your trading</span>
 					</h2>
-					<p className="mt-4 text-lg text-muted-foreground">
-						Natural language queries powered by your choice of AI. Get
-						personalized insights that would take hours to analyze manually.
+					<p className="mt-6 max-w-xl font-mono text-base text-muted-foreground">
+						Natural language queries powered by your choice of AI.
+						Get insights that would take hours to analyze manually.
 					</p>
 				</div>
 
-				{/* Interactive demo */}
-				<div className="mx-auto mt-12 max-w-3xl">
-					<Card className="overflow-hidden border-border/50 bg-card/80 backdrop-blur-sm">
-						{/* Chat header */}
-						<div className="flex items-center gap-3 border-border/50 border-b px-6 py-4">
-							<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-chart-3/20">
-								<Brain className="h-5 w-5 text-chart-3" />
-							</div>
-							<div>
-								<div className="font-medium">Trading AI Assistant</div>
-								<div className="text-muted-foreground text-sm">
-									Analyzing your performance data...
+				{/* Terminal interface */}
+				<div className="mx-auto max-w-4xl">
+					<div className="overflow-hidden rounded border border-white/10 bg-black/80 shadow-2xl">
+						{/* Terminal header */}
+						<div className="flex items-center justify-between border-b border-white/5 bg-white/[0.02] px-4 py-3">
+							<div className="flex items-center gap-3">
+								<div className="flex items-center gap-2">
+									<div className="h-3 w-3 rounded-full bg-loss/60" />
+									<div className="h-3 w-3 rounded-full bg-breakeven/60" />
+									<div className="h-3 w-3 rounded-full bg-profit/60" />
 								</div>
+								<span className="ml-4 font-mono text-xs text-muted-foreground">
+									edge-ai
+								</span>
+							</div>
+							<div className="flex items-center gap-2">
+								<Brain className="h-4 w-4 text-accent" />
+								<span className="font-mono text-xs text-muted-foreground">
+									Claude 3.5 Sonnet
+								</span>
 							</div>
 						</div>
 
-						{/* Query selection */}
-						<div className="border-border/50 border-b px-6 py-4">
-							<div className="mb-3 text-muted-foreground text-sm">
-								Try asking:
-							</div>
+						{/* Query selector */}
+						<div className="border-b border-white/5 p-4">
 							<div className="flex flex-wrap gap-2">
-								{exampleQueries.map((query) => (
-									<Button
-										key={query}
-										onClick={() => {
-											setSelectedQuery(query);
-											setShowResponse(false);
-										}}
-										size="sm"
-										variant={selectedQuery === query ? "secondary" : "outline"}
+								{queries.map((query, index) => (
+									<button
+										className={`flex items-center gap-2 rounded border px-3 py-2 font-mono text-xs transition-all ${
+											activeIndex === index
+												? "border-primary/50 bg-primary/10 text-primary"
+												: "border-white/10 bg-white/[0.02] text-muted-foreground hover:border-white/20 hover:text-foreground"
+										}`}
+										key={query.question}
+										onClick={() => handleQuerySelect(index)}
+										type="button"
 									>
-										{query}
-									</Button>
+										<ChevronRight className="h-3 w-3" />
+										{query.question}
+									</button>
 								))}
 							</div>
 						</div>
 
-						{/* Chat content */}
-						<div className="min-h-[300px] p-6">
-							{/* User message */}
-							<div className="mb-6 flex justify-end">
-								<div className="max-w-[80%] rounded-2xl rounded-br-md bg-primary px-4 py-2 text-primary-foreground">
-									{selectedQuery}
-								</div>
+						{/* Terminal content */}
+						<div className="min-h-[400px] p-6">
+							{/* User input */}
+							<div className="mb-6 flex items-start gap-3">
+								<span className="font-mono text-sm text-primary">$</span>
+								<span className="font-mono text-sm">
+									{queries[activeIndex].question}
+								</span>
 							</div>
 
-							{/* AI response */}
+							{/* AI Response */}
 							{showResponse ? (
-								<div className="flex gap-3">
-									<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-chart-3/20">
-										<Brain className="h-4 w-4 text-chart-3" />
-									</div>
-									<div className="rounded-2xl rounded-tl-md bg-secondary px-4 py-3">
-										<div className="prose prose-sm prose-invert max-w-none">
-											{exampleResponse.split("\n").map((line) => {
-												if (line.startsWith("**") && line.endsWith("**")) {
-													return (
-														<p
-															className="mt-3 font-semibold first:mt-0"
-															key={`heading-${line}`}
-														>
-															{line.replace(/\*\*/g, "")}
-														</p>
-													);
-												}
-												if (line.startsWith("- ")) {
-													return (
-														<p
-															className="ml-4 text-muted-foreground"
-															key={`bullet-${line}`}
-														>
-															{line}
-														</p>
-													);
-												}
-												return line ? (
-													<p
-														className="text-muted-foreground"
-														key={`text-${line}`}
-													>
-														{line}
-													</p>
-												) : null;
-											})}
-										</div>
+								<div className="flex items-start gap-3">
+									<span className="font-mono text-sm text-accent">→</span>
+									<div className="font-mono text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap">
+										<TypewriterText
+											key={key}
+											speed={8}
+											text={queries[activeIndex].response}
+										/>
 									</div>
 								</div>
 							) : (
-								<div className="flex items-center justify-center py-12">
+								<div className="flex items-center justify-center py-20">
 									<Button
-										className="gap-2"
-										onClick={() => setShowResponse(true)}
+										className="gap-2 font-mono text-xs uppercase tracking-wider"
+										onClick={() => {
+											setShowResponse(true);
+											setKey((prev) => prev + 1);
+										}}
 									>
-										<Send className="h-4 w-4" />
-										See AI Response
+										<Brain className="h-4 w-4" />
+										Run Query
 									</Button>
 								</div>
 							)}
 						</div>
-					</Card>
 
-					{/* Provider badges */}
-					<div className="mt-6 flex items-center justify-center gap-4 text-muted-foreground text-sm">
-						<span>Works with:</span>
-						<div className="flex items-center gap-3">
-							<span className="rounded border border-border/50 px-2 py-1">
-								OpenAI
+						{/* Terminal footer */}
+						<div className="border-t border-white/5 bg-white/[0.02] px-4 py-3">
+							<div className="flex items-center justify-between">
+								<span className="font-mono text-xs text-muted-foreground">
+									Powered by your API key
 							</span>
-							<span className="rounded border border-border/50 px-2 py-1">
-								Anthropic
-							</span>
-							<span className="rounded border border-border/50 px-2 py-1">
-								Google AI
-							</span>
+								<div className="flex items-center gap-4 font-mono text-xs text-muted-foreground">
+									<span>OpenAI</span>
+									<span>Anthropic</span>
+									<span>Google</span>
+								</div>
+							</div>
 						</div>
+					</div>
+				</div>
+
+				{/* Trust badges */}
+				<div className="mt-12 flex flex-wrap items-center justify-center gap-8 font-mono text-xs text-muted-foreground">
+					<div className="flex items-center gap-2">
+						<span className="h-2 w-2 rounded-full bg-profit" />
+						<span>Your data stays private</span>
+					</div>
+					<div className="flex items-center gap-2">
+						<span className="h-2 w-2 rounded-full bg-accent" />
+						<span>Use your own API keys</span>
+					</div>
+					<div className="flex items-center gap-2">
+						<span className="h-2 w-2 rounded-full bg-primary" />
+						<span>Choose your AI provider</span>
 					</div>
 				</div>
 			</div>

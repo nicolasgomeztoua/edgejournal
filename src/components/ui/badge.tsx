@@ -5,7 +5,7 @@ import type * as React from "react";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-	"inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-full border px-2 py-0.5 font-medium text-xs transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3",
+	"inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded border px-2 py-0.5 font-mono text-xs uppercase tracking-wider transition-all focus-visible:ring-2 focus-visible:ring-primary/50 [&>svg]:pointer-events-none [&>svg]:size-3",
 	{
 		variants: {
 			variant: {
@@ -14,9 +14,13 @@ const badgeVariants = cva(
 				secondary:
 					"border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90",
 				destructive:
-					"border-transparent bg-destructive text-white focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40 [a&]:hover:bg-destructive/90",
+					"border-transparent bg-destructive text-white focus-visible:ring-destructive/50 [a&]:hover:bg-destructive/90",
 				outline:
-					"text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
+					"border-white/10 text-foreground [a&]:hover:border-white/20 [a&]:hover:bg-white/[0.02]",
+				profit:
+					"border-profit/20 bg-profit/10 text-profit",
+				loss:
+					"border-loss/20 bg-loss/10 text-loss",
 			},
 		},
 		defaultVariants: {
