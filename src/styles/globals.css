@@ -8,15 +8,16 @@
    ============================================ */
 
 @theme {
-	/* Primary Font: Departure Mono-inspired via JetBrains */
+	/* Primary Font: Manrope for body, JetBrains Mono for code/data */
 	--font-sans:
 		var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
 		"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 	--font-mono:
 		var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, "SF Mono", Menlo,
 		Consolas, "Liberation Mono", monospace;
+	/* Display uses same as sans (Manrope) - clean, modern, readable */
 	--font-display:
-		var(--font-space-grotesk), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+		var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
 @theme inline {

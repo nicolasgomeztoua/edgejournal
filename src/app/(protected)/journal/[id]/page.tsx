@@ -1008,7 +1008,7 @@ export default function TradeDetailPage() {
 									!trade.takeProfitHit && (
 										<Badge variant="secondary">Manual Exit</Badge>
 									)}
-								{trade.wasTrailed && (
+								{trade.wasTrailed && trade.exitReason !== "trailing_stop" && (
 									<Badge
 										className="border-accent/30 text-accent"
 										variant="outline"
