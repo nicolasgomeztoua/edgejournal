@@ -299,8 +299,12 @@ export default function AnalyticsPage() {
 		<div className="space-y-6">
 			{/* Header */}
 			<div>
-				<h1 className="font-bold text-3xl tracking-tight">Analytics</h1>
-				<p className="text-muted-foreground">
+				<div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/35 px-3 py-1.5 text-sm backdrop-blur">
+					<span className="h-1.5 w-1.5 rounded-full bg-chart-2" />
+					<span className="text-muted-foreground">Performance</span>
+				</div>
+				<h1 className="mt-3 font-semibold text-3xl tracking-tight">Analytics</h1>
+				<p className="mt-1 text-muted-foreground">
 					Visualize your trading performance
 				</p>
 			</div>

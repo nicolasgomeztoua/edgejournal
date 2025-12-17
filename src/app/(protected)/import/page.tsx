@@ -392,8 +392,16 @@ export default function ImportPage() {
 					</Link>
 				</Button>
 				<div>
-					<h1 className="font-bold text-2xl tracking-tight">Import Trades</h1>
-					<p className="text-muted-foreground">Import trades from a CSV file</p>
+					<div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/35 px-3 py-1.5 text-sm backdrop-blur">
+						<span className="h-1.5 w-1.5 rounded-full bg-chart-2" />
+						<span className="text-muted-foreground">Ingest</span>
+					</div>
+					<h1 className="mt-3 font-semibold text-3xl tracking-tight">
+						Import Trades
+					</h1>
+					<p className="mt-1 text-muted-foreground">
+						Import trades from a CSV file
+					</p>
 				</div>
 			</div>
 

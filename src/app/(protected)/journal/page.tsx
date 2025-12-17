@@ -224,19 +224,37 @@ export default function JournalPage() {
 	return (
 		<div className="space-y-6">
 			{/* Header */}
-			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+			<div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 				<div>
-					<h1 className="font-bold text-3xl tracking-tight">Trades</h1>
-					<p className="text-muted-foreground">
+					<div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/35 px-3 py-1.5 text-sm backdrop-blur">
+						<span className="h-1.5 w-1.5 rounded-full bg-chart-2" />
+						<span className="text-muted-foreground">Journal</span>
+					</div>
+					<h1 className="mt-3 font-semibold text-3xl tracking-tight">Trades</h1>
+					<p className="mt-1 text-muted-foreground">
 						{selectedAccount ? (
 							<>
 								Trades for{" "}
-								<span className="font-medium">{selectedAccount.name}</span>
+								<span className="font-medium text-foreground">
+									{selectedAccount.name}
+								</span>
 							</>
 						) : (
 							"View and manage all your trades"
 						)}
 					</p>
+				</div>
+
+				<div className="flex items-center gap-2">
+					<Button asChild className="shadow-sm shadow-primary/15" variant="outline">
+						<Link href="/trade/new">
+							<Plus className="mr-2 h-4 w-4" />
+							Log trade
+						</Link>
+					</Button>
+					<Button asChild variant="ghost">
+						<Link href="/import">Import</Link>
+					</Button>
 				</div>
 			</div>
 

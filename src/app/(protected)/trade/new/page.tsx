@@ -178,8 +178,14 @@ export default function NewTradePage() {
 					</Link>
 				</Button>
 				<div>
-					<h1 className="font-bold text-2xl tracking-tight">Log Trade</h1>
-					<p className="text-muted-foreground">Record a completed trade</p>
+					<div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/35 px-3 py-1.5 text-sm backdrop-blur">
+						<span className="h-1.5 w-1.5 rounded-full bg-primary" />
+						<span className="text-muted-foreground">Capture</span>
+					</div>
+					<h1 className="mt-3 font-semibold text-3xl tracking-tight">
+						Log Trade
+					</h1>
+					<p className="mt-1 text-muted-foreground">Record a completed trade</p>
 				</div>
 			</div>
 

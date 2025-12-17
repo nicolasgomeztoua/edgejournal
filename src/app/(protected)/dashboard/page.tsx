@@ -1,8 +1,10 @@
 "use client";
 
 import { Info, TrendingDown, TrendingUp } from "lucide-react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { useAccount } from "@/contexts/account-context";
 import { cn, formatCurrency, getPnLColorClass } from "@/lib/utils";
 import { api } from "@/trpc/react";
@@ -321,12 +323,20 @@ export default function DashboardPage() {
 	return (
 		<div className="space-y-6">
 			{/* Header */}
-			<div className="flex items-center justify-between">
+			<div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 				<div>
-					<h1 className="font-bold text-2xl tracking-tight">Dashboard</h1>
+					<div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/35 px-3 py-1.5 text-sm backdrop-blur">
+						<span className="h-1.5 w-1.5 rounded-full bg-primary" />
+						<span className="text-muted-foreground">Overview</span>
+					</div>
+					<h1 className="mt-3 font-semibold text-3xl tracking-tight">
+						Dashboard
+					</h1>
 					{selectedAccount && (
-						<p className="text-muted-foreground text-sm">
-							{selectedAccount.name}
+						<p className="mt-1 text-muted-foreground text-sm">
+							<span className="font-medium text-foreground">
+								{selectedAccount.name}
+							</span>
 							{selectedAccount.broker && (
 								<span className="text-muted-foreground/70">
 									{" "}
@@ -336,6 +346,10 @@ export default function DashboardPage() {
 						</p>
 					)}
 				</div>
+
+				<Button asChild className="shadow-sm shadow-primary/15" variant="outline">
+					<Link href="/trade/new">Log a trade</Link>
+				</Button>
 			</div>
 
 			{/* Stats Row */}

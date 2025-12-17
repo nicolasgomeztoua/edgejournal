@@ -77,20 +77,24 @@ export function AppSidebar() {
 		useAccount();
 
 	return (
-		<Sidebar>
+		<Sidebar variant="floating">
 			<SidebarHeader className="border-sidebar-border border-b">
 				<Link className="flex items-center gap-2 px-2 py-2" href="/dashboard">
-					<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-						<TrendingUp className="h-5 w-5 text-primary-foreground" />
+					<div className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-primary shadow-lg shadow-primary/15">
+						<div className="-inset-px absolute rounded-lg landing-border opacity-80" />
+						<TrendingUp className="relative h-5 w-5 text-primary-foreground" />
 					</div>
-					<span className="font-bold text-lg tracking-tight">EdgeJournal</span>
+					<span className="font-semibold text-[15px] tracking-tight">
+						<span className="text-sidebar-foreground">Edge</span>
+						<span className="text-primary">Journal</span>
+					</span>
 				</Link>
 
 				{/* Account Selector */}
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
 						<button
-							className="flex w-full items-center gap-2 rounded-lg border border-sidebar-border bg-sidebar-accent/50 px-3 py-2 text-left text-sm transition-colors hover:bg-sidebar-accent"
+							className="flex w-full items-center gap-2 rounded-xl border border-sidebar-border/70 bg-sidebar-accent/40 px-3 py-2 text-left text-sm transition-colors hover:bg-sidebar-accent/70"
 							type="button"
 						>
 							{isLoading ? (
@@ -181,7 +185,7 @@ export function AppSidebar() {
 				{/* Add Trade Dropdown */}
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
-						<Button className="mt-2 w-full" size="sm">
+						<Button className="mt-2 w-full shadow-sm shadow-primary/15" size="sm">
 							<Plus className="mr-2 h-4 w-4" />
 							Add Trade
 						</Button>

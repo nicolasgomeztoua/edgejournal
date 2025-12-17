@@ -290,14 +290,18 @@ export function SettingsContent() {
 		<div className="mx-auto max-w-3xl space-y-6">
 			{/* Header */}
 			<div>
-				<h1 className="font-bold text-3xl tracking-tight">Settings</h1>
-				<p className="text-muted-foreground">
+				<div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/35 px-3 py-1.5 text-sm backdrop-blur">
+					<span className="h-1.5 w-1.5 rounded-full bg-primary" />
+					<span className="text-muted-foreground">Preferences</span>
+				</div>
+				<h1 className="mt-3 font-semibold text-3xl tracking-tight">Settings</h1>
+				<p className="mt-1 text-muted-foreground">
 					Configure your accounts and AI integrations
 				</p>
 			</div>
 
 			<Tabs onValueChange={setActiveTab} value={activeTab}>
-				<TabsList className="grid w-full grid-cols-3">
+				<TabsList className="grid w-full grid-cols-3 bg-card/40 backdrop-blur">
 					<TabsTrigger value="general">General</TabsTrigger>
 					<TabsTrigger value="accounts">Trading Accounts</TabsTrigger>
 					<TabsTrigger value="ai">AI Providers</TabsTrigger>

@@ -325,8 +325,12 @@ export default function TradeDetailPage() {
 						</Link>
 					</Button>
 					<div>
+						<div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/35 px-3 py-1.5 text-sm backdrop-blur">
+							<span className="h-1.5 w-1.5 rounded-full bg-primary" />
+							<span className="text-muted-foreground">Trade details</span>
+						</div>
 						<div className="flex flex-wrap items-center gap-3">
-							<h1 className="font-bold text-2xl tracking-tight">
+							<h1 className="mt-3 font-semibold text-3xl tracking-tight">
 								{trade.symbol}
 							</h1>
 							<Badge

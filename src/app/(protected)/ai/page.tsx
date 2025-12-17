@@ -227,24 +227,30 @@ export default function AIInsightsPage() {
 	return (
 		<div className="flex h-[calc(100vh-8rem)] flex-col space-y-6">
 			{/* Header */}
-			<div className="flex items-center justify-between">
+			<div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 				<div>
-					<h1 className="font-bold text-3xl tracking-tight">AI Insights</h1>
-					<p className="text-muted-foreground">
+					<div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/35 px-3 py-1.5 text-sm backdrop-blur">
+						<span className="h-1.5 w-1.5 rounded-full bg-chart-3" />
+						<span className="text-muted-foreground">Assistant</span>
+					</div>
+					<h1 className="mt-3 font-semibold text-3xl tracking-tight">
+						AI Insights
+					</h1>
+					<p className="mt-1 text-muted-foreground">
 						Ask questions about your trading performance
 					</p>
 				</div>
-				<Button asChild variant="outline">
+				<Button asChild className="shadow-sm shadow-primary/15" variant="outline">
 					<Link href="/settings">
 						<Key className="mr-2 h-4 w-4" />
-						Configure API Keys
+						Configure API keys
 					</Link>
 				</Button>
 			</div>
 
 			{/* API Key Notice */}
 			{hasApiKey === false && (
-				<Card className="border-primary/50 bg-primary/5">
+				<Card className="border-primary/50 bg-primary/10">
 					<CardContent className="flex items-center justify-between p-4">
 						<div className="flex items-center gap-3">
 							<Sparkles className="h-5 w-5 text-primary" />
