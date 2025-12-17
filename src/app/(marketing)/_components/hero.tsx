@@ -1,118 +1,78 @@
 "use client";
 
 import { SignUpButton } from "@clerk/nextjs";
-import { ArrowRight, BarChart3, Brain, LineChart } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { HeroDashboardMock } from "./hero-dashboard-mock";
+import { Badge } from "@/components/ui/badge";
 
 export function Hero() {
-	return (
-		<section className="relative min-h-screen overflow-hidden pt-16">
-			{/* Background gradient */}
-			<div className="gradient-trading absolute inset-0" />
+  return (
+    <section className="relative min-h-screen w-full overflow-hidden pt-24 pb-32">
+      {/* Dynamic Background */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/10 via-background to-background" />
+        <div className="absolute top-0 left-0 right-0 h-[500px] bg-gradient-to-b from-primary/5 to-transparent opacity-30" />
+      </div>
 
-			{/* Animated grid background */}
-			<div
-				className="absolute inset-0 opacity-[0.03]"
-				style={{
-					backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-						linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-					backgroundSize: "60px 60px",
-				}}
-			/>
+      <div className="container relative z-10 mx-auto px-4">
+        <div className="flex flex-col items-center justify-center text-center">
+          {/* Announcement Badge */}
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <Badge variant="outline" className="mb-6 gap-2 border-primary/20 bg-primary/5 px-4 py-1.5 text-sm backdrop-blur-sm">
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              <span className="text-muted-foreground">
+                <span className="font-semibold text-foreground">v2.0 is here</span> — AI-Powered Analytics
+              </span>
+            </Badge>
+          </div>
 
-			{/* Glow effects */}
-			<div className="absolute top-1/4 left-1/4 h-96 w-96 rounded-full bg-primary/20 blur-[128px]" />
-			<div className="absolute right-1/4 bottom-1/4 h-96 w-96 rounded-full bg-chart-2/20 blur-[128px]" />
+          {/* Main Headline */}
+          <h1 className="max-w-5xl animate-in fade-in slide-in-from-bottom-6 duration-700 fill-mode-backwards delay-150 font-sans font-bold text-5xl leading-tight tracking-tight sm:text-6xl md:text-7xl lg:text-8xl">
+            Find Your Edge in <br className="hidden md:block" />
+            <span className="bg-gradient-to-r from-primary via-blue-400 to-purple-500 bg-clip-text text-transparent">
+              Every Market Condition
+            </span>
+          </h1>
 
-			<div className="container relative mx-auto flex min-h-screen flex-col items-center justify-center px-4 text-center">
-				{/* Badge */}
-				<div className="mb-8 inline-flex items-center gap-2 rounded-full border border-border/50 bg-card/50 px-4 py-2 text-sm backdrop-blur-sm">
-					<span className="flex h-2 w-2 rounded-full bg-profit" />
-					<span className="text-muted-foreground">
-						AI-Powered Trading Analytics
-					</span>
-				</div>
+          {/* Subheadline */}
+          <p className="mt-8 max-w-2xl animate-in fade-in slide-in-from-bottom-6 duration-700 fill-mode-backwards delay-300 text-lg text-muted-foreground sm:text-xl">
+            The professional trading journal for futures and forex. 
+            Analyze patterns, track psychology, and let AI discover what's holding you back.
+          </p>
 
-				{/* Main headline */}
-				<h1 className="max-w-4xl font-bold text-5xl leading-tight tracking-tight sm:text-6xl md:text-7xl">
-					Trade Smarter with{" "}
-					<span className="bg-gradient-to-r from-primary via-chart-2 to-primary bg-clip-text text-transparent">
-						AI-Powered
-					</span>{" "}
-					Insights
-				</h1>
+          {/* CTA Buttons */}
+          <div className="mt-10 flex animate-in fade-in slide-in-from-bottom-6 flex-col gap-4 duration-700 fill-mode-backwards delay-500 sm:flex-row">
+            <SignUpButton mode="modal">
+              <Button size="lg" className="h-12 min-w-[160px] text-base font-semibold shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:-translate-y-0.5 transition-all">
+                Start Free Trial
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </SignUpButton>
+            <Button size="lg" variant="outline" className="h-12 min-w-[160px] text-base hover:bg-secondary/50">
+              <a href="#features">View Demo</a>
+            </Button>
+          </div>
+        </div>
 
-				{/* Subheadline */}
-				<p className="mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-					The professional trading journal for Futures and Forex traders. Track
-					your trades, analyze patterns, and get AI-driven insights to improve
-					your edge.
-				</p>
+        {/* Dashboard Preview */}
+        <div className="mt-20 animate-in fade-in zoom-in-95 duration-1000 fill-mode-backwards delay-700">
+          <HeroDashboardMock />
+        </div>
 
-				{/* CTA buttons */}
-				<div className="mt-10 flex flex-col items-center gap-4 sm:flex-row">
-					<SignUpButton mode="modal">
-						<Button className="gap-2 text-base" size="lg">
-							Start Free Trial
-							<ArrowRight className="h-4 w-4" />
-						</Button>
-					</SignUpButton>
-					<Button asChild className="text-base" size="lg" variant="outline">
-						<a href="#features">See How It Works</a>
-					</Button>
-				</div>
-
-				{/* Stats */}
-				<div className="mt-20 grid grid-cols-3 gap-8 sm:gap-16">
-					<div className="text-center">
-						<div className="font-bold text-3xl text-profit sm:text-4xl">
-							+32%
-						</div>
-						<div className="mt-1 text-muted-foreground text-sm">
-							Avg. Win Rate Improvement
-						</div>
-					</div>
-					<div className="text-center">
-						<div className="font-bold text-3xl sm:text-4xl">10K+</div>
-						<div className="mt-1 text-muted-foreground text-sm">
-							Trades Analyzed
-						</div>
-					</div>
-					<div className="text-center">
-						<div className="font-bold text-3xl text-chart-2 sm:text-4xl">
-							AI
-						</div>
-						<div className="mt-1 text-muted-foreground text-sm">
-							Powered Insights
-						</div>
-					</div>
-				</div>
-
-				{/* Feature preview cards */}
-				<div className="mt-20 grid w-full max-w-4xl grid-cols-1 gap-4 sm:grid-cols-3">
-					<div className="group rounded-xl border border-border/50 bg-card/50 p-6 backdrop-blur-sm transition-all hover:border-primary/50 hover:bg-card">
-						<LineChart className="h-8 w-8 text-primary" />
-						<h3 className="mt-4 font-semibold">Trade Journal</h3>
-						<p className="mt-2 text-muted-foreground text-sm">
-							Log every trade with detailed entry/exit data and notes
-						</p>
-					</div>
-					<div className="group rounded-xl border border-border/50 bg-card/50 p-6 backdrop-blur-sm transition-all hover:border-chart-2/50 hover:bg-card">
-						<BarChart3 className="h-8 w-8 text-chart-2" />
-						<h3 className="mt-4 font-semibold">Analytics</h3>
-						<p className="mt-2 text-muted-foreground text-sm">
-							Visualize performance with detailed charts and metrics
-						</p>
-					</div>
-					<div className="group rounded-xl border border-border/50 bg-card/50 p-6 backdrop-blur-sm transition-all hover:border-chart-3/50 hover:bg-card">
-						<Brain className="h-8 w-8 text-chart-3" />
-						<h3 className="mt-4 font-semibold">AI Insights</h3>
-						<p className="mt-2 text-muted-foreground text-sm">
-							Ask questions about your trading in natural language
-						</p>
-					</div>
-				</div>
-			</div>
-		</section>
-	);
+        {/* Social Proof / Trust */}
+        <div className="mt-20 animate-in fade-in slide-in-from-bottom-8 duration-1000 fill-mode-backwards delay-1000">
+          <p className="mb-6 text-center text-sm font-medium text-muted-foreground/60">
+            TRUSTED BY TRADERS FROM TOP FIRMS
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-8 opacity-50 grayscale transition-all hover:opacity-100 hover:grayscale-0">
+             {/* Simple text placeholders for logos as we don't have SVGs handy, or abstract shapes */}
+             <div className="flex items-center gap-2 font-bold text-lg text-foreground"><div className="h-6 w-6 rounded bg-foreground" /> APEX</div>
+             <div className="flex items-center gap-2 font-bold text-lg text-foreground"><div className="h-6 w-6 rounded bg-foreground" /> TOPSTEP</div>
+             <div className="flex items-center gap-2 font-bold text-lg text-foreground"><div className="h-6 w-6 rounded bg-foreground" /> FTMO</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 }

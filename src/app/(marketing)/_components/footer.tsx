@@ -1,95 +1,77 @@
-import { TrendingUp } from "lucide-react";
 import Link from "next/link";
-
-const footerLinks = {
-	Product: [
-		{ name: "Features", href: "#features" },
-		{ name: "AI Insights", href: "#ai" },
-		{ name: "Pricing", href: "#pricing" },
-		{ name: "Changelog", href: "#" },
-	],
-	Resources: [
-		{ name: "Documentation", href: "#" },
-		{ name: "API Reference", href: "#" },
-		{ name: "Blog", href: "#" },
-		{ name: "Community", href: "#" },
-	],
-	Company: [
-		{ name: "About", href: "#" },
-		{ name: "Contact", href: "#" },
-		{ name: "Privacy", href: "#" },
-		{ name: "Terms", href: "#" },
-	],
-};
+import { TrendingUp, Twitter, Github, Linkedin } from "lucide-react";
 
 export function Footer() {
-	return (
-		<footer className="border-border/50 border-t bg-card/30">
-			<div className="container mx-auto px-4 py-12">
-				<div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
-					{/* Brand column */}
-					<div className="lg:col-span-2">
-						<Link className="flex items-center gap-2" href="/">
-							<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-								<TrendingUp className="h-5 w-5 text-primary-foreground" />
-							</div>
-							<span className="font-bold text-xl tracking-tight">
-								EdgeJournal
-							</span>
-						</Link>
-						<p className="mt-4 max-w-xs text-muted-foreground text-sm">
-							The professional trading journal for futures and forex traders who
-							want to find their edge.
-						</p>
-					</div>
-
-					{/* Link columns */}
-					{Object.entries(footerLinks).map(([category, links]) => (
-						<div key={category}>
-							<h3 className="font-semibold">{category}</h3>
-							<ul className="mt-4 space-y-2">
-								{links.map((link) => (
-									<li key={link.name}>
-										<Link
-											className="text-muted-foreground text-sm transition-colors hover:text-foreground"
-											href={link.href}
-										>
-											{link.name}
-										</Link>
-									</li>
-								))}
-							</ul>
-						</div>
-					))}
-				</div>
-
-				{/* Bottom bar */}
-				<div className="mt-12 flex flex-col items-center justify-between gap-4 border-border/50 border-t pt-8 sm:flex-row">
-					<p className="text-muted-foreground text-sm">
-						© {new Date().getFullYear()} EdgeJournal. All rights reserved.
-					</p>
-					<div className="flex items-center gap-4">
-						<Link
-							className="text-muted-foreground text-sm transition-colors hover:text-foreground"
-							href="#"
-						>
-							Twitter
-						</Link>
-						<Link
-							className="text-muted-foreground text-sm transition-colors hover:text-foreground"
-							href="#"
-						>
-							Discord
-						</Link>
-						<Link
-							className="text-muted-foreground text-sm transition-colors hover:text-foreground"
-							href="#"
-						>
-							GitHub
-						</Link>
-					</div>
-				</div>
-			</div>
-		</footer>
-	);
+  return (
+    <footer className="border-t border-border/40 bg-background/50 backdrop-blur-xl">
+      <div className="container mx-auto px-4 py-12">
+        <div className="grid gap-8 lg:grid-cols-4">
+          <div className="lg:col-span-1">
+            <Link className="flex items-center gap-2" href="/">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20">
+                <TrendingUp className="h-5 w-5 text-primary" />
+              </div>
+              <span className="font-bold text-xl tracking-tight">EdgeJournal</span>
+            </Link>
+            <p className="mt-4 text-sm text-muted-foreground">
+              The professional trading journal for traders who want to find their edge.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-8 lg:col-span-3 lg:grid-cols-4">
+            <div>
+              <h3 className="font-semibold text-foreground">Product</h3>
+              <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
+                <li><Link href="#features" className="hover:text-primary">Features</Link></li>
+                <li><Link href="#ai" className="hover:text-primary">AI Insights</Link></li>
+                <li><Link href="#pricing" className="hover:text-primary">Pricing</Link></li>
+                <li><Link href="/changelog" className="hover:text-primary">Changelog</Link></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h3 className="font-semibold text-foreground">Resources</h3>
+              <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
+                <li><Link href="/blog" className="hover:text-primary">Blog</Link></li>
+                <li><Link href="/docs" className="hover:text-primary">Documentation</Link></li>
+                <li><Link href="/help" className="hover:text-primary">Help Center</Link></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h3 className="font-semibold text-foreground">Company</h3>
+              <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
+                <li><Link href="/about" className="hover:text-primary">About</Link></li>
+                <li><Link href="/careers" className="hover:text-primary">Careers</Link></li>
+                <li><Link href="/legal" className="hover:text-primary">Privacy</Link></li>
+                <li><Link href="/legal" className="hover:text-primary">Terms</Link></li>
+              </ul>
+            </div>
+            
+             <div>
+              <h3 className="font-semibold text-foreground">Social</h3>
+              <div className="mt-4 flex gap-4">
+                <Link href="#" className="text-muted-foreground hover:text-primary">
+                  <Twitter className="h-5 w-5" />
+                  <span className="sr-only">Twitter</span>
+                </Link>
+                <Link href="#" className="text-muted-foreground hover:text-primary">
+                  <Github className="h-5 w-5" />
+                  <span className="sr-only">GitHub</span>
+                </Link>
+                <Link href="#" className="text-muted-foreground hover:text-primary">
+                  <Linkedin className="h-5 w-5" />
+                  <span className="sr-only">LinkedIn</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="mt-12 border-t border-border/40 pt-8 text-center text-sm text-muted-foreground">
+          © {new Date().getFullYear()} EdgeJournal. All rights reserved.
+        </div>
+      </div>
+    </footer>
+  );
 }
