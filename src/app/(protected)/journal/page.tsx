@@ -246,7 +246,11 @@ export default function JournalPage() {
 				</div>
 
 				<div className="flex items-center gap-2">
-					<Button asChild className="shadow-sm shadow-primary/15" variant="outline">
+					<Button
+						asChild
+						className="shadow-primary/15 shadow-sm"
+						variant="outline"
+					>
 						<Link href="/trade/new">
 							<Plus className="mr-2 h-4 w-4" />
 							Log trade

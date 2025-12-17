@@ -81,7 +81,7 @@ export function AppSidebar() {
 			<SidebarHeader className="border-sidebar-border border-b">
 				<Link className="flex items-center gap-2 px-2 py-2" href="/dashboard">
 					<div className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-primary shadow-lg shadow-primary/15">
-						<div className="-inset-px absolute rounded-lg landing-border opacity-80" />
+						<div className="-inset-px landing-border absolute rounded-lg opacity-80" />
 						<TrendingUp className="relative h-5 w-5 text-primary-foreground" />
 					</div>
 					<span className="font-semibold text-[15px] tracking-tight">
@@ -185,7 +185,10 @@ export function AppSidebar() {
 				{/* Add Trade Dropdown */}
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
-						<Button className="mt-2 w-full shadow-sm shadow-primary/15" size="sm">
+						<Button
+							className="mt-2 w-full shadow-primary/15 shadow-sm"
+							size="sm"
+						>
 							<Plus className="mr-2 h-4 w-4" />
 							Add Trade
 						</Button>

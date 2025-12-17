@@ -75,7 +75,7 @@ export function Features() {
 	return (
 		<section className="relative py-20 sm:py-24" id="features">
 			<div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background via-card/25 to-background" />
-			<div className="pointer-events-none absolute inset-0 opacity-[0.05] bg-grid-fine landing-mask-fade-y" />
+			<div className="landing-mask-fade-y pointer-events-none absolute inset-0 bg-grid-fine opacity-[0.05]" />
 
 			<div className="container relative mx-auto px-4">
 				<div className="mx-auto max-w-2xl text-center">

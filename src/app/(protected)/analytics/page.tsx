@@ -303,7 +303,9 @@ export default function AnalyticsPage() {
 					<span className="h-1.5 w-1.5 rounded-full bg-chart-2" />
 					<span className="text-muted-foreground">Performance</span>
 				</div>
-				<h1 className="mt-3 font-semibold text-3xl tracking-tight">Analytics</h1>
+				<h1 className="mt-3 font-semibold text-3xl tracking-tight">
+					Analytics
+				</h1>
 				<p className="mt-1 text-muted-foreground">
 					Visualize your trading performance
 				</p>

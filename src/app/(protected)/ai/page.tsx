@@ -240,7 +240,11 @@ export default function AIInsightsPage() {
 						Ask questions about your trading performance
 					</p>
 				</div>
-				<Button asChild className="shadow-sm shadow-primary/15" variant="outline">
+				<Button
+					asChild
+					className="shadow-primary/15 shadow-sm"
+					variant="outline"
+				>
 					<Link href="/settings">
 						<Key className="mr-2 h-4 w-4" />
 						Configure API keys

@@ -2,6 +2,7 @@
 
 import { SignUpButton } from "@clerk/nextjs";
 import { Check, Key, Sparkles, Zap } from "lucide-react";
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,7 +15,6 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { useMemo, useState } from "react";
 
 const plans = [
 	{
@@ -85,7 +85,11 @@ export function Pricing() {
 				return { ...plan, priceLabel: `$${plan.yearly}`, periodLabel: suffix };
 			}
 
-			return { ...plan, priceLabel: `$${plan.monthly}`, periodLabel: plan.period };
+			return {
+				...plan,
+				priceLabel: `$${plan.monthly}`,
+				periodLabel: plan.period,
+			};
 		});
 	}, [billing]);
 
@@ -99,8 +103,8 @@ export function Pricing() {
 						Pricing that scales with discipline
 					</h2>
 					<p className="mt-4 text-base text-muted-foreground leading-relaxed sm:text-lg">
-						Start free, upgrade when the journal becomes a habit. Bring your
-						own AI keys (BYOK) or go Team for managed AI.
+						Start free, upgrade when the journal becomes a habit. Bring your own
+						AI keys (BYOK) or go Team for managed AI.
 					</p>
 
 					<div className="mt-8 flex justify-center">
@@ -169,7 +173,9 @@ export function Pricing() {
 									<span className="font-semibold text-4xl">
 										{plan.priceLabel}
 									</span>
-									<span className="text-muted-foreground">{plan.periodLabel}</span>
+									<span className="text-muted-foreground">
+										{plan.periodLabel}
+									</span>
 								</div>
 
 								<ul className="space-y-3">
@@ -192,7 +198,7 @@ export function Pricing() {
 								) : (
 									<SignUpButton mode="modal">
 										<Button
-											className="w-full shadow-sm shadow-primary/15"
+											className="w-full shadow-primary/15 shadow-sm"
 											variant={plan.popular ? "default" : "outline"}
 										>
 											{plan.cta}

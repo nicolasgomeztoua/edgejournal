@@ -17,7 +17,7 @@ export function Hero() {
 		<section className="relative overflow-hidden">
 			{/* Background */}
 			<div className="gradient-trading absolute inset-0" />
-			<div className="pointer-events-none absolute inset-0 opacity-[0.06] bg-grid-fine landing-mask-fade-y" />
+			<div className="landing-mask-fade-y pointer-events-none absolute inset-0 bg-grid-fine opacity-[0.06]" />
 			<div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/0 via-background/0 to-background" />
 
 			{/* Glow */}
@@ -44,14 +44,14 @@ export function Hero() {
 						</h1>
 
 						<p className="mt-5 max-w-xl text-base text-muted-foreground leading-relaxed sm:text-lg">
-							EdgeJournal turns every trade into a feedback loop: capture context,
-							see patterns, and ask “why” in plain English. Built for futures and
-							forex traders who obsess over process—not vibes.
+							EdgeJournal turns every trade into a feedback loop: capture
+							context, see patterns, and ask “why” in plain English. Built for
+							futures and forex traders who obsess over process—not vibes.
 						</p>
 
 						<div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
 							<SignUpButton mode="modal">
-								<Button className="gap-2 shadow-sm shadow-primary/20" size="lg">
+								<Button className="gap-2 shadow-primary/20 shadow-sm" size="lg">
 									Start free
 									<ArrowRight className="h-4 w-4" />
 								</Button>
@@ -97,7 +97,7 @@ export function Hero() {
 
 					{/* Product preview */}
 					<div className="relative">
-						<div className="pointer-events-none absolute -inset-6 rounded-3xl bg-gradient-to-tr from-primary/12 via-transparent to-chart-3/10 blur-2xl" />
+						<div className="-inset-6 pointer-events-none absolute rounded-3xl bg-gradient-to-tr from-primary/12 via-transparent to-chart-3/10 blur-2xl" />
 
 						<Card className="relative overflow-hidden border-border/60 bg-card/50 backdrop-blur">
 							<div className="flex items-center justify-between border-border/60 border-b px-5 py-4">
@@ -106,7 +106,9 @@ export function Hero() {
 										<BarChart3 className="h-5 w-5 text-primary" />
 									</div>
 									<div>
-										<div className="font-medium leading-none">Session recap</div>
+										<div className="font-medium leading-none">
+											Session recap
+										</div>
 										<div className="mt-1 text-muted-foreground text-xs">
 											ES • London + NY overlap
 										</div>
@@ -125,7 +127,9 @@ export function Hero() {
 										<div className="text-muted-foreground text-xs">
 											Best setup
 										</div>
-										<div className="text-xs text-muted-foreground">last 30d</div>
+										<div className="text-muted-foreground text-xs">
+											last 30d
+										</div>
 									</div>
 									<div className="mt-3 font-semibold text-lg">
 										Breakout → pullback
@@ -148,17 +152,15 @@ export function Hero() {
 
 								<div className="rounded-xl border border-border/60 bg-background/30 p-4">
 									<div className="flex items-center justify-between">
-										<div className="text-muted-foreground text-xs">
-											AI note
-										</div>
+										<div className="text-muted-foreground text-xs">AI note</div>
 										<Brain className="h-4 w-4 text-chart-3" />
 									</div>
-									<p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-										You tighten stops after 2 losses. Consider a rule: “size down,
-										don’t choke.” Your best sessions occur when first stop is
-										unchanged.
+									<p className="mt-3 text-muted-foreground text-sm leading-relaxed">
+										You tighten stops after 2 losses. Consider a rule: “size
+										down, don’t choke.” Your best sessions occur when first stop
+										is unchanged.
 									</p>
-									<div className="mt-4 inline-flex items-center gap-2 rounded-lg border border-border/60 bg-card/40 px-3 py-2 text-xs text-muted-foreground">
+									<div className="mt-4 inline-flex items-center gap-2 rounded-lg border border-border/60 bg-card/40 px-3 py-2 text-muted-foreground text-xs">
 										<span className="h-1.5 w-1.5 rounded-full bg-chart-3" />
 										Powered by your key (BYOK)
 									</div>
@@ -168,7 +170,9 @@ export function Hero() {
 							<div className="border-border/60 border-t px-5 py-4">
 								<div className="flex items-center justify-between text-xs">
 									<span className="text-muted-foreground">Equity curve</span>
-									<span className="text-muted-foreground">Last 14 sessions</span>
+									<span className="text-muted-foreground">
+										Last 14 sessions
+									</span>
 								</div>
 								<div className="mt-3 h-16 w-full rounded-lg bg-grid-dot opacity-60" />
 							</div>

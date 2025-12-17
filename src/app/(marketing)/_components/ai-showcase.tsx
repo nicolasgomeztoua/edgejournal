@@ -29,14 +29,14 @@ export function AIShowcase() {
 	return (
 		<section className="relative py-20 sm:py-24" id="ai">
 			<div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background via-primary/6 to-background" />
-			<div className="pointer-events-none absolute left-[10%] top-[15%] h-72 w-72 rounded-full bg-chart-3/12 blur-[120px]" />
+			<div className="pointer-events-none absolute top-[15%] left-[10%] h-72 w-72 rounded-full bg-chart-3/12 blur-[120px]" />
 			<div className="pointer-events-none absolute right-[8%] bottom-[10%] h-72 w-72 rounded-full bg-primary/12 blur-[120px]" />
 
 			<div className="container relative mx-auto px-4">
 				<div className="grid items-start gap-10 lg:grid-cols-[1fr,1.15fr] lg:gap-14">
 					{/* Copy */}
 					<div className="max-w-xl">
-						<div className="inline-flex items-center gap-2 rounded-full border border-chart-3/30 bg-chart-3/10 px-3 py-1.5 text-sm text-chart-3">
+						<div className="inline-flex items-center gap-2 rounded-full border border-chart-3/30 bg-chart-3/10 px-3 py-1.5 text-chart-3 text-sm">
 							<Sparkles className="h-4 w-4" />
 							AI analyst for your journal
 						</div>
@@ -45,8 +45,8 @@ export function AIShowcase() {
 						</h2>
 						<p className="mt-4 text-base text-muted-foreground leading-relaxed sm:text-lg">
 							Query your trades in plain English, then validate the insight with
-							filters and charts. Use your own provider keys—your trading data is
-							never used to train models.
+							filters and charts. Use your own provider keys—your trading data
+							is never used to train models.
 						</p>
 
 						<div className="mt-8 grid gap-3 sm:grid-cols-2">
@@ -71,7 +71,7 @@ export function AIShowcase() {
 
 					{/* Interactive demo */}
 					<div className="relative">
-						<div className="pointer-events-none absolute -inset-6 rounded-3xl bg-gradient-to-tr from-chart-3/14 via-transparent to-primary/10 blur-2xl" />
+						<div className="-inset-6 pointer-events-none absolute rounded-3xl bg-gradient-to-tr from-chart-3/14 via-transparent to-primary/10 blur-2xl" />
 						<Card className="relative overflow-hidden border-border/60 bg-card/50 backdrop-blur">
 							{/* Chat header */}
 							<div className="flex items-center gap-3 border-border/60 border-b px-6 py-4">
@@ -100,7 +100,9 @@ export function AIShowcase() {
 												setShowResponse(false);
 											}}
 											size="sm"
-											variant={selectedQuery === query ? "secondary" : "outline"}
+											variant={
+												selectedQuery === query ? "secondary" : "outline"
+											}
 										>
 											{query}
 										</Button>
@@ -159,7 +161,7 @@ export function AIShowcase() {
 								) : (
 									<div className="flex items-center justify-center py-12">
 										<Button
-											className="gap-2 shadow-sm shadow-primary/15"
+											className="gap-2 shadow-primary/15 shadow-sm"
 											onClick={() => setShowResponse(true)}
 										>
 											<Send className="h-4 w-4" />

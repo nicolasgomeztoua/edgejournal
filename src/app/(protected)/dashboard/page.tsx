@@ -2,9 +2,9 @@
 
 import { Info, TrendingDown, TrendingUp } from "lucide-react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
 import { useAccount } from "@/contexts/account-context";
 import { cn, formatCurrency, getPnLColorClass } from "@/lib/utils";
 import { api } from "@/trpc/react";
@@ -347,7 +347,11 @@ export default function DashboardPage() {
 					)}
 				</div>
 
-				<Button asChild className="shadow-sm shadow-primary/15" variant="outline">
+				<Button
+					asChild
+					className="shadow-primary/15 shadow-sm"
+					variant="outline"
+				>
 					<Link href="/trade/new">Log a trade</Link>
 				</Button>
 			</div>
