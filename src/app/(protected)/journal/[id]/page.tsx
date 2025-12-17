@@ -14,10 +14,12 @@ import {
 	Plus,
 	Save,
 	Shield,
+	Tag,
 	Target,
 	Trash2,
 	TrendingDown,
 	TrendingUp,
+	X,
 	XCircle,
 } from "lucide-react";
 import Image from "next/image";
@@ -51,6 +53,116 @@ import { Textarea } from "@/components/ui/textarea";
 import { FOREX_SYMBOLS, FUTURES_SYMBOLS } from "@/lib/symbols";
 import { cn, formatCurrency, getPnLColorClass } from "@/lib/utils";
 import { api } from "@/trpc/react";
+
+// Tags section component
+function TradeTagsSection({ tradeId }: { tradeId: number }) {
+	const [isAddingTag, setIsAddingTag] = useState(false);
+	
+	const { data: tradeTags = [], refetch: refetchTradeTags } = api.tags.getForTrade.useQuery({ tradeId });
+	const { data: allTags = [] } = api.tags.getAll.useQuery();
+	
+	const addTag = api.tags.addToTrade.useMutation({
+		onSuccess: () => {
+			refetchTradeTags();
+			setIsAddingTag(false);
+		},
+		onError: (error) => {
+			toast.error(error.message || "Failed to add tag");
+		},
+	});
+	
+	const removeTag = api.tags.removeFromTrade.useMutation({
+		onSuccess: () => {
+			refetchTradeTags();
+		},
+		onError: (error) => {
+			toast.error(error.message || "Failed to remove tag");
+		},
+	});
+	
+	// Available tags (not already added)
+	const availableTags = allTags.filter(
+		(tag) => !tradeTags.some((t) => t.id === tag.id)
+	);
+	
+	return (
+		<div className="flex flex-wrap items-center gap-2">
+			<span className="text-muted-foreground text-xs uppercase tracking-wider">Tags:</span>
+			{tradeTags.map((tag) => (
+				<span
+					className="group inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm text-white"
+					key={tag.id}
+					style={{ backgroundColor: tag.color ?? "#6366f1" }}
+				>
+					<Tag className="h-3 w-3" />
+					{tag.name}
+					<button
+						className="ml-1 rounded-full opacity-0 transition-opacity hover:bg-white/20 group-hover:opacity-100"
+						disabled={removeTag.isPending}
+						onClick={() => removeTag.mutate({ tradeId, tagId: tag.id })}
+						type="button"
+					>
+						<X className="h-3 w-3" />
+					</button>
+				</span>
+			))}
+			{isAddingTag ? (
+				<div className="flex items-center gap-2">
+					<Select
+						onValueChange={(tagId) => {
+							addTag.mutate({ tradeId, tagId: parseInt(tagId, 10) });
+						}}
+					>
+						<SelectTrigger className="h-8 w-[160px]">
+							<SelectValue placeholder="Select tag..." />
+						</SelectTrigger>
+						<SelectContent>
+							{availableTags.length === 0 ? (
+								<div className="px-2 py-4 text-center text-muted-foreground text-sm">
+									No more tags available.
+									<br />
+									<Link className="text-primary hover:underline" href="/settings?tab=tags">
+										Create new tags
+									</Link>
+								</div>
+							) : (
+								availableTags.map((tag) => (
+									<SelectItem key={tag.id} value={tag.id.toString()}>
+										<span className="flex items-center gap-2">
+											<span
+												className="h-2 w-2 rounded-full"
+												style={{ backgroundColor: tag.color ?? "#6366f1" }}
+											/>
+											{tag.name}
+										</span>
+									</SelectItem>
+								))
+							)}
+						</SelectContent>
+					</Select>
+					<Button
+						onClick={() => setIsAddingTag(false)}
+						size="icon"
+						variant="ghost"
+						className="h-8 w-8"
+					>
+						<X className="h-4 w-4" />
+					</Button>
+				</div>
+			) : (
+				<Button
+					className="h-7 gap-1 rounded-full px-3"
+					onClick={() => setIsAddingTag(true)}
+					size="sm"
+					variant="outline"
+				>
+					<Plus className="h-3 w-3" />
+					Add Tag
+				</Button>
+			)}
+		</div>
+	);
+}
 
 const SETUP_TYPES = [
 	"Breakout",
@@ -952,6 +1064,9 @@ export default function TradeDetailPage() {
 				</div>
 			</div>
 
+			{/* Tags Section */}
+			<TradeTagsSection tradeId={tradeId} />
+
 			{/* P&L Hero - Closed trades only */}
 			{trade.status === "closed" && trade.netPnl && (
 				<div
@@ -965,7 +1080,7 @@ export default function TradeDetailPage() {
 					{/* Decorative glow */}
 					<div
 						className={cn(
-							"-top-20 -right-20 pointer-events-none absolute h-40 w-40 rounded-full blur-3xl",
+							"pointer-events-none absolute -top-20 -right-20 h-40 w-40 rounded-full blur-3xl",
 							parseFloat(trade.netPnl) >= 0 ? "bg-profit/20" : "bg-loss/20",
 						)}
 					/>

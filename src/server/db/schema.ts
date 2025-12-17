@@ -357,6 +357,56 @@ export const userSettings = createTable("user_settings", {
 });
 
 // ============================================================================
+// DAILY NOTES TABLE (Trading Diary)
+// ============================================================================
+
+export const dailyNotes = createTable(
+	"daily_note",
+	{
+		id: integer().primaryKey().generatedByDefaultAsIdentity(),
+		userId: integer("user_id")
+			.notNull()
+			.references(() => users.id, { onDelete: "cascade" }),
+		accountId: integer("account_id").references(() => accounts.id, {
+			onDelete: "set null",
+		}),
+
+		// The date this note is for (stored as date only, no time)
+		date: timestamp("date", { withTimezone: true }).notNull(),
+
+		// Pre-market / Planning notes
+		preMarketNotes: text("pre_market_notes"),
+		marketOutlook: text("market_outlook"), // bullish, bearish, neutral, choppy
+		plannedSetups: text("planned_setups"), // What setups are you looking for today?
+
+		// Post-market / Review notes
+		postMarketNotes: text("post_market_notes"),
+		lessonsLearned: text("lessons_learned"),
+		emotionalState: emotionalStateEnum("emotional_state"),
+
+		// Rating
+		dayRating: integer("day_rating"), // 1-5 stars
+
+		// Goals tracking
+		dailyGoal: text("daily_goal"),
+		goalMet: boolean("goal_met"),
+
+		// Metadata
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.$defaultFn(() => new Date()),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+			() => new Date(),
+		),
+	},
+	(t) => [
+		index("daily_note_user_id_idx").on(t.userId),
+		index("daily_note_date_idx").on(t.date),
+		index("daily_note_account_id_idx").on(t.accountId),
+	],
+);
+
+// ============================================================================
 // AI CONVERSATIONS TABLE
 // ============================================================================
 
@@ -408,6 +458,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
 	tags: many(tags),
 	settings: one(userSettings),
 	aiConversations: many(aiConversations),
+	dailyNotes: many(dailyNotes),
 }));
 
 export const accountsRelations = relations(accounts, ({ one, many }) => ({
@@ -496,6 +547,17 @@ export const aiMessagesRelations = relations(aiMessages, ({ one }) => ({
 	}),
 }));
 
+export const dailyNotesRelations = relations(dailyNotes, ({ one }) => ({
+	user: one(users, {
+		fields: [dailyNotes.userId],
+		references: [users.id],
+	}),
+	account: one(accounts, {
+		fields: [dailyNotes.accountId],
+		references: [accounts.id],
+	}),
+}));
+
 // ============================================================================
 // TYPE EXPORTS
 // ============================================================================
@@ -514,3 +576,5 @@ export type TradeScreenshot = typeof tradeScreenshots.$inferSelect;
 export type UserSettings = typeof userSettings.$inferSelect;
 export type AiConversation = typeof aiConversations.$inferSelect;
 export type AiMessage = typeof aiMessages.$inferSelect;
+export type DailyNote = typeof dailyNotes.$inferSelect;
+export type NewDailyNote = typeof dailyNotes.$inferInsert;
