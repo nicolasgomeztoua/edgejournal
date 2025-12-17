@@ -12,18 +12,18 @@ export function CTA() {
 			<div className="absolute inset-0 bg-gradient-to-t from-primary/5 via-transparent to-transparent" />
 
 			{/* Grid background */}
-			<div className="absolute inset-0 grid-bg opacity-30" />
+			<div className="grid-bg absolute inset-0 opacity-30" />
 
 			{/* Glow effect */}
-			<div className="absolute bottom-0 left-1/2 h-[400px] w-[600px] -translate-x-1/2 rounded-full bg-primary/10 blur-[150px]" />
+			<div className="-translate-x-1/2 absolute bottom-0 left-1/2 h-[400px] w-[600px] rounded-full bg-primary/10 blur-[150px]" />
 
 			<div className="relative mx-auto max-w-4xl px-6 text-center">
 				{/* Main content */}
 				<SignedOut>
-					<h2 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
+					<h2 className="font-bold text-4xl leading-tight tracking-tight sm:text-5xl lg:text-6xl">
 						Ready to find your
 						<br />
-						<span className="text-primary text-glow-primary">trading edge?</span>
+						<span className="text-glow-primary text-primary">trading edge?</span>
 					</h2>
 
 					<p className="mx-auto mt-6 max-w-xl font-mono text-base text-muted-foreground">
@@ -45,7 +45,7 @@ export function CTA() {
 					</div>
 
 					{/* Trust elements */}
-					<div className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-4 font-mono text-xs text-muted-foreground">
+					<div className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-4 font-mono text-muted-foreground text-xs">
 						<span>✓ No credit card required</span>
 						<span>✓ 14-day Pro trial</span>
 						<span>✓ Cancel anytime</span>
@@ -53,10 +53,10 @@ export function CTA() {
 				</SignedOut>
 
 				<SignedIn>
-					<h2 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
+					<h2 className="font-bold text-4xl leading-tight tracking-tight sm:text-5xl lg:text-6xl">
 						Ready to continue
 						<br />
-						<span className="text-primary text-glow-primary">your journey?</span>
+						<span className="text-glow-primary text-primary">your journey?</span>
 					</h2>
 
 					<p className="mx-auto mt-6 max-w-xl font-mono text-base text-muted-foreground">

@@ -64,15 +64,15 @@ export function Pricing() {
 	return (
 		<section className="relative py-32" id="pricing">
 			{/* Background */}
-			<div className="absolute inset-0 grid-bg opacity-30" />
+			<div className="grid-bg absolute inset-0 opacity-30" />
 
 			<div className="relative mx-auto max-w-6xl px-6">
 				{/* Header */}
 				<div className="mb-16 text-center">
-					<span className="mb-4 inline-block font-mono text-xs uppercase tracking-wider text-primary">
+					<span className="mb-4 inline-block font-mono text-primary text-xs uppercase tracking-wider">
 						Pricing
 					</span>
-					<h2 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
+					<h2 className="font-bold text-4xl leading-tight tracking-tight sm:text-5xl lg:text-6xl">
 						Simple, transparent
 						<br />
 						<span className="text-primary">pricing</span>
@@ -109,9 +109,9 @@ export function Pricing() {
 						>
 							{/* Popular badge */}
 							{plan.highlighted && (
-								<div className="absolute -top-3 left-6 flex items-center gap-1 rounded bg-primary px-3 py-1">
+								<div className="-top-3 absolute left-6 flex items-center gap-1 rounded bg-primary px-3 py-1">
 									<Sparkles className="h-3 w-3 text-primary-foreground" />
-									<span className="font-mono text-xs font-medium text-primary-foreground uppercase tracking-wider">
+									<span className="font-medium font-mono text-primary-foreground text-xs uppercase tracking-wider">
 										Popular
 									</span>
 								</div>
@@ -119,18 +119,18 @@ export function Pricing() {
 
 							{/* Plan header */}
 								<div className="mb-6">
-								<h3 className="text-xl font-bold">{plan.name}</h3>
-								<p className="mt-1 font-mono text-sm text-muted-foreground">
+								<h3 className="font-bold text-xl">{plan.name}</h3>
+								<p className="mt-1 font-mono text-muted-foreground text-sm">
 									{plan.tagline}
 								</p>
 							</div>
 
 							{/* Price */}
 							<div className="mb-8">
-								<span className="text-5xl font-bold tracking-tight">
+								<span className="font-bold text-5xl tracking-tight">
 									{plan.price}
 								</span>
-								<span className="font-mono text-sm text-muted-foreground">
+								<span className="font-mono text-muted-foreground text-sm">
 									{plan.period}
 								</span>
 								</div>
@@ -144,7 +144,7 @@ export function Pricing() {
 												plan.highlighted ? "text-primary" : "text-profit"
 											}`}
 										/>
-										<span className="font-mono text-sm text-muted-foreground">
+										<span className="font-mono text-muted-foreground text-sm">
 												{feature}
 											</span>
 										</li>
@@ -192,7 +192,7 @@ export function Pricing() {
 				</div>
 
 				{/* Trial note */}
-				<p className="mt-12 text-center font-mono text-sm text-muted-foreground">
+				<p className="mt-12 text-center font-mono text-muted-foreground text-sm">
 					All plans include a 14-day free trial of Pro features.{" "}
 					<span className="text-foreground">No credit card required.</span>
 				</p>

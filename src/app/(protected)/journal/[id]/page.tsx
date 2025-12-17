@@ -5,15 +5,12 @@ import {
 	ArrowDownRight,
 	ArrowLeft,
 	BarChart3,
-	Calendar,
 	Camera,
 	Check,
 	Clock,
-	DollarSign,
 	Edit,
 	FileText,
 	Loader2,
-	Percent,
 	Plus,
 	Save,
 	Shield,
@@ -21,22 +18,15 @@ import {
 	Trash2,
 	TrendingDown,
 	TrendingUp,
-	X,
 	XCircle,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
 import {
 	Dialog,
 	DialogContent,
@@ -55,7 +45,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -128,12 +117,16 @@ function ExecutionsTab({
 		notes: "",
 	});
 
-	const [trailedStopLoss, setTrailedStopLoss] = useState(trade.trailedStopLoss || "");
+	const [trailedStopLoss, setTrailedStopLoss] = useState(
+		trade.trailedStopLoss || "",
+	);
 	const [exitReason, setExitReason] = useState(trade.exitReason || "");
 
-	const { data: executions, isLoading, refetch: refetchExecutions } = api.trades.getExecutions.useQuery(
-		{ tradeId },
-	);
+	const {
+		data: executions,
+		isLoading,
+		refetch: refetchExecutions,
+	} = api.trades.getExecutions.useQuery({ tradeId });
 
 	const addExecution = api.trades.addExecution.useMutation({
 		onSuccess: () => {
@@ -207,61 +200,67 @@ function ExecutionsTab({
 	return (
 		<div className="space-y-6">
 			{/* Quick Actions */}
-			<div className="flex flex-wrap gap-3">
-				<Dialog open={isSettingTrailingStop} onOpenChange={setIsSettingTrailingStop}>
+			<div className="flex flex-wrap gap-2">
+				<Dialog
+					onOpenChange={setIsSettingTrailingStop}
+					open={isSettingTrailingStop}
+				>
 					<DialogTrigger asChild>
-						<Button variant="outline" size="sm">
-							<Target className="mr-2 h-4 w-4" />
-							{trade.wasTrailed ? "Update Trailing Stop" : "Set Trailing Stop"}
+						<Button size="sm" variant="outline">
+							<Target className="mr-2 h-3.5 w-3.5" />
+							{trade.wasTrailed ? "Update Trail" : "Set Trail"}
 						</Button>
 					</DialogTrigger>
 					<DialogContent>
 						<DialogHeader>
 							<DialogTitle>Trailing Stop Loss</DialogTitle>
 							<DialogDescription>
-								Record the final trailed stop loss level for this trade.
+								Record the final trailed stop loss level.
 							</DialogDescription>
 						</DialogHeader>
 						<div className="space-y-4 py-4">
 							<div className="space-y-2">
-								<Label>Original Stop Loss</Label>
-								<p className="font-mono text-sm text-muted-foreground">
-									{trade.trailedStopLoss || "Not set"}
-								</p>
-							</div>
-							<div className="space-y-2">
 								<Label htmlFor="trailedSL">Trailed Stop Loss</Label>
 								<Input
 									id="trailedSL"
-									type="number"
-									step="any"
-									className="font-mono"
-									value={trailedStopLoss}
 									onChange={(e) => setTrailedStopLoss(e.target.value)}
 									placeholder="Enter trailed SL price"
+									step="any"
+									type="number"
+									value={trailedStopLoss}
 								/>
 							</div>
 						</div>
 						<DialogFooter>
-							<Button variant="outline" onClick={() => setIsSettingTrailingStop(false)}>
+							<Button
+								onClick={() => setIsSettingTrailingStop(false)}
+								variant="outline"
+							>
 								Cancel
 							</Button>
 							<Button
 								disabled={!trailedStopLoss || updateTrailingStop.isPending}
-								onClick={() => updateTrailingStop.mutate({ tradeId, trailedStopLoss })}
+								onClick={() =>
+									updateTrailingStop.mutate({ tradeId, trailedStopLoss })
+								}
 							>
-								{updateTrailingStop.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+								{updateTrailingStop.isPending && (
+									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								)}
 								Save
 							</Button>
 						</DialogFooter>
 					</DialogContent>
 				</Dialog>
 
-				<Dialog open={isSettingExitReason} onOpenChange={setIsSettingExitReason}>
+				<Dialog
+					onOpenChange={setIsSettingExitReason}
+					open={isSettingExitReason}
+				>
 					<DialogTrigger asChild>
-						<Button variant="outline" size="sm">
-							<Shield className="mr-2 h-4 w-4" />
-							Set Exit Reason
+						<Button size="sm" variant="outline">
+							<Shield className="mr-2 h-3.5 w-3.5" />
+							Exit Reason
 						</Button>
 					</DialogTrigger>
 					<DialogContent>
@@ -272,52 +271,61 @@ function ExecutionsTab({
 							</DialogDescription>
 						</DialogHeader>
 						<div className="space-y-4 py-4">
-							<div className="space-y-2">
-								<Label>Exit Reason</Label>
-								<Select value={exitReason} onValueChange={setExitReason}>
-									<SelectTrigger>
-										<SelectValue placeholder="Select exit reason" />
-									</SelectTrigger>
-									<SelectContent>
-										{EXIT_REASONS.map((reason) => (
-											<SelectItem key={reason.value} value={reason.value}>
-												{reason.label}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</div>
+							<Select onValueChange={setExitReason} value={exitReason}>
+								<SelectTrigger>
+									<SelectValue placeholder="Select exit reason" />
+								</SelectTrigger>
+								<SelectContent>
+									{EXIT_REASONS.map((reason) => (
+										<SelectItem key={reason.value} value={reason.value}>
+											{reason.label}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
 						</div>
 						<DialogFooter>
-							<Button variant="outline" onClick={() => setIsSettingExitReason(false)}>
+							<Button
+								onClick={() => setIsSettingExitReason(false)}
+								variant="outline"
+							>
 								Cancel
 							</Button>
 							<Button
 								disabled={!exitReason || updateTrade.isPending}
-								onClick={() => updateTrade.mutate({
-									id: tradeId,
-									exitReason: exitReason as "manual" | "stop_loss" | "trailing_stop" | "take_profit" | "time_based" | "breakeven",
-								})}
+								onClick={() =>
+									updateTrade.mutate({
+										id: tradeId,
+										exitReason: exitReason as
+											| "manual"
+											| "stop_loss"
+											| "trailing_stop"
+											| "take_profit"
+											| "time_based"
+											| "breakeven",
+									})
+								}
 							>
-								{updateTrade.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+								{updateTrade.isPending && (
+									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								)}
 								Save
 							</Button>
 						</DialogFooter>
 					</DialogContent>
 				</Dialog>
 
-				<Dialog open={isAddingExecution} onOpenChange={setIsAddingExecution}>
+				<Dialog onOpenChange={setIsAddingExecution} open={isAddingExecution}>
 					<DialogTrigger asChild>
 						<Button size="sm">
-							<Plus className="mr-2 h-4 w-4" />
-							Add Partial Exit
+							<Plus className="mr-2 h-3.5 w-3.5" />
+							Add Execution
 						</Button>
 					</DialogTrigger>
 					<DialogContent>
 						<DialogHeader>
 							<DialogTitle>Add Execution</DialogTitle>
 							<DialogDescription>
-								Record a partial exit, scale in, or scale out for this trade.
 								Remaining: {remainingQty.toFixed(2)} contracts/lots
 							</DialogDescription>
 						</DialogHeader>
@@ -325,17 +333,24 @@ function ExecutionsTab({
 							<div className="space-y-2">
 								<Label>Type</Label>
 								<Select
-									value={executionForm.executionType}
 									onValueChange={(v) =>
-										setExecutionForm({ ...executionForm, executionType: v as typeof executionForm.executionType })
+										setExecutionForm({
+											...executionForm,
+											executionType: v as typeof executionForm.executionType,
+										})
 									}
+									value={executionForm.executionType}
 								>
 									<SelectTrigger>
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
-										<SelectItem value="scale_out">Scale Out (Partial Exit)</SelectItem>
-										<SelectItem value="scale_in">Scale In (Add to Position)</SelectItem>
+										<SelectItem value="scale_out">
+											Scale Out (Partial Exit)
+										</SelectItem>
+										<SelectItem value="scale_in">
+											Scale In (Add to Position)
+										</SelectItem>
 										<SelectItem value="exit">Full Exit</SelectItem>
 									</SelectContent>
 								</Select>
@@ -344,65 +359,81 @@ function ExecutionsTab({
 								<div className="space-y-2">
 									<Label>Price</Label>
 									<Input
-										type="number"
-										step="any"
-										className="font-mono"
-										value={executionForm.price}
-										onChange={(e) => setExecutionForm({ ...executionForm, price: e.target.value })}
+										onChange={(e) =>
+											setExecutionForm({
+												...executionForm,
+												price: e.target.value,
+											})
+										}
 										placeholder="0.00"
+										step="any"
+										type="number"
+										value={executionForm.price}
 									/>
 								</div>
 								<div className="space-y-2">
 									<Label>Quantity</Label>
 									<Input
-										type="number"
-										step="any"
-										className="font-mono"
-										value={executionForm.quantity}
-										onChange={(e) => setExecutionForm({ ...executionForm, quantity: e.target.value })}
+										onChange={(e) =>
+											setExecutionForm({
+												...executionForm,
+												quantity: e.target.value,
+											})
+										}
 										placeholder="0.00"
+										step="any"
+										type="number"
+										value={executionForm.quantity}
 									/>
 								</div>
 							</div>
 							<div className="space-y-2">
 								<Label>Date & Time</Label>
 								<Input
+									onChange={(e) =>
+										setExecutionForm({
+											...executionForm,
+											executedAt: e.target.value,
+										})
+									}
 									type="datetime-local"
 									value={executionForm.executedAt}
-									onChange={(e) => setExecutionForm({ ...executionForm, executedAt: e.target.value })}
-								/>
-							</div>
-							<div className="space-y-2">
-								<Label>Fees (optional)</Label>
-								<Input
-									type="number"
-									step="any"
-									className="font-mono"
-									value={executionForm.fees}
-									onChange={(e) => setExecutionForm({ ...executionForm, fees: e.target.value })}
-									placeholder="0.00"
 								/>
 							</div>
 							<div className="space-y-2">
 								<Label>Notes (optional)</Label>
 								<Textarea
-									value={executionForm.notes}
-									onChange={(e) => setExecutionForm({ ...executionForm, notes: e.target.value })}
+									onChange={(e) =>
+										setExecutionForm({
+											...executionForm,
+											notes: e.target.value,
+										})
+									}
 									placeholder="e.g., Took partial profit at resistance"
 									rows={2}
+									value={executionForm.notes}
 								/>
 							</div>
 						</div>
 						<DialogFooter>
-							<Button variant="outline" onClick={() => setIsAddingExecution(false)}>
+							<Button
+								onClick={() => setIsAddingExecution(false)}
+								variant="outline"
+							>
 								Cancel
 							</Button>
 							<Button
-								disabled={!executionForm.price || !executionForm.quantity || addExecution.isPending}
+								disabled={
+									!executionForm.price ||
+									!executionForm.quantity ||
+									addExecution.isPending
+								}
 								onClick={handleAddExecution}
 							>
-								{addExecution.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-								Add Execution
+								{addExecution.isPending && (
+									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								)}
+								Add
 							</Button>
 						</DialogFooter>
 					</DialogContent>
@@ -410,105 +441,92 @@ function ExecutionsTab({
 			</div>
 
 			{/* Executions List */}
-			<Card>
-				<CardHeader>
-					<CardTitle className="text-base">Execution History</CardTitle>
-					<CardDescription>
-						All entries and exits for this trade
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					{isLoading ? (
-						<div className="space-y-3">
-							{[...Array(3)].map((_, i) => (
-								<Skeleton key={`exec-skeleton-${i}`} className="h-16" />
-							))}
-						</div>
-					) : !executions || executions.length === 0 ? (
-						<div className="py-8 text-center">
-							<ArrowDownRight className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-							<p className="text-muted-foreground text-sm">No additional executions recorded</p>
-							<p className="text-muted-foreground text-xs mt-1">
-								Add partial exits or scale-ins to track complex trades
-							</p>
-						</div>
-					) : (
-						<div className="space-y-3">
-							{executions.map((exec) => {
-								const pnl = exec.realizedPnl ? parseFloat(exec.realizedPnl) : null;
-								const isExit = exec.executionType === "exit" || exec.executionType === "scale_out";
+			{isLoading ? (
+				<div className="space-y-3">
+					{["exec-sk-1", "exec-sk-2", "exec-sk-3"].map((id) => (
+						<Skeleton className="h-16" key={id} />
+					))}
+				</div>
+			) : !executions || executions.length === 0 ? (
+				<div className="rounded border border-white/10 border-dashed py-12 text-center">
+					<p className="text-muted-foreground text-sm">
+						No executions recorded
+					</p>
+					<p className="mt-1 text-muted-foreground text-xs">
+						Add partial exits or scale-ins to track complex trades
+					</p>
+				</div>
+			) : (
+				<div className="space-y-2">
+					{executions.map((exec) => {
+						const pnl = exec.realizedPnl ? parseFloat(exec.realizedPnl) : null;
+						const isExit =
+							exec.executionType === "exit" ||
+							exec.executionType === "scale_out";
 
-								return (
+						return (
+							<div
+								className="flex items-center justify-between rounded border border-white/5 bg-white/[0.01] px-4 py-3"
+								key={exec.id}
+							>
+								<div className="flex items-center gap-3">
 									<div
-										key={exec.id}
-										className="flex items-center justify-between rounded-lg border bg-white/[0.02] p-4"
+										className={cn(
+											"flex h-8 w-8 items-center justify-center rounded",
+											isExit ? "bg-loss/10" : "bg-profit/10",
+										)}
 									>
-										<div className="flex items-center gap-4">
-											<div
-												className={cn(
-													"rounded-md p-2",
-													isExit ? "bg-loss/10" : "bg-profit/10",
-												)}
-											>
-												{isExit ? (
-													<ArrowDownRight className="h-4 w-4 text-loss" />
-												) : (
-													<TrendingUp className="h-4 w-4 text-profit" />
-												)}
-											</div>
-											<div>
-												<div className="flex items-center gap-2">
-													<span className="font-medium capitalize">
-														{exec.executionType.replace("_", " ")}
-													</span>
-													<Badge variant="outline" className="font-mono text-xs">
-														{parseFloat(exec.quantity).toFixed(2)}
-													</Badge>
-												</div>
-												<div className="flex items-center gap-2 text-muted-foreground text-xs">
-													<span>@ {parseFloat(exec.price).toLocaleString()}</span>
-													<span>•</span>
-													<span>{new Date(exec.executedAt).toLocaleString()}</span>
-												</div>
-												{exec.notes && (
-													<p className="mt-1 text-muted-foreground text-xs italic">
-														{exec.notes}
-													</p>
-												)}
-											</div>
+										{isExit ? (
+											<ArrowDownRight className="h-4 w-4 text-loss" />
+										) : (
+											<TrendingUp className="h-4 w-4 text-profit" />
+										)}
+									</div>
+									<div>
+										<div className="flex items-center gap-2 text-sm">
+											<span className="capitalize">
+												{exec.executionType.replace("_", " ")}
+											</span>
+											<span className="font-mono text-muted-foreground text-xs">
+												{parseFloat(exec.quantity).toFixed(2)} @{" "}
+												{parseFloat(exec.price).toLocaleString()}
+											</span>
 										</div>
-										<div className="flex items-center gap-3">
-											{pnl !== null && (
-												<span
-													className={cn(
-														"font-mono font-semibold",
-														pnl >= 0 ? "text-profit" : "text-loss",
-													)}
-												>
-													{pnl >= 0 ? "+" : ""}
-													{formatCurrency(pnl)}
-												</span>
-											)}
-											<Button
-												variant="ghost"
-												size="icon"
-												className="h-8 w-8"
-												onClick={() => {
-													if (confirm("Delete this execution?")) {
-														deleteExecution.mutate({ executionId: exec.id });
-													}
-												}}
-											>
-												<Trash2 className="h-4 w-4" />
-											</Button>
+										<div className="text-muted-foreground text-xs">
+											{new Date(exec.executedAt).toLocaleString()}
 										</div>
 									</div>
-								);
-							})}
-						</div>
-					)}
-				</CardContent>
-			</Card>
+								</div>
+								<div className="flex items-center gap-3">
+									{pnl !== null && (
+										<span
+											className={cn(
+												"font-mono text-sm",
+												pnl >= 0 ? "text-profit" : "text-loss",
+											)}
+										>
+											{pnl >= 0 ? "+" : ""}
+											{formatCurrency(pnl)}
+										</span>
+									)}
+									<Button
+										className="h-7 w-7"
+										onClick={() => {
+											if (confirm("Delete this execution?")) {
+												deleteExecution.mutate({ executionId: exec.id });
+											}
+										}}
+										size="icon"
+										variant="ghost"
+									>
+										<Trash2 className="h-3.5 w-3.5" />
+									</Button>
+								</div>
+							</div>
+						);
+					})}
+				</div>
+			)}
 		</div>
 	);
 }
@@ -522,7 +540,6 @@ export default function TradeDetailPage() {
 	const [isClosing, setIsClosing] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
 
-	// Edit form state
 	const [editForm, setEditForm] = useState({
 		symbol: "",
 		instrumentType: "futures" as "futures" | "forex",
@@ -536,7 +553,6 @@ export default function TradeDetailPage() {
 		notes: "",
 	});
 
-	// Close trade form state
 	const [closeData, setCloseData] = useState({
 		exitPrice: "",
 		exitDate: new Date().toISOString().split("T")[0],
@@ -553,7 +569,6 @@ export default function TradeDetailPage() {
 		{ enabled: !Number.isNaN(tradeId) },
 	);
 
-	// Initialize edit form when trade loads
 	useEffect(() => {
 		if (trade) {
 			setEditForm({
@@ -584,7 +599,7 @@ export default function TradeDetailPage() {
 
 	const closeTrade = api.trades.close.useMutation({
 		onSuccess: () => {
-			toast.success("Trade closed successfully");
+			toast.success("Trade closed");
 			setIsClosing(false);
 			refetch();
 		},
@@ -640,12 +655,8 @@ export default function TradeDetailPage() {
 		});
 	};
 
-	const handleDeleteTrade = () => {
-		deleteTrade.mutate({ id: tradeId });
-	};
-
-	// Calculate additional stats
-	const calculateStats = () => {
+	// Calculate stats
+	const stats = (() => {
 		if (!trade) return null;
 
 		const entry = parseFloat(trade.entryPrice);
@@ -654,23 +665,16 @@ export default function TradeDetailPage() {
 		const tp = trade.takeProfit ? parseFloat(trade.takeProfit) : null;
 		const isLong = trade.direction === "long";
 
-		// Risk (distance to SL)
 		const riskPips = sl ? Math.abs(entry - sl) : null;
-
-		// Reward (distance to TP)
 		const rewardPips = tp ? Math.abs(tp - entry) : null;
-
-		// R:R Ratio
 		const rrRatio = riskPips && rewardPips ? rewardPips / riskPips : null;
 
-		// Actual R achieved (if closed)
 		let rMultiple = null;
 		if (exit && riskPips) {
 			const pnlPips = isLong ? exit - entry : entry - exit;
 			rMultiple = pnlPips / riskPips;
 		}
 
-		// Trade duration
 		let duration = null;
 		if (trade.exitTime && trade.entryTime) {
 			const ms =
@@ -688,7 +692,6 @@ export default function TradeDetailPage() {
 			}
 		}
 
-		// Percentage gain/loss
 		let percentChange = null;
 		if (exit) {
 			percentChange = ((exit - entry) / entry) * 100 * (isLong ? 1 : -1);
@@ -702,26 +705,14 @@ export default function TradeDetailPage() {
 			duration,
 			percentChange,
 		};
-	};
-
-	const stats = calculateStats();
+	})();
 
 	if (isLoading) {
 		return (
-			<div className="mx-auto max-w-5xl space-y-6">
-				<div className="flex items-center gap-4">
-					<Skeleton className="h-10 w-10" />
-					<div className="space-y-2">
-						<Skeleton className="h-8 w-48" />
-						<Skeleton className="h-4 w-32" />
-					</div>
-				</div>
+			<div className="mx-auto max-w-4xl space-y-6">
+				<Skeleton className="h-12 w-64" />
 				<Skeleton className="h-32" />
-				<div className="grid gap-6 lg:grid-cols-3">
-					<Skeleton className="h-48" />
-					<Skeleton className="h-48" />
-					<Skeleton className="h-48" />
-				</div>
+				<Skeleton className="h-64" />
 			</div>
 		);
 	}
@@ -732,7 +723,7 @@ export default function TradeDetailPage() {
 				<AlertTriangle className="mb-4 h-12 w-12 text-muted-foreground" />
 				<h2 className="font-semibold text-xl">Trade not found</h2>
 				<p className="mb-4 text-muted-foreground">
-					This trade doesn&apos;t exist or you don&apos;t have access to it.
+					This trade doesn&apos;t exist or you don&apos;t have access.
 				</p>
 				<Button asChild>
 					<Link href="/journal">Back to Journal</Link>
@@ -741,10 +732,16 @@ export default function TradeDetailPage() {
 		);
 	}
 
+	const formatPrice = (price: string) =>
+		parseFloat(price).toLocaleString(undefined, {
+			minimumFractionDigits: 2,
+			maximumFractionDigits: 5,
+		});
+
 	return (
-		<div className="mx-auto max-w-5xl space-y-6">
+		<div className="mx-auto max-w-4xl space-y-6">
 			{/* Header */}
-			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+			<div className="flex items-start justify-between">
 				<div className="flex items-center gap-4">
 					<Button asChild size="icon" variant="ghost">
 						<Link href="/journal">
@@ -752,16 +749,13 @@ export default function TradeDetailPage() {
 						</Link>
 					</Button>
 					<div>
-						<div className="flex flex-wrap items-center gap-3">
-							<h1 className="font-bold text-2xl tracking-tight">
-								{trade.symbol}
-							</h1>
+						<div className="flex items-center gap-3">
+							<h1 className="font-bold text-2xl">{trade.symbol}</h1>
 							<Badge
 								className={cn(
-									"font-medium",
 									trade.direction === "long"
-										? "border-profit/50 bg-profit/10 text-profit"
-										: "border-loss/50 bg-loss/10 text-loss",
+										? "border-profit/30 bg-profit/10 text-profit"
+										: "border-loss/30 bg-loss/10 text-loss",
 								)}
 								variant="outline"
 							>
@@ -773,7 +767,6 @@ export default function TradeDetailPage() {
 								{trade.direction.toUpperCase()}
 							</Badge>
 							<Badge
-								className={trade.status === "closed" ? "bg-chart-1" : ""}
 								variant={trade.status === "open" ? "secondary" : "default"}
 							>
 								{trade.status === "open" ? (
@@ -781,14 +774,13 @@ export default function TradeDetailPage() {
 								) : (
 									<Check className="mr-1 h-3 w-3" />
 								)}
-								{trade.status.charAt(0).toUpperCase() + trade.status.slice(1)}
+								{trade.status}
 							</Badge>
 						</div>
 						<p className="mt-1 text-muted-foreground text-sm">
-							{trade.instrumentType.charAt(0).toUpperCase() +
-								trade.instrumentType.slice(1)}
-							{trade.setupType && ` • ${trade.setupType}`}
-							{stats?.duration && ` • ${stats.duration}`}
+							{trade.instrumentType}
+							{trade.setupType && ` · ${trade.setupType}`}
+							{stats?.duration && ` · ${stats.duration}`}
 						</p>
 					</div>
 				</div>
@@ -797,14 +789,17 @@ export default function TradeDetailPage() {
 					{isEditing ? (
 						<>
 							<Button
-								disabled={updateTrade.isPending}
 								onClick={() => setIsEditing(false)}
-								variant="outline"
+								size="sm"
+								variant="ghost"
 							>
-								<X className="mr-2 h-4 w-4" />
 								Cancel
 							</Button>
-							<Button disabled={updateTrade.isPending} onClick={handleSaveEdit}>
+							<Button
+								disabled={updateTrade.isPending}
+								onClick={handleSaveEdit}
+								size="sm"
+							>
 								{updateTrade.isPending ? (
 									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 								) : (
@@ -815,7 +810,11 @@ export default function TradeDetailPage() {
 						</>
 					) : (
 						<>
-							<Button onClick={() => setIsEditing(true)} variant="outline">
+							<Button
+								onClick={() => setIsEditing(true)}
+								size="sm"
+								variant="outline"
+							>
 								<Edit className="mr-2 h-4 w-4" />
 								Edit
 							</Button>
@@ -823,25 +822,23 @@ export default function TradeDetailPage() {
 							{trade.status === "open" && (
 								<Dialog onOpenChange={setIsClosing} open={isClosing}>
 									<DialogTrigger asChild>
-										<Button>
+										<Button size="sm">
 											<XCircle className="mr-2 h-4 w-4" />
-											Close Trade
+											Close
 										</Button>
 									</DialogTrigger>
 									<DialogContent>
 										<DialogHeader>
 											<DialogTitle>Close Trade</DialogTitle>
 											<DialogDescription>
-												Enter the exit details to close this {trade.symbol}{" "}
-												{trade.direction} trade.
+												Enter exit details for this {trade.symbol}{" "}
+												{trade.direction} position.
 											</DialogDescription>
 										</DialogHeader>
 										<div className="space-y-4 py-4">
 											<div className="space-y-2">
-												<Label htmlFor="exitPrice">Exit Price *</Label>
+												<Label>Exit Price</Label>
 												<Input
-													className="font-mono"
-													id="exitPrice"
 													onChange={(e) =>
 														setCloseData({
 															...closeData,
@@ -856,9 +853,8 @@ export default function TradeDetailPage() {
 											</div>
 											<div className="grid grid-cols-2 gap-4">
 												<div className="space-y-2">
-													<Label htmlFor="exitDate">Exit Date</Label>
+													<Label>Exit Date</Label>
 													<Input
-														id="exitDate"
 														onChange={(e) =>
 															setCloseData({
 																...closeData,
@@ -870,9 +866,8 @@ export default function TradeDetailPage() {
 													/>
 												</div>
 												<div className="space-y-2">
-													<Label htmlFor="exitTime">Exit Time</Label>
+													<Label>Exit Time</Label>
 													<Input
-														id="exitTime"
 														onChange={(e) =>
 															setCloseData({
 																...closeData,
@@ -885,10 +880,8 @@ export default function TradeDetailPage() {
 												</div>
 											</div>
 											<div className="space-y-2">
-												<Label htmlFor="fees">Fees (optional)</Label>
+												<Label>Fees (optional)</Label>
 												<Input
-													className="font-mono"
-													id="fees"
 													onChange={(e) =>
 														setCloseData({ ...closeData, fees: e.target.value })
 													}
@@ -922,7 +915,7 @@ export default function TradeDetailPage() {
 
 							<Dialog onOpenChange={setIsDeleting} open={isDeleting}>
 								<DialogTrigger asChild>
-									<Button size="icon" variant="outline">
+									<Button size="icon" variant="ghost">
 										<Trash2 className="h-4 w-4" />
 									</Button>
 								</DialogTrigger>
@@ -930,8 +923,8 @@ export default function TradeDetailPage() {
 									<DialogHeader>
 										<DialogTitle>Delete Trade</DialogTitle>
 										<DialogDescription>
-											Are you sure you want to delete this trade? This action
-											cannot be undone.
+											This will move the trade to trash. You can restore it
+											later.
 										</DialogDescription>
 									</DialogHeader>
 									<DialogFooter>
@@ -943,7 +936,7 @@ export default function TradeDetailPage() {
 										</Button>
 										<Button
 											disabled={deleteTrade.isPending}
-											onClick={handleDeleteTrade}
+											onClick={() => deleteTrade.mutate({ id: tradeId })}
 											variant="destructive"
 										>
 											{deleteTrade.isPending && (
@@ -959,44 +952,83 @@ export default function TradeDetailPage() {
 				</div>
 			</div>
 
-			{/* P&L Hero Card - Only for closed trades */}
+			{/* P&L Hero - Closed trades only */}
 			{trade.status === "closed" && trade.netPnl && (
-				<Card
+				<div
 					className={cn(
-						"overflow-hidden border-2",
+						"relative overflow-hidden rounded-xl p-8",
 						parseFloat(trade.netPnl) >= 0
-							? "border-profit/30 bg-gradient-to-br from-profit/10 to-profit/5"
-							: "border-loss/30 bg-gradient-to-br from-loss/10 to-loss/5",
+							? "bg-gradient-to-br from-profit/10 via-profit/5 to-transparent"
+							: "bg-gradient-to-br from-loss/10 via-loss/5 to-transparent",
 					)}
 				>
-					<CardContent className="p-6">
-						<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-							{/* Net P&L */}
-							<div className="space-y-1">
-								<p className="flex items-center gap-1 text-muted-foreground text-sm">
-									<DollarSign className="h-3 w-3" />
-									Net P&L
-								</p>
-								<p
-									className={cn(
-										"font-bold font-mono text-3xl",
-										getPnLColorClass(trade.netPnl),
-									)}
-								>
-									{formatCurrency(parseFloat(trade.netPnl))}
-								</p>
-							</div>
+					{/* Decorative glow */}
+					<div
+						className={cn(
+							"-top-20 -right-20 pointer-events-none absolute h-40 w-40 rounded-full blur-3xl",
+							parseFloat(trade.netPnl) >= 0 ? "bg-profit/20" : "bg-loss/20",
+						)}
+					/>
 
-							{/* Percentage Change */}
+					<div className="relative flex flex-wrap items-end justify-between gap-6">
+						{/* Main P&L */}
+						<div>
+							<p className="mb-2 text-muted-foreground text-sm uppercase tracking-wider">
+								Net Profit / Loss
+							</p>
+							<p
+								className={cn(
+									"font-bold font-mono text-5xl tracking-tight",
+									getPnLColorClass(trade.netPnl),
+								)}
+							>
+								{parseFloat(trade.netPnl) >= 0 ? "+" : ""}
+								{formatCurrency(parseFloat(trade.netPnl))}
+							</p>
+							{/* Exit badges */}
+							<div className="mt-3 flex flex-wrap gap-2">
+								{trade.exitReason === "trailing_stop" && (
+									<Badge
+										className="border-accent/30 text-accent"
+										variant="outline"
+									>
+										Trailing Stop
+									</Badge>
+								)}
+								{trade.exitReason === "stop_loss" && (
+									<Badge variant="destructive">Stop Loss</Badge>
+								)}
+								{trade.exitReason === "take_profit" && (
+									<Badge className="bg-profit text-profit-foreground">
+										Take Profit
+									</Badge>
+								)}
+								{!trade.exitReason &&
+									!trade.stopLossHit &&
+									!trade.takeProfitHit && (
+										<Badge variant="secondary">Manual Exit</Badge>
+									)}
+								{trade.wasTrailed && (
+									<Badge
+										className="border-accent/30 text-accent"
+										variant="outline"
+									>
+										Trailed
+									</Badge>
+								)}
+							</div>
+						</div>
+
+						{/* Secondary stats */}
+						<div className="flex gap-8">
 							{stats?.percentChange != null && (
-								<div className="space-y-1">
-									<p className="flex items-center gap-1 text-muted-foreground text-sm">
-										<Percent className="h-3 w-3" />
+								<div className="text-right">
+									<p className="text-muted-foreground text-xs uppercase tracking-wider">
 										Change
 									</p>
 									<p
 										className={cn(
-											"font-bold font-mono text-3xl",
+											"font-bold font-mono text-2xl",
 											stats.percentChange >= 0 ? "text-profit" : "text-loss",
 										)}
 									>
@@ -1005,16 +1037,14 @@ export default function TradeDetailPage() {
 									</p>
 								</div>
 							)}
-
-							{/* R Multiple */}
 							{stats?.rMultiple != null && (
-								<div className="space-y-1">
-									<p className="flex items-center gap-1 text-muted-foreground text-sm">
-										<Target className="h-3 w-3" />R Multiple
+								<div className="text-right">
+									<p className="text-muted-foreground text-xs uppercase tracking-wider">
+										R Multiple
 									</p>
 									<p
 										className={cn(
-											"font-bold font-mono text-3xl",
+											"font-bold font-mono text-2xl",
 											stats.rMultiple >= 0 ? "text-profit" : "text-loss",
 										)}
 									>
@@ -1023,77 +1053,12 @@ export default function TradeDetailPage() {
 									</p>
 								</div>
 							)}
-
-							{/* Status Badges */}
-							<div className="flex flex-col justify-center space-y-2">
-								{/* Exit Reason Badge */}
-								{trade.exitReason === "trailing_stop" && (
-									<Badge className="w-fit border-accent/50 bg-accent/10 text-accent">
-										<Target className="mr-1 h-3 w-3" />
-										Trailing Stop
-									</Badge>
-								)}
-								{trade.exitReason === "stop_loss" && (
-									<Badge className="w-fit" variant="destructive">
-										<AlertTriangle className="mr-1 h-3 w-3" />
-										Stop Loss Hit
-									</Badge>
-								)}
-								{trade.exitReason === "take_profit" && (
-									<Badge className="w-fit bg-profit text-profit-foreground">
-										<Target className="mr-1 h-3 w-3" />
-										Take Profit Hit
-									</Badge>
-								)}
-								{trade.exitReason === "breakeven" && (
-									<Badge className="w-fit" variant="secondary">
-										<Shield className="mr-1 h-3 w-3" />
-										Breakeven
-									</Badge>
-								)}
-								{trade.exitReason === "time_based" && (
-									<Badge className="w-fit" variant="secondary">
-										<Clock className="mr-1 h-3 w-3" />
-										Time Exit
-									</Badge>
-								)}
-								{/* Fallback to old logic if no exitReason set */}
-								{!trade.exitReason && trade.stopLossHit && (
-									<Badge className="w-fit" variant="destructive">
-										<AlertTriangle className="mr-1 h-3 w-3" />
-										Stop Loss Hit
-									</Badge>
-								)}
-								{!trade.exitReason && trade.takeProfitHit && (
-									<Badge className="w-fit bg-profit text-profit-foreground">
-										<Target className="mr-1 h-3 w-3" />
-										Take Profit Hit
-									</Badge>
-								)}
-								{!trade.exitReason && !trade.stopLossHit && !trade.takeProfitHit && (
-									<Badge className="w-fit" variant="secondary">
-										Manual Exit
-									</Badge>
-								)}
-								{/* Partial Exit Badge */}
-								{trade.isPartiallyExited && (
-									<Badge className="w-fit border-primary/50 bg-primary/10 text-primary">
-										Partial Exits
-									</Badge>
-								)}
-								{/* Trailed Badge */}
-								{trade.wasTrailed && (
-									<Badge className="w-fit border-accent/50 bg-accent/10 text-accent">
-										Trailed
-									</Badge>
-								)}
-							</div>
 						</div>
-					</CardContent>
-				</Card>
+					</div>
+				</div>
 			)}
 
-			{/* Main Content Tabs */}
+			{/* Main Content */}
 			<Tabs className="space-y-6" defaultValue="details">
 				<TabsList>
 					<TabsTrigger className="gap-2" value="details">
@@ -1114,114 +1079,128 @@ export default function TradeDetailPage() {
 					</TabsTrigger>
 				</TabsList>
 
-				{/* Details Tab */}
 				<TabsContent className="space-y-6" value="details">
-					<div className="grid gap-6 lg:grid-cols-3">
-						{/* Entry Details */}
-						<Card>
-							<CardHeader className="pb-3">
-								<CardTitle className="flex items-center gap-2 text-base">
-									<div
-										className={cn(
-											"rounded-md p-1.5",
-											isEditing
-												? editForm.direction === "long"
-													? "bg-profit/10"
-													: "bg-loss/10"
-												: trade.direction === "long"
-													? "bg-profit/10"
-													: "bg-loss/10",
-										)}
-									>
-										{(isEditing ? editForm.direction : trade.direction) ===
-										"long" ? (
-											<TrendingUp className="h-4 w-4 text-profit" />
-										) : (
-											<TrendingDown className="h-4 w-4 text-loss" />
-										)}
+					{isEditing ? (
+						/* Edit Mode */
+						<div className="grid gap-6 md:grid-cols-2">
+							<div className="space-y-4 rounded border border-white/5 p-6">
+								<h3 className="font-medium">Position</h3>
+								<div className="space-y-3">
+									<div className="space-y-2">
+										<Label className="text-muted-foreground text-xs">
+											Instrument Type
+										</Label>
+										<div className="grid grid-cols-2 gap-2">
+											<Button
+												onClick={() =>
+													setEditForm({
+														...editForm,
+														instrumentType: "futures",
+														symbol: "",
+													})
+												}
+												size="sm"
+												type="button"
+												variant={
+													editForm.instrumentType === "futures"
+														? "default"
+														: "outline"
+												}
+											>
+												Futures
+											</Button>
+											<Button
+												onClick={() =>
+													setEditForm({
+														...editForm,
+														instrumentType: "forex",
+														symbol: "",
+													})
+												}
+												size="sm"
+												type="button"
+												variant={
+													editForm.instrumentType === "forex"
+														? "default"
+														: "outline"
+												}
+											>
+												Forex
+											</Button>
+										</div>
 									</div>
-									Entry
-								</CardTitle>
-							</CardHeader>
-							<CardContent className="space-y-3">
-								{isEditing ? (
-									<>
-										<div className="space-y-2">
-											<Label className="text-xs">Instrument Type</Label>
-											<Tabs
-												onValueChange={(v) =>
-													setEditForm({
-														...editForm,
-														instrumentType: v as "futures" | "forex",
-														symbol: "", // Reset symbol when type changes
-													})
+									<div className="space-y-2">
+										<Label className="text-muted-foreground text-xs">
+											Symbol
+										</Label>
+										<Select
+											onValueChange={(v) =>
+												setEditForm({ ...editForm, symbol: v })
+											}
+											value={editForm.symbol}
+										>
+											<SelectTrigger>
+												<SelectValue placeholder="Select symbol" />
+											</SelectTrigger>
+											<SelectContent>
+												{(editForm.instrumentType === "futures"
+													? FUTURES_SYMBOLS
+													: FOREX_SYMBOLS
+												).map((s) => (
+													<SelectItem key={s.value} value={s.value}>
+														{s.label}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
+									<div className="space-y-2">
+										<Label className="text-muted-foreground text-xs">
+											Direction
+										</Label>
+										<div className="grid grid-cols-2 gap-2">
+											<Button
+												className={
+													editForm.direction === "long"
+														? "bg-profit text-profit-foreground hover:bg-profit/90"
+														: ""
 												}
-												value={editForm.instrumentType}
-											>
-												<TabsList className="grid h-9 w-full grid-cols-2">
-													<TabsTrigger className="text-xs" value="futures">
-														Futures
-													</TabsTrigger>
-													<TabsTrigger className="text-xs" value="forex">
-														Forex
-													</TabsTrigger>
-												</TabsList>
-											</Tabs>
-										</div>
-										<div className="space-y-2">
-											<Label className="text-xs">Symbol</Label>
-											<Select
-												onValueChange={(v) =>
-													setEditForm({ ...editForm, symbol: v })
+												onClick={() =>
+													setEditForm({ ...editForm, direction: "long" })
 												}
-												value={editForm.symbol}
-											>
-												<SelectTrigger className="h-9">
-													<SelectValue placeholder="Select symbol" />
-												</SelectTrigger>
-												<SelectContent>
-													{(editForm.instrumentType === "futures"
-														? FUTURES_SYMBOLS
-														: FOREX_SYMBOLS
-													).map((s) => (
-														<SelectItem key={s.value} value={s.value}>
-															{s.label}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-										</div>
-										<div className="space-y-2">
-											<Label className="text-xs">Direction</Label>
-											<Tabs
-												onValueChange={(v) =>
-													setEditForm({
-														...editForm,
-														direction: v as "long" | "short",
-													})
+												size="sm"
+												type="button"
+												variant={
+													editForm.direction === "long" ? "default" : "outline"
 												}
-												value={editForm.direction}
 											>
-												<TabsList className="grid h-9 w-full grid-cols-2">
-													<TabsTrigger
-														className="text-xs data-[state=active]:bg-profit/20 data-[state=active]:text-profit"
-														value="long"
-													>
-														Long
-													</TabsTrigger>
-													<TabsTrigger
-														className="text-xs data-[state=active]:bg-loss/20 data-[state=active]:text-loss"
-														value="short"
-													>
-														Short
-													</TabsTrigger>
-												</TabsList>
-											</Tabs>
+												Long
+											</Button>
+											<Button
+												className={
+													editForm.direction === "short"
+														? "bg-loss text-loss-foreground hover:bg-loss/90"
+														: ""
+												}
+												onClick={() =>
+													setEditForm({ ...editForm, direction: "short" })
+												}
+												size="sm"
+												type="button"
+												variant={
+													editForm.direction === "short" ? "default" : "outline"
+												}
+											>
+												Short
+											</Button>
 										</div>
+									</div>
+									<div className="grid grid-cols-2 gap-3">
 										<div className="space-y-2">
-											<Label className="text-xs">Entry Price</Label>
+											<Label className="text-muted-foreground text-xs">
+												Entry Price
+											</Label>
 											<Input
-												className="h-9 font-mono"
 												onChange={(e) =>
 													setEditForm({
 														...editForm,
@@ -1234,256 +1213,74 @@ export default function TradeDetailPage() {
 											/>
 										</div>
 										<div className="space-y-2">
-											<Label className="text-xs">
-												{editForm.instrumentType === "futures"
-													? "Contracts"
-													: "Lot Size"}
+											<Label className="text-muted-foreground text-xs">
+												Quantity
 											</Label>
 											<Input
-												className="h-9 font-mono"
 												onChange={(e) =>
-													setEditForm({ ...editForm, quantity: e.target.value })
+													setEditForm({
+														...editForm,
+														quantity: e.target.value,
+													})
 												}
 												step="any"
 												type="number"
 												value={editForm.quantity}
 											/>
 										</div>
-									</>
-								) : (
-									<>
-										<div className="flex items-center justify-between">
-											<span className="text-muted-foreground text-sm">
-												Price
-											</span>
-											<span className="font-mono font-semibold text-lg">
-												{parseFloat(trade.entryPrice).toLocaleString(
-													undefined,
-													{
-														minimumFractionDigits: 2,
-														maximumFractionDigits: 5,
-													},
-												)}
-											</span>
-										</div>
-										<Separator />
-										<div className="flex items-center justify-between">
-											<span className="text-muted-foreground text-sm">
-												Date
-											</span>
-											<span className="text-sm">
-												{new Date(trade.entryTime).toLocaleDateString()}
-											</span>
-										</div>
-										<div className="flex items-center justify-between">
-											<span className="text-muted-foreground text-sm">
-												Time
-											</span>
-											<span className="text-sm">
-												{new Date(trade.entryTime).toLocaleTimeString()}
-											</span>
-										</div>
-										<Separator />
-										<div className="flex items-center justify-between">
-											<span className="text-muted-foreground text-sm">
-												{trade.instrumentType === "futures"
-													? "Contracts"
-													: "Lots"}
-											</span>
-											<span className="font-medium font-mono">
-												{parseFloat(trade.quantity).toFixed(2)}
-											</span>
-										</div>
-									</>
-								)}
-							</CardContent>
-						</Card>
-
-						{/* Exit Details */}
-						<Card>
-							<CardHeader className="pb-3">
-								<CardTitle className="flex items-center gap-2 text-base">
-									<div className="rounded-md bg-loss/10 p-1.5">
-										<ArrowDownRight className="h-4 w-4 text-loss" />
 									</div>
-									Exit
-								</CardTitle>
-							</CardHeader>
-							<CardContent className="space-y-3">
-								<div className="flex items-center justify-between">
-									<span className="text-muted-foreground text-sm">Price</span>
-									<span className="font-mono font-semibold text-lg">
-										{trade.exitPrice
-											? parseFloat(trade.exitPrice).toLocaleString(undefined, {
-													minimumFractionDigits: 2,
-													maximumFractionDigits: 5,
+								</div>
+							</div>
+
+							<div className="space-y-4 rounded border border-white/5 p-6">
+								<h3 className="font-medium">Risk Management</h3>
+								<div className="grid grid-cols-2 gap-3">
+									<div className="space-y-2">
+										<Label className="text-muted-foreground text-xs">
+											Stop Loss
+										</Label>
+										<Input
+											onChange={(e) =>
+												setEditForm({ ...editForm, stopLoss: e.target.value })
+											}
+											placeholder="Not set"
+											step="any"
+											type="number"
+											value={editForm.stopLoss}
+										/>
+									</div>
+									<div className="space-y-2">
+										<Label className="text-muted-foreground text-xs">
+											Take Profit
+										</Label>
+										<Input
+											onChange={(e) =>
+												setEditForm({
+													...editForm,
+													takeProfit: e.target.value,
 												})
-											: "—"}
-									</span>
-								</div>
-								<Separator />
-								<div className="flex items-center justify-between">
-									<span className="text-muted-foreground text-sm">Date</span>
-									<span className="text-sm">
-										{trade.exitTime
-											? new Date(trade.exitTime).toLocaleDateString()
-											: "—"}
-									</span>
-								</div>
-								<div className="flex items-center justify-between">
-									<span className="text-muted-foreground text-sm">Time</span>
-									<span className="text-sm">
-										{trade.exitTime
-											? new Date(trade.exitTime).toLocaleTimeString()
-											: "—"}
-									</span>
-								</div>
-								<Separator />
-								<div className="flex items-center justify-between">
-									<span className="text-muted-foreground text-sm">Fees</span>
-									<span className="font-mono text-sm">
-										{trade.fees ? formatCurrency(parseFloat(trade.fees)) : "—"}
-									</span>
-								</div>
-							</CardContent>
-						</Card>
-
-						{/* Risk Management */}
-						<Card>
-							<CardHeader className="pb-3">
-								<CardTitle className="flex items-center gap-2 text-base">
-									<div className="rounded-md bg-chart-3/10 p-1.5">
-										<Shield className="h-4 w-4 text-chart-3" />
+											}
+											placeholder="Not set"
+											step="any"
+											type="number"
+											value={editForm.takeProfit}
+										/>
 									</div>
-									Risk
-								</CardTitle>
-							</CardHeader>
-							<CardContent className="space-y-3">
-								{isEditing ? (
-									<>
-										<div className="space-y-2">
-											<Label className="text-xs">Stop Loss</Label>
-											<Input
-												className="h-9 font-mono"
-												onChange={(e) =>
-													setEditForm({ ...editForm, stopLoss: e.target.value })
-												}
-												placeholder="Not set"
-												step="any"
-												type="number"
-												value={editForm.stopLoss}
-											/>
-										</div>
-										<div className="space-y-2">
-											<Label className="text-xs">Take Profit</Label>
-											<Input
-												className="h-9 font-mono"
-												onChange={(e) =>
-													setEditForm({
-														...editForm,
-														takeProfit: e.target.value,
-													})
-												}
-												placeholder="Not set"
-												step="any"
-												type="number"
-												value={editForm.takeProfit}
-											/>
-										</div>
-									</>
-								) : (
-									<>
-										<div className="flex items-center justify-between">
-											<span className="text-muted-foreground text-sm">
-												Stop Loss
-											</span>
-											<span className="font-medium font-mono text-loss">
-												{trade.stopLoss
-													? parseFloat(trade.stopLoss).toLocaleString(
-															undefined,
-															{
-																minimumFractionDigits: 2,
-																maximumFractionDigits: 5,
-															},
-														)
-													: "Not set"}
-											</span>
-										</div>
-										{/* Trailed Stop Loss */}
-										{trade.wasTrailed && trade.trailedStopLoss && (
-											<>
-												<div className="flex items-center justify-between">
-													<span className="flex items-center gap-1 text-muted-foreground text-sm">
-														<span className="text-accent">→</span> Trailed SL
-													</span>
-													<span className="font-medium font-mono text-accent">
-														{parseFloat(trade.trailedStopLoss).toLocaleString(
-															undefined,
-															{
-																minimumFractionDigits: 2,
-																maximumFractionDigits: 5,
-															},
-														)}
-													</span>
-												</div>
-											</>
-										)}
-										<Separator />
-										<div className="flex items-center justify-between">
-											<span className="text-muted-foreground text-sm">
-												Take Profit
-											</span>
-											<span className="font-medium font-mono text-profit">
-												{trade.takeProfit
-													? parseFloat(trade.takeProfit).toLocaleString(
-															undefined,
-															{
-																minimumFractionDigits: 2,
-																maximumFractionDigits: 5,
-															},
-														)
-													: "Not set"}
-											</span>
-										</div>
-										<Separator />
-										<div className="flex items-center justify-between">
-											<span className="text-muted-foreground text-sm">
-												R:R Ratio
-											</span>
-											<span className="font-medium font-mono">
-												{stats?.rrRatio ? `1:${stats.rrRatio.toFixed(2)}` : "—"}
-											</span>
-										</div>
-									</>
-								)}
-							</CardContent>
-						</Card>
-					</div>
-
-					{/* Trade Context */}
-					<Card>
-						<CardHeader className="pb-3">
-							<CardTitle className="flex items-center gap-2 text-base">
-								<div className="rounded-md bg-chart-4/10 p-1.5">
-									<Calendar className="h-4 w-4 text-chart-4" />
 								</div>
-								Trade Context
-							</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-								<div className="space-y-2">
-									<Label className="text-muted-foreground text-xs uppercase tracking-wide">
-										Setup Type
-									</Label>
-									{isEditing ? (
+
+								<h3 className="mt-6 font-medium">Context</h3>
+								<div className="space-y-3">
+									<div className="space-y-2">
+										<Label className="text-muted-foreground text-xs">
+											Setup Type
+										</Label>
 										<Select
 											onValueChange={(v) =>
 												setEditForm({ ...editForm, setupType: v })
 											}
 											value={editForm.setupType}
 										>
-											<SelectTrigger className="h-9">
+											<SelectTrigger>
 												<SelectValue placeholder="Select setup" />
 											</SelectTrigger>
 											<SelectContent>
@@ -1494,25 +1291,18 @@ export default function TradeDetailPage() {
 												))}
 											</SelectContent>
 										</Select>
-									) : (
-										<p className="font-medium">
-											{trade.setupType || "Not specified"}
-										</p>
-									)}
-								</div>
-
-								<div className="space-y-2">
-									<Label className="text-muted-foreground text-xs uppercase tracking-wide">
-										Emotional State
-									</Label>
-									{isEditing ? (
+									</div>
+									<div className="space-y-2">
+										<Label className="text-muted-foreground text-xs">
+											Emotional State
+										</Label>
 										<Select
 											onValueChange={(v) =>
 												setEditForm({ ...editForm, emotionalState: v })
 											}
 											value={editForm.emotionalState}
 										>
-											<SelectTrigger className="h-9">
+											<SelectTrigger>
 												<SelectValue placeholder="Select state" />
 											</SelectTrigger>
 											<SelectContent>
@@ -1523,163 +1313,338 @@ export default function TradeDetailPage() {
 												))}
 											</SelectContent>
 										</Select>
-									) : (
-										<p className="font-medium capitalize">
-											{trade.emotionalState || "Not specified"}
-										</p>
-									)}
-								</div>
-
-								<div className="space-y-2">
-									<Label className="text-muted-foreground text-xs uppercase tracking-wide">
-										Source
-									</Label>
-									<Badge className="capitalize" variant="outline">
-										{trade.importSource}
-									</Badge>
+									</div>
 								</div>
 							</div>
-						</CardContent>
-					</Card>
 
-					{/* Notes */}
-					<Card>
-						<CardHeader className="pb-3">
-							<CardTitle className="flex items-center gap-2 text-base">
-								<div className="rounded-md bg-chart-5/10 p-1.5">
-									<FileText className="h-4 w-4 text-chart-5" />
-								</div>
-								Notes & Analysis
-							</CardTitle>
-							<CardDescription>
-								Record your thoughts, lessons learned, and trade analysis
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							{isEditing ? (
+							<div className="space-y-4 rounded border border-white/5 p-6 md:col-span-2">
+								<h3 className="font-medium">Notes</h3>
 								<Textarea
 									onChange={(e) =>
 										setEditForm({ ...editForm, notes: e.target.value })
 									}
-									placeholder="What was your reasoning? What patterns did you see? What would you do differently?"
-									rows={6}
+									placeholder="What was your reasoning? What patterns did you see?"
+									rows={4}
 									value={editForm.notes}
 								/>
-							) : trade.notes ? (
-								<p className="whitespace-pre-wrap text-sm leading-relaxed">
-									{trade.notes}
-								</p>
-							) : (
-								<p className="text-muted-foreground text-sm italic">
-									No notes recorded. Click Edit to add your analysis.
-								</p>
-							)}
-						</CardContent>
-					</Card>
-
-					{/* Tags */}
-					{trade.tradeTags && trade.tradeTags.length > 0 && (
-						<Card>
-							<CardHeader className="pb-3">
-								<CardTitle className="text-base">Tags</CardTitle>
-							</CardHeader>
-							<CardContent>
-								<div className="flex flex-wrap gap-2">
-									{trade.tradeTags.map((tt) => (
-										<Badge
-											className="border"
-											key={tt.tag.id}
-											style={{
-												backgroundColor: `${tt.tag.color}20`,
-												borderColor: `${tt.tag.color}50`,
-											}}
-											variant="secondary"
+							</div>
+						</div>
+					) : (
+						/* View Mode - Redesigned */
+						<div className="space-y-8">
+							{/* Entry & Exit - Side by Side Comparison */}
+							<div className="grid gap-px overflow-hidden rounded-lg bg-white/10 md:grid-cols-2">
+								{/* Entry Side */}
+								<div className="bg-[#0a0a0a] p-6">
+									<div className="mb-5 flex items-center gap-3">
+										<div
+											className={cn(
+												"flex h-10 w-10 items-center justify-center rounded-full",
+												trade.direction === "long"
+													? "bg-profit/20 ring-2 ring-profit/30"
+													: "bg-loss/20 ring-2 ring-loss/30",
+											)}
 										>
-											{tt.tag.name}
-										</Badge>
-									))}
+											{trade.direction === "long" ? (
+												<TrendingUp className="h-5 w-5 text-profit" />
+											) : (
+												<TrendingDown className="h-5 w-5 text-loss" />
+											)}
+										</div>
+										<div>
+											<h3 className="font-semibold uppercase tracking-wide">
+												Entry
+											</h3>
+											<p className="text-muted-foreground text-xs">
+												{new Date(trade.entryTime).toLocaleDateString("en-US", {
+													weekday: "short",
+													month: "short",
+													day: "numeric",
+												})}
+											</p>
+										</div>
+									</div>
+									<div className="space-y-4">
+										<div>
+											<p className="text-muted-foreground text-xs uppercase tracking-wider">
+												Price
+											</p>
+											<p className="font-bold font-mono text-2xl text-white">
+												{formatPrice(trade.entryPrice)}
+											</p>
+										</div>
+										<div className="grid grid-cols-2 gap-4">
+											<div>
+												<p className="text-muted-foreground text-xs uppercase tracking-wider">
+													Time
+												</p>
+												<p className="font-mono text-sm text-white/80">
+													{new Date(trade.entryTime).toLocaleTimeString()}
+												</p>
+											</div>
+											<div>
+												<p className="text-muted-foreground text-xs uppercase tracking-wider">
+													{trade.instrumentType === "futures"
+														? "Contracts"
+														: "Lots"}
+												</p>
+												<p className="font-mono text-sm text-white/80">
+													{parseFloat(trade.quantity).toFixed(2)}
+												</p>
+											</div>
+										</div>
+									</div>
 								</div>
-							</CardContent>
-						</Card>
+
+								{/* Exit Side */}
+								<div className="bg-[#0a0a0a] p-6">
+									<div className="mb-5 flex items-center gap-3">
+										<div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 ring-2 ring-white/20">
+											<Target className="h-5 w-5 text-white/70" />
+										</div>
+										<div>
+											<h3 className="font-semibold uppercase tracking-wide">
+												Exit
+											</h3>
+											<p className="text-muted-foreground text-xs">
+												{trade.exitTime
+													? new Date(trade.exitTime).toLocaleDateString(
+															"en-US",
+															{
+																weekday: "short",
+																month: "short",
+																day: "numeric",
+															},
+														)
+													: "Open Position"}
+											</p>
+										</div>
+									</div>
+									<div className="space-y-4">
+										<div>
+											<p className="text-muted-foreground text-xs uppercase tracking-wider">
+												Price
+											</p>
+											<p className="font-bold font-mono text-2xl text-white">
+												{trade.exitPrice ? formatPrice(trade.exitPrice) : "—"}
+											</p>
+										</div>
+										<div className="grid grid-cols-2 gap-4">
+											<div>
+												<p className="text-muted-foreground text-xs uppercase tracking-wider">
+													Time
+												</p>
+												<p className="font-mono text-sm text-white/80">
+													{trade.exitTime
+														? new Date(trade.exitTime).toLocaleTimeString()
+														: "—"}
+												</p>
+											</div>
+											<div>
+												<p className="text-muted-foreground text-xs uppercase tracking-wider">
+													Fees
+												</p>
+												<p className="font-mono text-sm text-white/80">
+													{trade.fees
+														? formatCurrency(parseFloat(trade.fees))
+														: "—"}
+												</p>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							{/* Risk Management */}
+							<div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-white/[0.08] to-white/[0.02] p-6">
+								<div className="absolute top-0 right-0 h-32 w-32 bg-primary/5 blur-3xl" />
+								<div className="relative">
+									<div className="mb-5 flex items-center gap-3">
+										<div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 ring-2 ring-primary/20">
+											<Shield className="h-5 w-5 text-primary" />
+										</div>
+										<h3 className="font-semibold uppercase tracking-wide">
+											Risk Management
+										</h3>
+									</div>
+									<div className="grid gap-6 sm:grid-cols-4">
+										<div>
+											<p className="mb-1 text-muted-foreground text-xs uppercase tracking-wider">
+												Stop Loss
+											</p>
+											<p
+												className={cn(
+													"font-mono font-semibold text-lg",
+													trade.stopLoss
+														? "text-loss"
+														: "text-muted-foreground",
+												)}
+											>
+												{trade.stopLoss
+													? formatPrice(trade.stopLoss)
+													: "Not set"}
+											</p>
+											{trade.wasTrailed && trade.trailedStopLoss && (
+												<p className="mt-1 text-accent text-xs">
+													→ Trailed to {formatPrice(trade.trailedStopLoss)}
+												</p>
+											)}
+										</div>
+										<div>
+											<p className="mb-1 text-muted-foreground text-xs uppercase tracking-wider">
+												Take Profit
+											</p>
+											<p
+												className={cn(
+													"font-mono font-semibold text-lg",
+													trade.takeProfit
+														? "text-profit"
+														: "text-muted-foreground",
+												)}
+											>
+												{trade.takeProfit
+													? formatPrice(trade.takeProfit)
+													: "Not set"}
+											</p>
+										</div>
+										<div>
+											<p className="mb-1 text-muted-foreground text-xs uppercase tracking-wider">
+												R:R Ratio
+											</p>
+											<p className="font-mono font-semibold text-lg text-white">
+												{stats?.rrRatio ? `1:${stats.rrRatio.toFixed(2)}` : "—"}
+											</p>
+										</div>
+										<div>
+											<p className="mb-1 text-muted-foreground text-xs uppercase tracking-wider">
+												Risk ($)
+											</p>
+											<p className="font-mono font-semibold text-lg text-white">
+												{trade.stopLoss && trade.entryPrice
+													? formatCurrency(
+															Math.abs(
+																(parseFloat(trade.entryPrice) -
+																	parseFloat(trade.stopLoss)) *
+																	parseFloat(trade.quantity) *
+																	(trade.instrumentType === "futures" ? 20 : 1),
+															),
+														)
+													: "—"}
+											</p>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							{/* Context & Notes - Magazine Layout */}
+							<div className="grid gap-6 lg:grid-cols-3">
+								{/* Context Cards */}
+								<div className="space-y-4 lg:col-span-1">
+									<h3 className="font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+										Trade Context
+									</h3>
+									<div className="space-y-3">
+										<div className="rounded-lg bg-white/[0.04] p-4 transition-colors hover:bg-white/[0.06]">
+											<p className="mb-1 text-muted-foreground text-xs">
+												Setup Type
+											</p>
+											<p className="font-medium text-white">
+												{trade.setupType || "Not specified"}
+											</p>
+										</div>
+										<div className="rounded-lg bg-white/[0.04] p-4 transition-colors hover:bg-white/[0.06]">
+											<p className="mb-1 text-muted-foreground text-xs">
+												Emotional State
+											</p>
+											<p className="font-medium text-white capitalize">
+												{trade.emotionalState || "Not specified"}
+											</p>
+										</div>
+										<div className="rounded-lg bg-white/[0.04] p-4 transition-colors hover:bg-white/[0.06]">
+											<p className="mb-1 text-muted-foreground text-xs">
+												Import Source
+											</p>
+											<Badge className="mt-1 capitalize" variant="outline">
+												{trade.importSource}
+											</Badge>
+										</div>
+									</div>
+								</div>
+
+								{/* Notes */}
+								<div className="lg:col-span-2">
+									<h3 className="mb-4 font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+										Notes & Analysis
+									</h3>
+									<div className="min-h-[200px] rounded-lg bg-white/[0.04] p-6">
+										{trade.notes ? (
+											<p className="whitespace-pre-wrap text-white/80 leading-relaxed">
+												{trade.notes}
+											</p>
+										) : (
+											<div className="flex h-full min-h-[150px] items-center justify-center text-center">
+												<div>
+													<FileText className="mx-auto mb-3 h-8 w-8 text-muted-foreground/30" />
+													<p className="text-muted-foreground text-sm">
+														No notes recorded
+													</p>
+													<p className="mt-1 text-muted-foreground/60 text-xs">
+														Click Edit to add your analysis
+													</p>
+												</div>
+											</div>
+										)}
+									</div>
+								</div>
+							</div>
+						</div>
 					)}
 				</TabsContent>
 
-				{/* Executions Tab */}
-				<TabsContent className="space-y-6" value="executions">
-					<ExecutionsTab tradeId={tradeId} trade={trade} onUpdate={refetch} />
+				<TabsContent value="executions">
+					<ExecutionsTab onUpdate={refetch} trade={trade} tradeId={tradeId} />
 				</TabsContent>
 
-				{/* Chart Tab */}
-				<TabsContent className="space-y-6" value="chart">
-					<Card>
-						<CardHeader>
-							<CardTitle>Trade Visualization</CardTitle>
-							<CardDescription>
-								Price chart with entry, exit, and risk levels marked
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							<div className="flex h-[400px] items-center justify-center rounded-lg border border-dashed bg-muted/50">
-								<div className="space-y-2 text-center">
-									<BarChart3 className="mx-auto h-12 w-12 text-muted-foreground" />
-									<p className="text-muted-foreground">
-										TradingView Lightweight Charts integration coming soon
-									</p>
-									<p className="text-muted-foreground text-xs">
-										Will display candlestick chart with entry (
-										{trade.entryPrice}),
-										{trade.exitPrice && ` exit (${trade.exitPrice}),`}
-										{trade.stopLoss && ` SL (${trade.stopLoss}),`}
-										{trade.takeProfit && ` TP (${trade.takeProfit})`}
-									</p>
+				<TabsContent value="chart">
+					<div className="flex h-[400px] items-center justify-center rounded border border-white/10 border-dashed">
+						<div className="text-center">
+							<BarChart3 className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+							<p className="text-muted-foreground text-sm">
+								Chart integration coming soon
+							</p>
+						</div>
+					</div>
+				</TabsContent>
+
+				<TabsContent value="screenshots">
+					{trade.screenshots && trade.screenshots.length > 0 ? (
+						<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+							{trade.screenshots.map((ss) => (
+								<div
+									className="aspect-video overflow-hidden rounded border border-white/10"
+									key={ss.id}
+								>
+									<Image
+										alt={ss.caption || "Trade screenshot"}
+										className="h-full w-full object-cover"
+										src={ss.url}
+									/>
 								</div>
+							))}
+						</div>
+					) : (
+						<div className="flex h-[200px] items-center justify-center rounded border border-white/10 border-dashed">
+							<div className="text-center">
+								<Camera className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+								<p className="text-muted-foreground text-sm">
+									No screenshots attached
+								</p>
+								<Button className="mt-3" disabled size="sm" variant="outline">
+									Upload Screenshot (Coming Soon)
+								</Button>
 							</div>
-						</CardContent>
-					</Card>
-				</TabsContent>
-
-				{/* Screenshots Tab */}
-				<TabsContent className="space-y-6" value="screenshots">
-					<Card>
-						<CardHeader>
-							<CardTitle>Trade Screenshots</CardTitle>
-							<CardDescription>
-								Visual documentation of your trade setup and execution
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							{trade.screenshots && trade.screenshots.length > 0 ? (
-								<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-									{trade.screenshots.map((ss) => (
-										<div
-											className="aspect-video overflow-hidden rounded-lg border bg-muted"
-											key={ss.id}
-										>
-											{/* biome-ignore lint/performance/noImgElement: External screenshot URLs */}
-											<img
-												alt={ss.caption || "Trade screenshot"}
-												className="h-full w-full object-cover"
-												src={ss.url}
-											/>
-										</div>
-									))}
-								</div>
-							) : (
-								<div className="flex h-[200px] items-center justify-center rounded-lg border border-dashed bg-muted/50">
-									<div className="space-y-2 text-center">
-										<Camera className="mx-auto h-12 w-12 text-muted-foreground" />
-										<p className="text-muted-foreground">
-											No screenshots attached
-										</p>
-										<Button disabled size="sm" variant="outline">
-											<Camera className="mr-2 h-4 w-4" />
-											Upload Screenshot (Coming Soon)
-										</Button>
-									</div>
-								</div>
-							)}
-						</CardContent>
-					</Card>
+						</div>
+					)}
 				</TabsContent>
 			</Tabs>
 		</div>

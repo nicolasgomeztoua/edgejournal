@@ -22,25 +22,25 @@ const features = [
 		visual: (
 			<div className="mt-6 space-y-3">
 				<div className="flex items-center gap-4 rounded border border-white/5 bg-white/[0.02] p-3">
-					<span className="font-mono text-xs text-muted-foreground">
+					<span className="font-mono text-muted-foreground text-xs">
 						ES 03/15
 					</span>
-					<span className="font-mono text-sm font-medium">LONG</span>
-					<span className="ml-auto font-mono text-sm text-profit">
+					<span className="font-medium font-mono text-sm">LONG</span>
+					<span className="ml-auto font-mono text-profit text-sm">
 						+$425.00
 					</span>
 				</div>
 				<div className="flex items-center gap-4 rounded border border-white/5 bg-white/[0.02] p-3">
-					<span className="font-mono text-xs text-muted-foreground">NQ 03/15</span>
-					<span className="font-mono text-sm font-medium">SHORT</span>
-					<span className="ml-auto font-mono text-sm text-loss">-$180.00</span>
+					<span className="font-mono text-muted-foreground text-xs">NQ 03/15</span>
+					<span className="font-medium font-mono text-sm">SHORT</span>
+					<span className="ml-auto font-mono text-loss text-sm">-$180.00</span>
 				</div>
 				<div className="flex items-center gap-4 rounded border border-white/5 bg-white/[0.02] p-3">
-					<span className="font-mono text-xs text-muted-foreground">
+					<span className="font-mono text-muted-foreground text-xs">
 						EUR/USD
 					</span>
-					<span className="font-mono text-sm font-medium">LONG</span>
-					<span className="ml-auto font-mono text-sm text-profit">
+					<span className="font-medium font-mono text-sm">LONG</span>
+					<span className="ml-auto font-mono text-profit text-sm">
 						+$312.50
 					</span>
 				</div>
@@ -75,12 +75,12 @@ const features = [
 		visual: (
 			<div className="mt-6 space-y-2">
 				<div className="rounded bg-white/[0.02] p-3">
-					<p className="font-mono text-xs text-muted-foreground">
+					<p className="font-mono text-muted-foreground text-xs">
 						&gt; Analyze my morning trades
 					</p>
 				</div>
 				<div className="rounded bg-primary/5 p-3">
-					<p className="font-mono text-xs text-primary">
+					<p className="font-mono text-primary text-xs">
 						Your morning win rate is 67%...
 					</p>
 				</div>
@@ -180,15 +180,15 @@ export function Features() {
 	return (
 		<section className="relative py-32" id="features">
 			{/* Background */}
-			<div className="absolute inset-0 grid-bg opacity-50" />
+			<div className="grid-bg absolute inset-0 opacity-50" />
 
 			<div className="relative mx-auto max-w-6xl px-6">
 				{/* Section header */}
 				<div className="mb-20 max-w-2xl">
-					<span className="mb-4 inline-block font-mono text-xs uppercase tracking-wider text-primary">
+					<span className="mb-4 inline-block font-mono text-primary text-xs uppercase tracking-wider">
 						Features
 					</span>
-					<h2 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
+					<h2 className="font-bold text-4xl leading-tight tracking-tight sm:text-5xl lg:text-6xl">
 						Everything you need to{" "}
 						<span className="text-primary">find your edge</span>
 					</h2>
@@ -224,7 +224,7 @@ export function Features() {
 
 							{/* Content */}
 							<h3 className="font-semibold text-lg">{feature.title}</h3>
-							<p className="mt-2 font-mono text-sm text-muted-foreground leading-relaxed">
+							<p className="mt-2 font-mono text-muted-foreground text-sm leading-relaxed">
 								{feature.description}
 							</p>
 
@@ -233,7 +233,7 @@ export function Features() {
 
 							{/* Hover glow effect for highlighted cards */}
 							{feature.highlight && (
-								<div className="absolute -inset-px rounded opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+								<div className="-inset-px absolute rounded opacity-0 transition-opacity duration-300 group-hover:opacity-100">
 									<div className="absolute inset-0 rounded bg-gradient-to-r from-primary/10 via-transparent to-transparent" />
 								</div>
 							)}

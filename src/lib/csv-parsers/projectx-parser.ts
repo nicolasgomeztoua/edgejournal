@@ -397,7 +397,6 @@ function parseProjectXTrades(
 				fees: totalFees > 0 ? totalFees.toFixed(2) : undefined,
 				profit: pnl || undefined,
 				externalId: externalId || undefined,
-				// Store exit type in comment for reference
 				comment:
 					orderInfo.exitType !== "unknown"
 						? `Exit: ${orderInfo.exitType.toUpperCase()}`

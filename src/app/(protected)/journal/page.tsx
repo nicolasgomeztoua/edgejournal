@@ -1,8 +1,7 @@
 "use client";
 
 import {
-	ArrowDownRight,
-	ArrowUpRight,
+	Loader2,
 	MoreHorizontal,
 	Plus,
 	RotateCcw,
@@ -25,13 +24,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
 	DropdownMenu,
@@ -175,6 +167,19 @@ export default function JournalPage() {
 		},
 	});
 
+	const emptyTrash = api.trades.emptyTrash.useMutation({
+		onSuccess: (data) => {
+			toast.success(`${data.deleted} trades permanently deleted`);
+			refetchDeleted();
+			refetch();
+		},
+		onError: (error) => {
+			toast.error(error.message || "Failed to empty trash");
+		},
+	});
+
+	const [emptyTrashDialogOpen, setEmptyTrashDialogOpen] = useState(false);
+
 	const allTrades = data?.pages.flatMap((page) => page.items) ?? [];
 
 	const handleSelectAll = (checked: boolean) => {
@@ -256,433 +261,444 @@ export default function JournalPage() {
 
 				<TabsContent className="space-y-4" value="trades">
 					{/* Filters */}
-					<Card>
-						<CardContent className="pt-6">
-							<div className="flex flex-wrap gap-3">
-								{/* Search */}
-								<div className="relative min-w-[200px] flex-1">
-									<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
-									<Input
-										className="pl-9"
-										onChange={(e) => setSearch(e.target.value)}
-										placeholder="Search symbol, setup, notes..."
-										value={search}
+					<div className="flex flex-wrap items-center gap-3">
+						{/* Search */}
+						<div className="relative min-w-[200px] flex-1">
+							<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+							<Input
+								className="pl-9"
+								onChange={(e) => setSearch(e.target.value)}
+								placeholder="Search symbol, setup, notes..."
+								value={search}
+							/>
+						</div>
+
+						{/* Status Filter */}
+						<Select
+							onValueChange={(value) =>
+								setStatusFilter(value as "all" | "open" | "closed")
+							}
+							value={statusFilter}
+						>
+							<SelectTrigger className="w-[120px]">
+								<SelectValue placeholder="Status" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="all">All Status</SelectItem>
+								<SelectItem value="open">Open</SelectItem>
+								<SelectItem value="closed">Closed</SelectItem>
+							</SelectContent>
+						</Select>
+
+						{/* Direction Filter */}
+						<Select
+							onValueChange={(value) =>
+								setDirectionFilter(value as "all" | "long" | "short")
+							}
+							value={directionFilter}
+						>
+							<SelectTrigger className="w-[120px]">
+								<SelectValue placeholder="Direction" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="all">All</SelectItem>
+								<SelectItem value="long">Long</SelectItem>
+								<SelectItem value="short">Short</SelectItem>
+							</SelectContent>
+						</Select>
+
+						{/* Symbol Filter */}
+						<Input
+							className="w-[100px]"
+							onChange={(e) => setSymbolFilter(e.target.value.toUpperCase())}
+							placeholder="Symbol"
+							value={symbolFilter}
+						/>
+
+						{/* Clear Filters */}
+						{hasActiveFilters && (
+							<Button onClick={clearFilters} size="sm" variant="ghost">
+								<X className="mr-1 h-3.5 w-3.5" />
+								Clear
+							</Button>
+						)}
+					</div>
+
+					{/* Bulk Actions */}
+					{selectedTrades.size > 0 && (
+						<div className="flex items-center gap-3 rounded border border-white/10 bg-white/[0.02] px-4 py-3">
+							<span className="text-muted-foreground text-sm">
+								{selectedTrades.size} selected
+							</span>
+							<Button
+								disabled={deleteMany.isPending}
+								onClick={handleBulkDelete}
+								size="sm"
+								variant="destructive"
+							>
+								<Trash2 className="mr-2 h-3.5 w-3.5" />
+								Delete
+							</Button>
+							<Button
+								onClick={() => setSelectedTrades(new Set())}
+								size="sm"
+								variant="ghost"
+							>
+								Cancel
+							</Button>
+						</div>
+					)}
+
+					{/* Trades Table */}
+					<div className="rounded border border-white/5">
+						{isLoading ? (
+							<div className="space-y-3 p-6">
+								{[...Array(5)].map((_, i) => (
+									<Skeleton
+										className="h-12 w-full"
+										key={`skeleton-${i.toString()}`}
 									/>
-								</div>
-
-								{/* Status Filter */}
-								<Select
-									onValueChange={(value) =>
-										setStatusFilter(value as "all" | "open" | "closed")
-									}
-									value={statusFilter}
-								>
-									<SelectTrigger className="w-[130px]">
-										<SelectValue placeholder="Status" />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="all">All Status</SelectItem>
-										<SelectItem value="open">Open</SelectItem>
-										<SelectItem value="closed">Closed</SelectItem>
-									</SelectContent>
-								</Select>
-
-								{/* Direction Filter */}
-								<Select
-									onValueChange={(value) =>
-										setDirectionFilter(value as "all" | "long" | "short")
-									}
-									value={directionFilter}
-								>
-									<SelectTrigger className="w-[130px]">
-										<SelectValue placeholder="Direction" />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="all">All Directions</SelectItem>
-										<SelectItem value="long">Long</SelectItem>
-										<SelectItem value="short">Short</SelectItem>
-									</SelectContent>
-								</Select>
-
-								{/* Symbol Filter */}
-								<Input
-									className="w-[120px] font-mono"
-									onChange={(e) =>
-										setSymbolFilter(e.target.value.toUpperCase())
-									}
-									placeholder="Symbol..."
-									value={symbolFilter}
-								/>
-
-								{/* Clear Filters */}
-								{hasActiveFilters && (
-									<Button onClick={clearFilters} size="icon" variant="ghost">
-										<X className="h-4 w-4" />
+								))}
+							</div>
+						) : allTrades.length === 0 ? (
+							<div className="flex flex-col items-center justify-center py-16 text-center">
+								<Plus className="mb-4 h-10 w-10 text-muted-foreground/50" />
+								<h3 className="mb-1 font-medium">No trades found</h3>
+								<p className="mb-4 text-muted-foreground text-sm">
+									{hasActiveFilters
+										? "Try adjusting your filters"
+										: "Start logging your trades to build your journal"}
+								</p>
+								{!hasActiveFilters && (
+									<Button asChild size="sm">
+										<Link href="/trade/new">Add Your First Trade</Link>
 									</Button>
 								)}
 							</div>
-
-							{/* Bulk Actions */}
-							{selectedTrades.size > 0 && (
-								<div className="mt-4 flex items-center gap-3 rounded-lg border bg-muted/50 p-3">
-									<span className="text-muted-foreground text-sm">
-										{selectedTrades.size} selected
-									</span>
-									<Button
-										disabled={deleteMany.isPending}
-										onClick={handleBulkDelete}
-										size="sm"
-										variant="destructive"
-									>
-										<Trash2 className="mr-2 h-4 w-4" />
-										Delete Selected
-									</Button>
-									<Button
-										onClick={() => setSelectedTrades(new Set())}
-										size="sm"
-										variant="ghost"
-									>
-										Cancel
-									</Button>
-								</div>
-							)}
-						</CardContent>
-					</Card>
-
-					{/* Trades Table */}
-					<Card>
-						<CardContent className="p-0">
-							{isLoading ? (
-								<div className="space-y-4 p-6">
-									{[...Array(5)].map((_, i) => (
-										<div
-											className="flex items-center gap-4"
-											key={`skeleton-${i.toString()}`}
-										>
-											<Skeleton className="h-4 w-4" />
-											<Skeleton className="h-10 flex-1" />
-										</div>
-									))}
-								</div>
-							) : allTrades.length === 0 ? (
-								<div className="flex flex-col items-center justify-center py-16 text-center">
-									<div className="mb-4 rounded-full bg-muted p-4">
-										<Plus className="h-8 w-8 text-muted-foreground" />
-									</div>
-									<h3 className="mb-2 font-semibold">No trades found</h3>
-									<p className="mb-4 text-muted-foreground text-sm">
-										{hasActiveFilters
-											? "Try adjusting your filters"
-											: "Start logging your trades to build your journal"}
-									</p>
-									{!hasActiveFilters && (
-										<Button asChild>
-											<Link href="/trade/new">Add Your First Trade</Link>
-										</Button>
-									)}
-								</div>
-							) : (
-								<>
-									<Table>
-										<TableHeader>
-											<TableRow>
-												<TableHead className="w-[40px]">
-													<Checkbox
-														checked={
-															selectedTrades.size === allTrades.length &&
-															allTrades.length > 0
-														}
-														onCheckedChange={handleSelectAll}
-													/>
-												</TableHead>
-												<TableHead>Symbol</TableHead>
-												<TableHead>Direction</TableHead>
-												<TableHead>Entry</TableHead>
-												<TableHead>Exit</TableHead>
-												<TableHead>Size</TableHead>
-												<TableHead>P&L</TableHead>
-												<TableHead>Status</TableHead>
-												<TableHead className="w-[50px]"></TableHead>
-											</TableRow>
-										</TableHeader>
-										<TableBody>
-											{allTrades.map((trade) => (
-												<TableRow
-													className={cn(
-														"cursor-pointer hover:bg-muted/50",
-														selectedTrades.has(trade.id) && "bg-muted/30",
-													)}
-													key={trade.id}
-												>
-													<TableCell onClick={(e) => e.stopPropagation()}>
-														<Checkbox
-															checked={selectedTrades.has(trade.id)}
-															onCheckedChange={(checked) =>
-																handleSelectTrade(trade.id, !!checked)
-															}
-														/>
-													</TableCell>
-													<TableCell className="font-mono font-semibold">
-														<Link href={`/journal/${trade.id}`}>
-															{trade.symbol}
-														</Link>
-													</TableCell>
-													<TableCell>
-														<Link href={`/journal/${trade.id}`}>
-															<Badge
-																className={cn(
-																	trade.direction === "long"
-																		? "border-profit/50 text-profit"
-																		: "border-loss/50 text-loss",
-																)}
-																variant="outline"
-															>
-																{trade.direction === "long" ? (
-																	<ArrowUpRight className="mr-1 h-3 w-3" />
-																) : (
-																	<ArrowDownRight className="mr-1 h-3 w-3" />
-																)}
-																{trade.direction.toUpperCase()}
-															</Badge>
-														</Link>
-													</TableCell>
-													<TableCell>
-														<Link href={`/journal/${trade.id}`}>
-															<div className="font-mono text-sm">
-																{parseFloat(trade.entryPrice).toFixed(2)}
-															</div>
-															<div className="text-muted-foreground text-xs">
-																{formatDateTime(trade.entryTime)}
-															</div>
-														</Link>
-													</TableCell>
-													<TableCell>
-														<Link href={`/journal/${trade.id}`}>
-															{trade.exitPrice ? (
-																<>
-																	<div className="font-mono text-sm">
-																		{parseFloat(trade.exitPrice).toFixed(2)}
-																	</div>
-																	<div className="text-muted-foreground text-xs">
-																		{formatDateTime(trade.exitTime)}
-																	</div>
-																</>
-															) : (
-																<span className="text-muted-foreground">-</span>
-															)}
-														</Link>
-													</TableCell>
-													<TableCell className="font-mono">
-														<Link href={`/journal/${trade.id}`}>
-															{parseFloat(trade.quantity).toFixed(2)}
-														</Link>
-													</TableCell>
-													<TableCell>
-														<Link href={`/journal/${trade.id}`}>
-															<span
-																className={cn(
-																	"font-mono font-semibold",
-																	trade.netPnl
-																		? getPnLColorClass(trade.netPnl)
-																		: "text-muted-foreground",
-																)}
-															>
-																{trade.netPnl
-																	? formatCurrency(parseFloat(trade.netPnl))
-																	: "-"}
-															</span>
-														</Link>
-													</TableCell>
-													<TableCell>
-														<Link href={`/journal/${trade.id}`}>
-															<Badge
-																variant={
-																	trade.status === "open"
-																		? "secondary"
-																		: "default"
-																}
-															>
-																{trade.status}
-															</Badge>
-														</Link>
-													</TableCell>
-													<TableCell onClick={(e) => e.stopPropagation()}>
-														<DropdownMenu>
-															<DropdownMenuTrigger asChild>
-																<Button
-																	className="h-8 w-8"
-																	size="icon"
-																	variant="ghost"
-																>
-																	<MoreHorizontal className="h-4 w-4" />
-																</Button>
-															</DropdownMenuTrigger>
-															<DropdownMenuContent align="end">
-																<DropdownMenuItem asChild>
-																	<Link href={`/journal/${trade.id}`}>
-																		View Details
-																	</Link>
-																</DropdownMenuItem>
-																<DropdownMenuSeparator />
-																<DropdownMenuItem
-																	className="text-destructive focus:text-destructive"
-																	onClick={() => {
-																		setTradeToDelete(trade.id);
-																		setDeleteDialogOpen(true);
-																	}}
-																>
-																	<Trash2 className="mr-2 h-4 w-4" />
-																	Delete
-																</DropdownMenuItem>
-															</DropdownMenuContent>
-														</DropdownMenu>
-													</TableCell>
-												</TableRow>
-											))}
-										</TableBody>
-									</Table>
-
-									{hasNextPage && (
-										<div className="flex justify-center border-t p-4">
-											<Button
-												disabled={isFetchingNextPage}
-												onClick={() => fetchNextPage()}
-												variant="outline"
-											>
-												{isFetchingNextPage ? "Loading..." : "Load More"}
-											</Button>
-										</div>
-									)}
-								</>
-							)}
-						</CardContent>
-					</Card>
-				</TabsContent>
-
-				<TabsContent className="space-y-4" value="trash">
-					<Card>
-						<CardHeader>
-							<CardTitle className="text-lg">Deleted Trades</CardTitle>
-							<CardDescription>
-								Trades in trash can be restored or permanently deleted
-							</CardDescription>
-						</CardHeader>
-						<CardContent className="p-0">
-							{loadingDeleted ? (
-								<div className="space-y-4 p-6">
-									{[...Array(3)].map((_, i) => (
-										<Skeleton
-											className="h-12 w-full"
-											key={`skeleton-${i.toString()}`}
-										/>
-									))}
-								</div>
-							) : !deletedTrades || deletedTrades.length === 0 ? (
-								<div className="flex flex-col items-center justify-center py-12 text-center">
-									<Trash2 className="mb-4 h-12 w-12 text-muted-foreground/50" />
-									<h3 className="mb-1 font-semibold">Trash is empty</h3>
-									<p className="text-muted-foreground text-sm">
-										Deleted trades will appear here
-									</p>
-								</div>
-							) : (
+						) : (
+							<>
 								<Table>
 									<TableHeader>
 										<TableRow>
+											<TableHead className="w-[40px]">
+												<Checkbox
+													checked={
+														selectedTrades.size === allTrades.length &&
+														allTrades.length > 0
+													}
+													onCheckedChange={handleSelectAll}
+												/>
+											</TableHead>
 											<TableHead>Symbol</TableHead>
-											<TableHead>Direction</TableHead>
+											<TableHead>Side</TableHead>
 											<TableHead>Entry</TableHead>
+											<TableHead>Exit</TableHead>
+											<TableHead>Size</TableHead>
 											<TableHead>P&L</TableHead>
-											<TableHead>Deleted</TableHead>
-											<TableHead className="w-[100px]">Actions</TableHead>
+											<TableHead>Result</TableHead>
+											<TableHead className="w-[50px]"></TableHead>
 										</TableRow>
 									</TableHeader>
 									<TableBody>
-										{deletedTrades.map((trade) => (
-											<TableRow key={trade.id}>
+										{allTrades.map((trade) => (
+											<TableRow
+												className={cn(
+													"cursor-pointer hover:bg-muted/50",
+													selectedTrades.has(trade.id) && "bg-muted/30",
+												)}
+												key={trade.id}
+											>
+												<TableCell onClick={(e) => e.stopPropagation()}>
+													<Checkbox
+														checked={selectedTrades.has(trade.id)}
+														onCheckedChange={(checked) =>
+															handleSelectTrade(trade.id, !!checked)
+														}
+													/>
+												</TableCell>
 												<TableCell className="font-mono font-semibold">
-													{trade.symbol}
+													<Link href={`/journal/${trade.id}`}>
+														{trade.symbol}
+													</Link>
 												</TableCell>
 												<TableCell>
-													<Badge
-														className={cn(
-															trade.direction === "long"
-																? "border-profit/50 text-profit"
-																: "border-loss/50 text-loss",
-														)}
-														variant="outline"
-													>
-														{trade.direction.toUpperCase()}
-													</Badge>
-												</TableCell>
-												<TableCell>
-													<div className="font-mono text-sm">
-														{parseFloat(trade.entryPrice).toFixed(2)}
-													</div>
-													<div className="text-muted-foreground text-xs">
-														{formatDateTime(trade.entryTime)}
-													</div>
-												</TableCell>
-												<TableCell>
-													<span
-														className={cn(
-															"font-mono font-semibold",
-															trade.netPnl
-																? getPnLColorClass(trade.netPnl)
-																: "text-muted-foreground",
-														)}
-													>
-														{trade.netPnl
-															? formatCurrency(parseFloat(trade.netPnl))
-															: "-"}
-													</span>
-												</TableCell>
-												<TableCell className="text-muted-foreground text-sm">
-													{trade.deletedAt
-														? formatDateTime(trade.deletedAt)
-														: "-"}
-												</TableCell>
-												<TableCell>
-													<div className="flex items-center gap-1">
-														<Button
-															className="h-8 w-8"
-															disabled={restoreTrade.isPending}
-															onClick={() =>
-																restoreTrade.mutate({ id: trade.id })
-															}
-															size="icon"
-															title="Restore"
-															variant="ghost"
+													<Link href={`/journal/${trade.id}`}>
+														<span
+															className={cn(
+																"font-medium text-sm",
+																trade.direction === "long"
+																	? "text-profit"
+																	: "text-loss",
+															)}
 														>
-															<RotateCcw className="h-4 w-4" />
-														</Button>
-														<Button
-															className="h-8 w-8 text-destructive hover:text-destructive"
-															disabled={permanentDelete.isPending}
-															onClick={() => {
-																if (
-																	confirm(
-																		"Permanently delete this trade? This cannot be undone.",
-																	)
-																) {
-																	permanentDelete.mutate({ id: trade.id });
-																}
-															}}
-															size="icon"
-															title="Delete permanently"
-															variant="ghost"
+															{trade.direction === "long" ? "Long" : "Short"}
+														</span>
+													</Link>
+												</TableCell>
+												<TableCell>
+													<Link href={`/journal/${trade.id}`}>
+														<div className="font-mono text-sm">
+															{parseFloat(trade.entryPrice).toFixed(2)}
+														</div>
+														<div className="text-muted-foreground text-xs">
+															{formatDateTime(trade.entryTime)}
+														</div>
+													</Link>
+												</TableCell>
+												<TableCell>
+													<Link href={`/journal/${trade.id}`}>
+														{trade.exitPrice ? (
+															<>
+																<div className="font-mono text-sm">
+																	{parseFloat(trade.exitPrice).toFixed(2)}
+																</div>
+																<div className="text-muted-foreground text-xs">
+																	{formatDateTime(trade.exitTime)}
+																</div>
+															</>
+														) : (
+															<span className="text-muted-foreground">-</span>
+														)}
+													</Link>
+												</TableCell>
+												<TableCell className="font-mono">
+													<Link href={`/journal/${trade.id}`}>
+														{parseFloat(trade.quantity).toFixed(2)}
+													</Link>
+												</TableCell>
+												<TableCell>
+													<Link href={`/journal/${trade.id}`}>
+														<span
+															className={cn(
+																"font-mono font-semibold",
+																trade.netPnl
+																	? getPnLColorClass(trade.netPnl)
+																	: "text-muted-foreground",
+															)}
 														>
-															<Trash2 className="h-4 w-4" />
-														</Button>
-													</div>
+															{trade.netPnl
+																? formatCurrency(parseFloat(trade.netPnl))
+																: "-"}
+														</span>
+													</Link>
+												</TableCell>
+												<TableCell>
+													<Link href={`/journal/${trade.id}`}>
+														{trade.status === "open" ? (
+															<span className="text-muted-foreground text-sm">
+																Open
+															</span>
+														) : trade.exitReason === "take_profit" ||
+															trade.takeProfitHit ? (
+															<span className="text-profit text-sm">TP</span>
+														) : trade.exitReason === "stop_loss" ||
+															trade.stopLossHit ? (
+															<span className="text-loss text-sm">SL</span>
+														) : trade.exitReason === "trailing_stop" ? (
+															<span className="text-accent text-sm">Trail</span>
+														) : trade.exitReason === "breakeven" ? (
+															<span className="text-breakeven text-sm">BE</span>
+														) : (
+															<span className="text-muted-foreground text-sm">
+																Manual
+															</span>
+														)}
+													</Link>
+												</TableCell>
+												<TableCell onClick={(e) => e.stopPropagation()}>
+													<DropdownMenu>
+														<DropdownMenuTrigger asChild>
+															<Button
+																className="h-8 w-8"
+																size="icon"
+																variant="ghost"
+															>
+																<MoreHorizontal className="h-4 w-4" />
+															</Button>
+														</DropdownMenuTrigger>
+														<DropdownMenuContent align="end">
+															<DropdownMenuItem asChild>
+																<Link href={`/journal/${trade.id}`}>
+																	View Details
+																</Link>
+															</DropdownMenuItem>
+															<DropdownMenuSeparator />
+															<DropdownMenuItem
+																className="text-destructive focus:text-destructive"
+																onClick={() => {
+																	setTradeToDelete(trade.id);
+																	setDeleteDialogOpen(true);
+																}}
+															>
+																<Trash2 className="mr-2 h-4 w-4" />
+																Delete
+															</DropdownMenuItem>
+														</DropdownMenuContent>
+													</DropdownMenu>
 												</TableCell>
 											</TableRow>
 										))}
 									</TableBody>
 								</Table>
-							)}
-						</CardContent>
-					</Card>
+
+								{hasNextPage && (
+									<div className="flex justify-center border-white/5 border-t p-4">
+										<Button
+											disabled={isFetchingNextPage}
+											onClick={() => fetchNextPage()}
+											size="sm"
+											variant="outline"
+										>
+											{isFetchingNextPage ? "Loading..." : "Load More"}
+										</Button>
+									</div>
+								)}
+							</>
+						)}
+					</div>
+				</TabsContent>
+
+				<TabsContent className="space-y-4" value="trash">
+					<div className="flex items-center justify-between">
+						<p className="text-muted-foreground text-sm">
+							Trades in trash can be restored or permanently deleted.
+						</p>
+						{deletedTrades && deletedTrades.length > 0 && (
+							<Button
+								disabled={emptyTrash.isPending}
+								onClick={() => setEmptyTrashDialogOpen(true)}
+								size="sm"
+								variant="destructive"
+							>
+								{emptyTrash.isPending ? (
+									<>
+										<Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+										Deleting...
+									</>
+								) : (
+									<>
+										<Trash2 className="mr-2 h-3.5 w-3.5" />
+										Empty Trash
+									</>
+								)}
+							</Button>
+						)}
+					</div>
+					<div className="rounded border border-white/5">
+						{loadingDeleted ? (
+							<div className="space-y-3 p-6">
+								{[...Array(3)].map((_, i) => (
+									<Skeleton
+										className="h-12 w-full"
+										key={`skeleton-${i.toString()}`}
+									/>
+								))}
+							</div>
+						) : !deletedTrades || deletedTrades.length === 0 ? (
+							<div className="flex flex-col items-center justify-center py-12 text-center">
+								<Trash2 className="mb-3 h-10 w-10 text-muted-foreground/30" />
+								<h3 className="mb-1 font-medium">Trash is empty</h3>
+								<p className="text-muted-foreground text-sm">
+									Deleted trades will appear here
+								</p>
+							</div>
+						) : (
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Symbol</TableHead>
+										<TableHead>Direction</TableHead>
+										<TableHead>Entry</TableHead>
+										<TableHead>P&L</TableHead>
+										<TableHead>Deleted</TableHead>
+										<TableHead className="w-[100px]">Actions</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{deletedTrades.map((trade) => (
+										<TableRow key={trade.id}>
+											<TableCell className="font-mono font-semibold">
+												{trade.symbol}
+											</TableCell>
+											<TableCell>
+												<span
+													className={cn(
+														"font-medium text-sm",
+														trade.direction === "long"
+															? "text-profit"
+															: "text-loss",
+													)}
+												>
+													{trade.direction === "long" ? "Long" : "Short"}
+												</span>
+											</TableCell>
+											<TableCell>
+												<div className="font-mono text-sm">
+													{parseFloat(trade.entryPrice).toFixed(2)}
+												</div>
+												<div className="text-muted-foreground text-xs">
+													{formatDateTime(trade.entryTime)}
+												</div>
+											</TableCell>
+											<TableCell>
+												<span
+													className={cn(
+														"font-mono font-semibold",
+														trade.netPnl
+															? getPnLColorClass(trade.netPnl)
+															: "text-muted-foreground",
+													)}
+												>
+													{trade.netPnl
+														? formatCurrency(parseFloat(trade.netPnl))
+														: "-"}
+												</span>
+											</TableCell>
+											<TableCell className="text-muted-foreground text-sm">
+												{trade.deletedAt
+													? formatDateTime(trade.deletedAt)
+													: "-"}
+											</TableCell>
+											<TableCell>
+												<div className="flex items-center gap-1">
+													<Button
+														className="h-8 w-8"
+														disabled={restoreTrade.isPending}
+														onClick={() =>
+															restoreTrade.mutate({ id: trade.id })
+														}
+														size="icon"
+														title="Restore"
+														variant="ghost"
+													>
+														<RotateCcw className="h-4 w-4" />
+													</Button>
+													<Button
+														className="h-8 w-8 text-destructive hover:text-destructive"
+														disabled={permanentDelete.isPending}
+														onClick={() => {
+															if (
+																confirm(
+																	"Permanently delete this trade? This cannot be undone.",
+																)
+															) {
+																permanentDelete.mutate({ id: trade.id });
+															}
+														}}
+														size="icon"
+														title="Delete permanently"
+														variant="ghost"
+													>
+														<Trash2 className="h-4 w-4" />
+													</Button>
+												</div>
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						)}
+					</div>
 				</TabsContent>
 			</Tabs>
 
@@ -703,6 +719,36 @@ export default function JournalPage() {
 							onClick={handleDeleteTrade}
 						>
 							Delete
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+
+			{/* Empty Trash Confirmation Dialog */}
+			<AlertDialog
+				onOpenChange={setEmptyTrashDialogOpen}
+				open={emptyTrashDialogOpen}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Empty Trash</AlertDialogTitle>
+						<AlertDialogDescription>
+							This will permanently delete {deletedTrades?.length ?? 0}{" "}
+							trade(s). This action cannot be undone.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+							onClick={() => {
+								emptyTrash.mutate({
+									accountId: selectedAccountId ?? undefined,
+								});
+								setEmptyTrashDialogOpen(false);
+							}}
+						>
+							Delete All
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>

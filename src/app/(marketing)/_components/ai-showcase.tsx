@@ -124,11 +124,11 @@ export function AIShowcase() {
 				<div className="mb-16 flex flex-col items-center text-center">
 					<div className="mb-6 inline-flex items-center gap-2 rounded-none border border-accent/20 bg-accent/5 px-4 py-2">
 						<Sparkles className="h-4 w-4 text-accent" />
-						<span className="font-mono text-xs uppercase tracking-wider text-accent">
+						<span className="font-mono text-accent text-xs uppercase tracking-wider">
 						AI-Powered
 						</span>
 					</div>
-					<h2 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
+					<h2 className="font-bold text-4xl leading-tight tracking-tight sm:text-5xl lg:text-6xl">
 						Ask anything about
 						<br />
 						<span className="text-accent text-glow-accent">your trading</span>
@@ -143,27 +143,27 @@ export function AIShowcase() {
 				<div className="mx-auto max-w-4xl">
 					<div className="overflow-hidden rounded border border-white/10 bg-black/80 shadow-2xl">
 						{/* Terminal header */}
-						<div className="flex items-center justify-between border-b border-white/5 bg-white/[0.02] px-4 py-3">
+						<div className="flex items-center justify-between border-white/5 border-b bg-white/[0.02] px-4 py-3">
 							<div className="flex items-center gap-3">
 								<div className="flex items-center gap-2">
 									<div className="h-3 w-3 rounded-full bg-loss/60" />
 									<div className="h-3 w-3 rounded-full bg-breakeven/60" />
 									<div className="h-3 w-3 rounded-full bg-profit/60" />
 								</div>
-								<span className="ml-4 font-mono text-xs text-muted-foreground">
+								<span className="ml-4 font-mono text-muted-foreground text-xs">
 									edge-ai
 								</span>
 							</div>
 							<div className="flex items-center gap-2">
 								<Brain className="h-4 w-4 text-accent" />
-								<span className="font-mono text-xs text-muted-foreground">
+								<span className="font-mono text-muted-foreground text-xs">
 									Claude 3.5 Sonnet
 								</span>
 							</div>
 						</div>
 
 						{/* Query selector */}
-						<div className="border-b border-white/5 p-4">
+						<div className="border-white/5 border-b p-4">
 							<div className="flex flex-wrap gap-2">
 								{queries.map((query, index) => (
 									<button
@@ -187,21 +187,21 @@ export function AIShowcase() {
 						<div className="min-h-[400px] p-6">
 							{/* User input */}
 							<div className="mb-6 flex items-start gap-3">
-								<span className="font-mono text-sm text-primary">$</span>
+								<span className="font-mono text-primary text-sm">$</span>
 								<span className="font-mono text-sm">
-									{queries[activeIndex].question}
+									{queries[activeIndex]?.question}
 								</span>
 							</div>
 
 							{/* AI Response */}
 							{showResponse ? (
 								<div className="flex items-start gap-3">
-									<span className="font-mono text-sm text-accent">→</span>
-									<div className="font-mono text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap">
+									<span className="font-mono text-accent text-sm">→</span>
+									<div className="whitespace-pre-wrap font-mono text-muted-foreground text-sm leading-relaxed">
 										<TypewriterText
 											key={key}
 											speed={8}
-											text={queries[activeIndex].response}
+											text={queries[activeIndex]?.response ?? ""}
 										/>
 									</div>
 								</div>
@@ -222,12 +222,12 @@ export function AIShowcase() {
 						</div>
 
 						{/* Terminal footer */}
-						<div className="border-t border-white/5 bg-white/[0.02] px-4 py-3">
+						<div className="border-white/5 border-t bg-white/[0.02] px-4 py-3">
 							<div className="flex items-center justify-between">
-								<span className="font-mono text-xs text-muted-foreground">
+								<span className="font-mono text-muted-foreground text-xs">
 									Powered by your API key
 							</span>
-								<div className="flex items-center gap-4 font-mono text-xs text-muted-foreground">
+								<div className="flex items-center gap-4 font-mono text-muted-foreground text-xs">
 									<span>OpenAI</span>
 									<span>Anthropic</span>
 									<span>Google</span>
@@ -238,7 +238,7 @@ export function AIShowcase() {
 				</div>
 
 				{/* Trust badges */}
-				<div className="mt-12 flex flex-wrap items-center justify-center gap-8 font-mono text-xs text-muted-foreground">
+				<div className="mt-12 flex flex-wrap items-center justify-center gap-8 font-mono text-muted-foreground text-xs">
 					<div className="flex items-center gap-2">
 						<span className="h-2 w-2 rounded-full bg-profit" />
 						<span>Your data stays private</span>

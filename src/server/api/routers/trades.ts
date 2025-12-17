@@ -13,7 +13,12 @@ import {
 import { z } from "zod";
 import { calculatePnL } from "@/lib/symbols";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
-import { trades, tradeTags, tradeExecutions, userSettings } from "@/server/db/schema";
+import {
+	tradeExecutions,
+	trades,
+	tradeTags,
+	userSettings,
+} from "@/server/db/schema";
 
 // Input schemas
 const createTradeSchema = z.object({
@@ -674,6 +679,27 @@ export const tradesRouter = createTRPCRouter({
 			return { success: true };
 		}),
 
+	// Empty trash - permanently delete all trashed trades
+	emptyTrash: protectedProcedure
+		.input(z.object({ accountId: z.number().optional() }).optional())
+		.mutation(async ({ ctx, input }) => {
+			const conditions = [
+				eq(trades.userId, ctx.user.id),
+				isNotNull(trades.deletedAt),
+			];
+
+			if (input?.accountId) {
+				conditions.push(eq(trades.accountId, input.accountId));
+			}
+
+			const result = await ctx.db
+				.delete(trades)
+				.where(and(...conditions))
+				.returning({ id: trades.id });
+
+			return { success: true, deleted: result.length };
+		}),
+
 	// Get deleted trades (trash)
 	getDeleted: protectedProcedure
 		.input(
@@ -814,7 +840,10 @@ export const tradesRouter = createTRPCRouter({
 		.query(async ({ ctx, input }) => {
 			// Verify trade ownership
 			const trade = await ctx.db.query.trades.findFirst({
-				where: and(eq(trades.id, input.tradeId), eq(trades.userId, ctx.user.id)),
+				where: and(
+					eq(trades.id, input.tradeId),
+					eq(trades.userId, ctx.user.id),
+				),
 			});
 
 			if (!trade) {
@@ -835,7 +864,10 @@ export const tradesRouter = createTRPCRouter({
 		.mutation(async ({ ctx, input }) => {
 			// Verify trade ownership
 			const trade = await ctx.db.query.trades.findFirst({
-				where: and(eq(trades.id, input.tradeId), eq(trades.userId, ctx.user.id)),
+				where: and(
+					eq(trades.id, input.tradeId),
+					eq(trades.userId, ctx.user.id),
+				),
 			});
 
 			if (!trade) {
@@ -844,7 +876,10 @@ export const tradesRouter = createTRPCRouter({
 
 			// Calculate P&L for this execution if it's an exit
 			let realizedPnl: string | undefined;
-			if (input.executionType === "exit" || input.executionType === "scale_out") {
+			if (
+				input.executionType === "exit" ||
+				input.executionType === "scale_out"
+			) {
 				const pnl = calculatePnL(
 					trade.symbol,
 					trade.instrumentType,
@@ -871,7 +906,10 @@ export const tradesRouter = createTRPCRouter({
 				.returning();
 
 			// If this is a partial exit, update the trade's remaining quantity
-			if (input.executionType === "exit" || input.executionType === "scale_out") {
+			if (
+				input.executionType === "exit" ||
+				input.executionType === "scale_out"
+			) {
 				const currentRemaining = trade.remainingQuantity
 					? parseFloat(trade.remainingQuantity)
 					: parseFloat(trade.quantity);
@@ -917,7 +955,9 @@ export const tradesRouter = createTRPCRouter({
 				throw new Error("Execution not found");
 			}
 
-			await ctx.db.delete(tradeExecutions).where(eq(tradeExecutions.id, input.executionId));
+			await ctx.db
+				.delete(tradeExecutions)
+				.where(eq(tradeExecutions.id, input.executionId));
 
 			// Recalculate remaining quantity
 			const remainingExecutions = await ctx.db.query.tradeExecutions.findMany({
@@ -958,7 +998,10 @@ export const tradesRouter = createTRPCRouter({
 		.mutation(async ({ ctx, input }) => {
 			// Verify ownership
 			const trade = await ctx.db.query.trades.findFirst({
-				where: and(eq(trades.id, input.tradeId), eq(trades.userId, ctx.user.id)),
+				where: and(
+					eq(trades.id, input.tradeId),
+					eq(trades.userId, ctx.user.id),
+				),
 			});
 
 			if (!trade) {
