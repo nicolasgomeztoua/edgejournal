@@ -160,9 +160,7 @@ export default function ImportPage() {
 			for (let i = 1; i < lines.length; i++) {
 				const line = lines[i];
 				if (!line) continue;
-				const values = line
-					.split(",")
-					.map((v) => v.trim().replace(/"/g, ""));
+				const values = line.split(",").map((v) => v.trim().replace(/"/g, ""));
 				const row: ParsedRow = {};
 				parsedHeaders.forEach((header, index) => {
 					row[header] = values[index] || "";
