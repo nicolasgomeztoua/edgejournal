@@ -830,6 +830,329 @@ export const tradesRouter = createTRPCRouter({
 			};
 		}),
 
+	// Get daily P&L for calendar heatmap
+	getDailyPnL: protectedProcedure
+		.input(
+			z
+				.object({
+					startDate: z.string().datetime().optional(),
+					endDate: z.string().datetime().optional(),
+					accountId: z.number().optional(),
+				})
+				.optional(),
+		)
+		.query(async ({ ctx, input }) => {
+			const conditions = [
+				eq(trades.userId, ctx.user.id),
+				eq(trades.status, "closed"),
+				isNull(trades.deletedAt),
+			];
+
+			if (input?.accountId) {
+				conditions.push(eq(trades.accountId, input.accountId));
+			}
+			if (input?.startDate) {
+				conditions.push(gte(trades.exitTime, new Date(input.startDate)));
+			}
+			if (input?.endDate) {
+				conditions.push(lte(trades.exitTime, new Date(input.endDate)));
+			}
+
+			const closedTrades = await ctx.db.query.trades.findMany({
+				where: and(...conditions),
+				columns: {
+					id: true,
+					exitTime: true,
+					netPnl: true,
+				},
+			});
+
+			// Group by date
+			const dailyMap = new Map<
+				string,
+				{ date: string; pnl: number; trades: number }
+			>();
+
+			for (const trade of closedTrades) {
+				if (!trade.exitTime) continue;
+				const dateKey = trade.exitTime.toISOString().split("T")[0];
+				if (!dateKey) continue;
+
+				const existing = dailyMap.get(dateKey) ?? {
+					date: dateKey,
+					pnl: 0,
+					trades: 0,
+				};
+				existing.pnl += trade.netPnl ? parseFloat(trade.netPnl) : 0;
+				existing.trades += 1;
+				dailyMap.set(dateKey, existing);
+			}
+
+			return Array.from(dailyMap.values()).sort(
+				(a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+			);
+		}),
+
+	// Get performance by day of week
+	getDayOfWeekStats: protectedProcedure
+		.input(
+			z
+				.object({
+					startDate: z.string().datetime().optional(),
+					endDate: z.string().datetime().optional(),
+					accountId: z.number().optional(),
+				})
+				.optional(),
+		)
+		.query(async ({ ctx, input }) => {
+			const conditions = [
+				eq(trades.userId, ctx.user.id),
+				eq(trades.status, "closed"),
+				isNull(trades.deletedAt),
+			];
+
+			if (input?.accountId) {
+				conditions.push(eq(trades.accountId, input.accountId));
+			}
+			if (input?.startDate) {
+				conditions.push(gte(trades.entryTime, new Date(input.startDate)));
+			}
+			if (input?.endDate) {
+				conditions.push(lte(trades.entryTime, new Date(input.endDate)));
+			}
+
+			const closedTrades = await ctx.db.query.trades.findMany({
+				where: and(...conditions),
+				columns: {
+					id: true,
+					entryTime: true,
+					netPnl: true,
+				},
+			});
+
+			const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+			const dayStats = days.map((day) => ({
+				day,
+				pnl: 0,
+				trades: 0,
+				wins: 0,
+				losses: 0,
+			}));
+
+			for (const trade of closedTrades) {
+				const dayIndex = new Date(trade.entryTime).getDay();
+				const pnl = trade.netPnl ? parseFloat(trade.netPnl) : 0;
+				const stat = dayStats[dayIndex];
+				if (stat) {
+					stat.pnl += pnl;
+					stat.trades += 1;
+					if (pnl > 0) stat.wins += 1;
+					if (pnl < 0) stat.losses += 1;
+				}
+			}
+
+			return dayStats.map((s) => ({
+				...s,
+				winRate: s.trades > 0 ? (s.wins / s.trades) * 100 : 0,
+				avgPnl: s.trades > 0 ? s.pnl / s.trades : 0,
+			}));
+		}),
+
+	// Get performance by hour
+	getHourlyStats: protectedProcedure
+		.input(
+			z
+				.object({
+					startDate: z.string().datetime().optional(),
+					endDate: z.string().datetime().optional(),
+					accountId: z.number().optional(),
+				})
+				.optional(),
+		)
+		.query(async ({ ctx, input }) => {
+			const conditions = [
+				eq(trades.userId, ctx.user.id),
+				eq(trades.status, "closed"),
+				isNull(trades.deletedAt),
+			];
+
+			if (input?.accountId) {
+				conditions.push(eq(trades.accountId, input.accountId));
+			}
+			if (input?.startDate) {
+				conditions.push(gte(trades.entryTime, new Date(input.startDate)));
+			}
+			if (input?.endDate) {
+				conditions.push(lte(trades.entryTime, new Date(input.endDate)));
+			}
+
+			const closedTrades = await ctx.db.query.trades.findMany({
+				where: and(...conditions),
+				columns: {
+					id: true,
+					entryTime: true,
+					netPnl: true,
+				},
+			});
+
+			const hourStats: { hour: number; pnl: number; trades: number; wins: number }[] = [];
+			for (let i = 0; i < 24; i++) {
+				hourStats.push({ hour: i, pnl: 0, trades: 0, wins: 0 });
+			}
+
+			for (const trade of closedTrades) {
+				const hour = new Date(trade.entryTime).getHours();
+				const pnl = trade.netPnl ? parseFloat(trade.netPnl) : 0;
+				const stat = hourStats[hour];
+				if (stat) {
+					stat.pnl += pnl;
+					stat.trades += 1;
+					if (pnl > 0) stat.wins += 1;
+				}
+			}
+
+			return hourStats.map((s) => ({
+				...s,
+				winRate: s.trades > 0 ? (s.wins / s.trades) * 100 : 0,
+				label: `${s.hour.toString().padStart(2, "0")}:00`,
+			}));
+		}),
+
+	// Get performance by symbol
+	getSymbolStats: protectedProcedure
+		.input(
+			z
+				.object({
+					startDate: z.string().datetime().optional(),
+					endDate: z.string().datetime().optional(),
+					accountId: z.number().optional(),
+				})
+				.optional(),
+		)
+		.query(async ({ ctx, input }) => {
+			const conditions = [
+				eq(trades.userId, ctx.user.id),
+				eq(trades.status, "closed"),
+				isNull(trades.deletedAt),
+			];
+
+			if (input?.accountId) {
+				conditions.push(eq(trades.accountId, input.accountId));
+			}
+			if (input?.startDate) {
+				conditions.push(gte(trades.entryTime, new Date(input.startDate)));
+			}
+			if (input?.endDate) {
+				conditions.push(lte(trades.entryTime, new Date(input.endDate)));
+			}
+
+			const closedTrades = await ctx.db.query.trades.findMany({
+				where: and(...conditions),
+				columns: {
+					id: true,
+					symbol: true,
+					netPnl: true,
+				},
+			});
+
+			const symbolMap = new Map<
+				string,
+				{ symbol: string; pnl: number; trades: number; wins: number; losses: number }
+			>();
+
+			for (const trade of closedTrades) {
+				const pnl = trade.netPnl ? parseFloat(trade.netPnl) : 0;
+				const existing = symbolMap.get(trade.symbol) ?? {
+					symbol: trade.symbol,
+					pnl: 0,
+					trades: 0,
+					wins: 0,
+					losses: 0,
+				};
+				existing.pnl += pnl;
+				existing.trades += 1;
+				if (pnl > 0) existing.wins += 1;
+				if (pnl < 0) existing.losses += 1;
+				symbolMap.set(trade.symbol, existing);
+			}
+
+			return Array.from(symbolMap.values())
+				.map((s) => ({
+					...s,
+					winRate: s.trades > 0 ? (s.wins / s.trades) * 100 : 0,
+					avgPnl: s.trades > 0 ? s.pnl / s.trades : 0,
+				}))
+				.sort((a, b) => b.pnl - a.pnl);
+		}),
+
+	// Get performance by setup type
+	getSetupStats: protectedProcedure
+		.input(
+			z
+				.object({
+					startDate: z.string().datetime().optional(),
+					endDate: z.string().datetime().optional(),
+					accountId: z.number().optional(),
+				})
+				.optional(),
+		)
+		.query(async ({ ctx, input }) => {
+			const conditions = [
+				eq(trades.userId, ctx.user.id),
+				eq(trades.status, "closed"),
+				isNull(trades.deletedAt),
+			];
+
+			if (input?.accountId) {
+				conditions.push(eq(trades.accountId, input.accountId));
+			}
+			if (input?.startDate) {
+				conditions.push(gte(trades.entryTime, new Date(input.startDate)));
+			}
+			if (input?.endDate) {
+				conditions.push(lte(trades.entryTime, new Date(input.endDate)));
+			}
+
+			const closedTrades = await ctx.db.query.trades.findMany({
+				where: and(...conditions),
+				columns: {
+					id: true,
+					setupType: true,
+					netPnl: true,
+				},
+			});
+
+			const setupMap = new Map<
+				string,
+				{ setup: string; pnl: number; trades: number; wins: number; losses: number }
+			>();
+
+			for (const trade of closedTrades) {
+				const setup = trade.setupType || "Unclassified";
+				const pnl = trade.netPnl ? parseFloat(trade.netPnl) : 0;
+				const existing = setupMap.get(setup) ?? {
+					setup,
+					pnl: 0,
+					trades: 0,
+					wins: 0,
+					losses: 0,
+				};
+				existing.pnl += pnl;
+				existing.trades += 1;
+				if (pnl > 0) existing.wins += 1;
+				if (pnl < 0) existing.losses += 1;
+				setupMap.set(setup, existing);
+			}
+
+			return Array.from(setupMap.values())
+				.map((s) => ({
+					...s,
+					winRate: s.trades > 0 ? (s.wins / s.trades) * 100 : 0,
+					avgPnl: s.trades > 0 ? s.pnl / s.trades : 0,
+				}))
+				.sort((a, b) => b.pnl - a.pnl);
+		}),
+
 	// ============================================================================
 	// EXECUTION MANAGEMENT (Partial Exits / Scale In/Out)
 	// ============================================================================

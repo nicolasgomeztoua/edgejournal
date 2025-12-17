@@ -1,6 +1,10 @@
 "use client";
 
 import {
+	ArrowDownRight,
+	ArrowUpRight,
+	ChevronDown,
+	ChevronRight,
 	Loader2,
 	MoreHorizontal,
 	Plus,
@@ -10,7 +14,7 @@ import {
 	X,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
 	AlertDialog,
@@ -25,6 +29,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+	DateRangePicker,
+	type DateRange,
+	dateRangePresets,
+} from "@/components/ui/date-range-picker";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -59,9 +68,274 @@ import {
 } from "@/lib/utils";
 import { api } from "@/trpc/react";
 
+type Trade = {
+	id: number;
+	symbol: string;
+	direction: "long" | "short";
+	entryPrice: string;
+	exitPrice: string | null;
+	entryTime: Date;
+	exitTime: Date | null;
+	quantity: string;
+	netPnl: string | null;
+	status: "open" | "closed";
+	exitReason: string | null;
+	stopLossHit: boolean | null;
+	takeProfitHit: boolean | null;
+	setupType: string | null;
+	deletedAt?: Date | null;
+};
+
+type TradesByDay = {
+	date: string;
+	trades: Trade[];
+	pnl: number;
+	wins: number;
+	losses: number;
+	breakevens: number;
+};
+
+function DayHeader({
+	day,
+	isExpanded,
+	onToggle,
+}: {
+	day: TradesByDay;
+	isExpanded: boolean;
+	onToggle: () => void;
+}) {
+	const date = new Date(day.date);
+	const dayName = date.toLocaleDateString("en-US", { weekday: "long" });
+	const dateStr = date.toLocaleDateString("en-US", {
+		month: "short",
+		day: "numeric",
+		year: "numeric",
+	});
+
+	return (
+		<button
+			className="flex w-full items-center justify-between border-white/5 border-b bg-white/[0.02] px-4 py-3 text-left transition-colors hover:bg-white/[0.04]"
+			onClick={onToggle}
+			type="button"
+		>
+			<div className="flex items-center gap-3">
+				{isExpanded ? (
+					<ChevronDown className="h-4 w-4 text-muted-foreground" />
+				) : (
+					<ChevronRight className="h-4 w-4 text-muted-foreground" />
+				)}
+				<div>
+					<div className="font-semibold">{dayName}</div>
+					<div className="text-muted-foreground text-sm">{dateStr}</div>
+				</div>
+			</div>
+			<div className="flex items-center gap-6">
+				<div className="text-right">
+					<div className="text-muted-foreground text-xs">Trades</div>
+					<div className="font-mono">{day.trades.length}</div>
+				</div>
+				<div className="text-right">
+					<div className="text-muted-foreground text-xs">W/L/BE</div>
+					<div className="flex gap-1 font-mono text-sm">
+						<span className="text-profit">{day.wins}</span>
+						<span className="text-muted-foreground">/</span>
+						<span className="text-loss">{day.losses}</span>
+						<span className="text-muted-foreground">/</span>
+						<span className="text-yellow-500">{day.breakevens}</span>
+					</div>
+				</div>
+				<div className="w-24 text-right">
+					<div className="text-muted-foreground text-xs">P&L</div>
+					<div
+						className={cn(
+							"font-mono font-semibold",
+							getPnLColorClass(day.pnl),
+						)}
+					>
+						{day.pnl >= 0 ? "+" : ""}
+						{formatCurrency(day.pnl)}
+					</div>
+				</div>
+			</div>
+		</button>
+	);
+}
+
+function TradeRow({
+	trade,
+	isSelected,
+	onSelect,
+	onDelete,
+}: {
+	trade: Trade;
+	isSelected: boolean;
+	onSelect: (checked: boolean) => void;
+	onDelete: () => void;
+}) {
+	const pnl = trade.netPnl ? parseFloat(trade.netPnl) : 0;
+
+	return (
+		<TableRow
+			className={cn(
+				"cursor-pointer hover:bg-muted/50",
+				isSelected && "bg-muted/30",
+			)}
+		>
+			<TableCell className="w-[40px]" onClick={(e) => e.stopPropagation()}>
+				<Checkbox checked={isSelected} onCheckedChange={onSelect} />
+			</TableCell>
+			<TableCell>
+				<Link
+					className="flex items-center gap-2"
+					href={`/journal/${trade.id}`}
+				>
+					<div
+						className={cn(
+							"flex h-7 w-7 items-center justify-center rounded",
+							trade.direction === "long" ? "bg-profit/10" : "bg-loss/10",
+						)}
+					>
+						{trade.direction === "long" ? (
+							<ArrowUpRight className="h-3.5 w-3.5 text-profit" />
+						) : (
+							<ArrowDownRight className="h-3.5 w-3.5 text-loss" />
+						)}
+					</div>
+					<span className="font-mono font-semibold">{trade.symbol}</span>
+				</Link>
+			</TableCell>
+			<TableCell>
+				<Link href={`/journal/${trade.id}`}>
+					<span
+						className={cn(
+							"font-medium text-sm",
+							trade.direction === "long" ? "text-profit" : "text-loss",
+						)}
+					>
+						{trade.direction === "long" ? "LONG" : "SHORT"}
+					</span>
+				</Link>
+			</TableCell>
+			<TableCell>
+				<Link href={`/journal/${trade.id}`}>
+					<div className="font-mono text-sm">
+						{parseFloat(trade.entryPrice).toFixed(2)}
+					</div>
+					<div className="text-muted-foreground text-xs">
+						{new Date(trade.entryTime).toLocaleTimeString("en-US", {
+							hour: "2-digit",
+							minute: "2-digit",
+						})}
+					</div>
+				</Link>
+			</TableCell>
+			<TableCell>
+				<Link href={`/journal/${trade.id}`}>
+					{trade.exitPrice ? (
+						<>
+							<div className="font-mono text-sm">
+								{parseFloat(trade.exitPrice).toFixed(2)}
+							</div>
+							<div className="text-muted-foreground text-xs">
+								{trade.exitTime
+									? new Date(trade.exitTime).toLocaleTimeString("en-US", {
+											hour: "2-digit",
+											minute: "2-digit",
+										})
+									: ""}
+							</div>
+						</>
+					) : (
+						<Badge className="text-xs" variant="outline">
+							Open
+						</Badge>
+					)}
+				</Link>
+			</TableCell>
+			<TableCell className="font-mono">
+				<Link href={`/journal/${trade.id}`}>
+					{parseFloat(trade.quantity).toFixed(2)}
+				</Link>
+			</TableCell>
+			<TableCell>
+				<Link href={`/journal/${trade.id}`}>
+					<span
+						className={cn(
+							"font-mono font-semibold",
+							trade.netPnl ? getPnLColorClass(pnl) : "text-muted-foreground",
+						)}
+					>
+						{trade.netPnl ? (pnl >= 0 ? "+" : "") + formatCurrency(pnl) : "-"}
+					</span>
+				</Link>
+			</TableCell>
+			<TableCell>
+				<Link href={`/journal/${trade.id}`}>
+					{trade.setupType ? (
+						<Badge className="text-xs" variant="secondary">
+							{trade.setupType
+								.replace(/_/g, " ")
+								.replace(/\b\w/g, (c) => c.toUpperCase())
+								.slice(0, 15)}
+						</Badge>
+					) : (
+						<span className="text-muted-foreground text-xs">-</span>
+					)}
+				</Link>
+			</TableCell>
+			<TableCell>
+				<Link href={`/journal/${trade.id}`}>
+					{trade.status === "open" ? (
+						<span className="text-muted-foreground text-sm">Open</span>
+					) : trade.exitReason === "take_profit" || trade.takeProfitHit ? (
+						<span className="text-profit text-sm">TP</span>
+					) : trade.exitReason === "stop_loss" || trade.stopLossHit ? (
+						<span className="text-loss text-sm">SL</span>
+					) : trade.exitReason === "trailing_stop" ? (
+						<span className="text-primary text-sm">Trail</span>
+					) : trade.exitReason === "breakeven" ? (
+						<span className="text-sm text-yellow-500">BE</span>
+					) : (
+						<span className="text-muted-foreground text-sm">Manual</span>
+					)}
+				</Link>
+			</TableCell>
+			<TableCell onClick={(e) => e.stopPropagation()}>
+				<DropdownMenu>
+					<DropdownMenuTrigger asChild>
+						<Button className="h-8 w-8" size="icon" variant="ghost">
+							<MoreHorizontal className="h-4 w-4" />
+						</Button>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end">
+						<DropdownMenuItem asChild>
+							<Link href={`/journal/${trade.id}`}>View Details</Link>
+						</DropdownMenuItem>
+						<DropdownMenuSeparator />
+						<DropdownMenuItem
+							className="text-destructive focus:text-destructive"
+							onClick={onDelete}
+						>
+							<Trash2 className="mr-2 h-4 w-4" />
+							Delete
+						</DropdownMenuItem>
+					</DropdownMenuContent>
+				</DropdownMenu>
+			</TableCell>
+		</TableRow>
+	);
+}
+
 export default function JournalPage() {
 	const { selectedAccountId, selectedAccount } = useAccount();
 	const [tab, setTab] = useState<"trades" | "trash">("trades");
+	const [viewMode, setViewMode] = useState<"grouped" | "list">("grouped");
+
+	// Date range
+	const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
+		const preset = dateRangePresets.find((p) => p.key === "allTime");
+		return preset?.getRange();
+	});
 
 	// Filters
 	const [statusFilter, setStatusFilter] = useState<"all" | "open" | "closed">(
@@ -78,6 +352,9 @@ export default function JournalPage() {
 	const [selectedTrades, setSelectedTrades] = useState<Set<number>>(new Set());
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [tradeToDelete, setTradeToDelete] = useState<number | null>(null);
+
+	// Track expanded days
+	const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
 
 	// Debounce search input
 	useEffect(() => {
@@ -97,7 +374,7 @@ export default function JournalPage() {
 		refetch,
 	} = api.trades.getAll.useInfiniteQuery(
 		{
-			limit: 30,
+			limit: 100,
 			status: statusFilter !== "all" ? statusFilter : undefined,
 			tradeDirection:
 				directionFilter !== "all"
@@ -106,6 +383,8 @@ export default function JournalPage() {
 			symbol: symbolFilter || undefined,
 			search: debouncedSearch || undefined,
 			accountId: selectedAccountId ?? undefined,
+			startDate: dateRange?.from.toISOString(),
+			endDate: dateRange?.to.toISOString(),
 		},
 		{
 			getNextPageParam: (lastPage) => lastPage.nextCursor,
@@ -136,8 +415,8 @@ export default function JournalPage() {
 	});
 
 	const deleteMany = api.trades.deleteMany.useMutation({
-		onSuccess: (data) => {
-			toast.success(`${data.deleted} trades moved to trash`);
+		onSuccess: (result) => {
+			toast.success(`${result.deleted} trades moved to trash`);
 			refetch();
 			setSelectedTrades(new Set());
 		},
@@ -168,8 +447,8 @@ export default function JournalPage() {
 	});
 
 	const emptyTrash = api.trades.emptyTrash.useMutation({
-		onSuccess: (data) => {
-			toast.success(`${data.deleted} trades permanently deleted`);
+		onSuccess: (result) => {
+			toast.success(`${result.deleted} trades permanently deleted`);
 			refetchDeleted();
 			refetch();
 		},
@@ -181,6 +460,68 @@ export default function JournalPage() {
 	const [emptyTrashDialogOpen, setEmptyTrashDialogOpen] = useState(false);
 
 	const allTrades = data?.pages.flatMap((page) => page.items) ?? [];
+
+	// Group trades by day
+	const tradesByDay = useMemo(() => {
+		const breakevenThreshold = 5; // Default threshold
+		const grouped: Record<string, TradesByDay> = {};
+
+		for (const trade of allTrades) {
+			const date = new Date(trade.entryTime);
+			const dateKey = date.toISOString().split("T")[0] as string;
+
+			if (!grouped[dateKey]) {
+				grouped[dateKey] = {
+					date: dateKey,
+					trades: [],
+					pnl: 0,
+					wins: 0,
+					losses: 0,
+					breakevens: 0,
+				};
+			}
+
+			const dayGroup = grouped[dateKey];
+			if (dayGroup) {
+				dayGroup.trades.push(trade as Trade);
+				const pnl = trade.netPnl ? parseFloat(trade.netPnl) : 0;
+				dayGroup.pnl += pnl;
+
+				if (trade.status === "closed" && trade.netPnl) {
+					if (Math.abs(pnl) <= breakevenThreshold) {
+						dayGroup.breakevens++;
+					} else if (pnl > 0) {
+						dayGroup.wins++;
+					} else {
+						dayGroup.losses++;
+					}
+				}
+			}
+		}
+
+		// Sort by date descending
+		return Object.values(grouped).sort(
+			(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+		);
+	}, [allTrades]);
+
+	// Auto-expand first day when data loads
+	useEffect(() => {
+		const firstDay = tradesByDay[0];
+		if (tradesByDay.length > 0 && expandedDays.size === 0 && firstDay) {
+			setExpandedDays(new Set([firstDay.date]));
+		}
+	}, [tradesByDay, expandedDays.size]);
+
+	const toggleDay = (date: string) => {
+		const newExpanded = new Set(expandedDays);
+		if (newExpanded.has(date)) {
+			newExpanded.delete(date);
+		} else {
+			newExpanded.add(date);
+		}
+		setExpandedDays(newExpanded);
+	};
 
 	const handleSelectAll = (checked: boolean) => {
 		if (checked) {
@@ -218,6 +559,7 @@ export default function JournalPage() {
 		setDirectionFilter("all");
 		setSymbolFilter("");
 		setSearch("");
+		setDateRange(dateRangePresets.find((p) => p.key === "allTime")?.getRange());
 	};
 
 	const hasActiveFilters =
@@ -226,45 +568,139 @@ export default function JournalPage() {
 		symbolFilter ||
 		search;
 
+	// Summary stats
+	const summary = useMemo(() => {
+		let totalPnl = 0;
+		let wins = 0;
+		let losses = 0;
+		let breakevens = 0;
+		const threshold = 5;
+
+		for (const trade of allTrades) {
+			if (trade.status === "closed" && trade.netPnl) {
+				const pnl = parseFloat(trade.netPnl);
+				totalPnl += pnl;
+				if (Math.abs(pnl) <= threshold) {
+					breakevens++;
+				} else if (pnl > 0) {
+					wins++;
+				} else {
+					losses++;
+				}
+			}
+		}
+
+		return { totalPnl, wins, losses, breakevens, total: allTrades.length };
+	}, [allTrades]);
+
 	return (
 		<div className="space-y-6">
 			{/* Header */}
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 				<div>
-					<h1 className="font-bold text-3xl tracking-tight">Trades</h1>
-					<p className="text-muted-foreground">
-						{selectedAccount ? (
-							<>
-								Trades for{" "}
-								<span className="font-medium">{selectedAccount.name}</span>
-							</>
-						) : (
-							"View and manage all your trades"
-						)}
-					</p>
+					<h1 className="font-bold text-2xl tracking-tight">Trades</h1>
+					{selectedAccount && (
+						<p className="text-muted-foreground text-sm">
+							{selectedAccount.name}
+							{selectedAccount.broker && ` · ${selectedAccount.broker}`}
+						</p>
+					)}
 				</div>
+				<DateRangePicker onChange={setDateRange} value={dateRange} />
 			</div>
 
-			<Tabs onValueChange={(v) => setTab(v as "trades" | "trash")} value={tab}>
-				<TabsList>
-					<TabsTrigger value="trades">All Trades</TabsTrigger>
-					<TabsTrigger className="gap-2" value="trash">
-						<Trash2 className="h-4 w-4" />
-						Trash
-						{deletedTrades && deletedTrades.length > 0 && (
-							<Badge className="ml-1 h-5 px-1.5" variant="secondary">
-								{deletedTrades.length}
-							</Badge>
-						)}
-					</TabsTrigger>
-				</TabsList>
+			{/* Summary Stats */}
+			{allTrades.length > 0 && (
+				<div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
+					<div className="rounded-lg border border-white/5 bg-white/[0.02] p-3">
+						<div className="text-muted-foreground text-xs">Total Trades</div>
+						<div className="font-mono font-semibold text-lg">
+							{summary.total}
+						</div>
+					</div>
+					<div className="rounded-lg border border-white/5 bg-white/[0.02] p-3">
+						<div className="text-muted-foreground text-xs">Total P&L</div>
+						<div
+							className={cn(
+								"font-mono font-semibold text-lg",
+								getPnLColorClass(summary.totalPnl),
+							)}
+						>
+							{summary.totalPnl >= 0 ? "+" : ""}
+							{formatCurrency(summary.totalPnl)}
+						</div>
+					</div>
+					<div className="rounded-lg border border-white/5 bg-white/[0.02] p-3">
+						<div className="text-muted-foreground text-xs">Wins</div>
+						<div className="font-mono font-semibold text-lg text-profit">
+							{summary.wins}
+						</div>
+					</div>
+					<div className="rounded-lg border border-white/5 bg-white/[0.02] p-3">
+						<div className="text-muted-foreground text-xs">Losses</div>
+						<div className="font-mono font-semibold text-lg text-loss">
+							{summary.losses}
+						</div>
+					</div>
+					<div className="rounded-lg border border-white/5 bg-white/[0.02] p-3">
+						<div className="text-muted-foreground text-xs">Win Rate</div>
+						<div
+							className={cn(
+								"font-mono font-semibold text-lg",
+								summary.wins + summary.losses > 0
+									? (summary.wins / (summary.wins + summary.losses)) * 100 >= 50
+										? "text-profit"
+										: "text-loss"
+									: "",
+							)}
+						>
+							{summary.wins + summary.losses > 0
+								? (
+										(summary.wins / (summary.wins + summary.losses)) *
+										100
+									).toFixed(1)
+								: 0}
+							%
+						</div>
+					</div>
+				</div>
+			)}
 
-				<TabsContent className="space-y-4" value="trades">
+			<Tabs onValueChange={(v) => setTab(v as "trades" | "trash")} value={tab}>
+				<div className="flex items-center justify-between">
+					<TabsList>
+						<TabsTrigger value="trades">All Trades</TabsTrigger>
+						<TabsTrigger className="gap-2" value="trash">
+							<Trash2 className="h-4 w-4" />
+							Trash
+							{deletedTrades && deletedTrades.length > 0 && (
+								<Badge className="ml-1 h-5 px-1.5" variant="secondary">
+									{deletedTrades.length}
+								</Badge>
+							)}
+						</TabsTrigger>
+					</TabsList>
+					{tab === "trades" && (
+						<div className="flex items-center gap-2">
+							<Button
+								onClick={() =>
+									setViewMode(viewMode === "grouped" ? "list" : "grouped")
+								}
+								size="sm"
+								variant="outline"
+							>
+								{viewMode === "grouped" ? "List View" : "Day View"}
+							</Button>
+						</div>
+					)}
+				</div>
+
+				<TabsContent className="mt-4 space-y-4" value="trades">
 					{/* Filters */}
 					<div className="flex flex-wrap items-center gap-3">
 						{/* Search */}
 						<div className="relative min-w-[200px] flex-1">
-							<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+							<Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 							<Input
 								className="pl-9"
 								onChange={(e) => setSearch(e.target.value)}
@@ -349,8 +785,8 @@ export default function JournalPage() {
 						</div>
 					)}
 
-					{/* Trades Table */}
-					<div className="rounded border border-white/5">
+					{/* Trades View */}
+					<div className="overflow-hidden rounded border border-white/5">
 						{isLoading ? (
 							<div className="space-y-3 p-6">
 								{[...Array(5)].map((_, i) => (
@@ -375,190 +811,130 @@ export default function JournalPage() {
 									</Button>
 								)}
 							</div>
-						) : (
-							<>
-								<Table>
-									<TableHeader>
-										<TableRow>
-											<TableHead className="w-[40px]">
-												<Checkbox
-													checked={
-														selectedTrades.size === allTrades.length &&
-														allTrades.length > 0
-													}
-													onCheckedChange={handleSelectAll}
-												/>
-											</TableHead>
-											<TableHead>Symbol</TableHead>
-											<TableHead>Side</TableHead>
-											<TableHead>Entry</TableHead>
-											<TableHead>Exit</TableHead>
-											<TableHead>Size</TableHead>
-											<TableHead>P&L</TableHead>
-											<TableHead>Result</TableHead>
-											<TableHead className="w-[50px]"></TableHead>
-										</TableRow>
-									</TableHeader>
-									<TableBody>
-										{allTrades.map((trade) => (
-											<TableRow
-												className={cn(
-													"cursor-pointer hover:bg-muted/50",
-													selectedTrades.has(trade.id) && "bg-muted/30",
-												)}
-												key={trade.id}
-											>
-												<TableCell onClick={(e) => e.stopPropagation()}>
-													<Checkbox
-														checked={selectedTrades.has(trade.id)}
-														onCheckedChange={(checked) =>
-															handleSelectTrade(trade.id, !!checked)
-														}
-													/>
-												</TableCell>
-												<TableCell className="font-mono font-semibold">
-													<Link href={`/journal/${trade.id}`}>
-														{trade.symbol}
-													</Link>
-												</TableCell>
-												<TableCell>
-													<Link href={`/journal/${trade.id}`}>
-														<span
-															className={cn(
-																"font-medium text-sm",
-																trade.direction === "long"
-																	? "text-profit"
-																	: "text-loss",
-															)}
-														>
-															{trade.direction === "long" ? "Long" : "Short"}
-														</span>
-													</Link>
-												</TableCell>
-												<TableCell>
-													<Link href={`/journal/${trade.id}`}>
-														<div className="font-mono text-sm">
-															{parseFloat(trade.entryPrice).toFixed(2)}
-														</div>
-														<div className="text-muted-foreground text-xs">
-															{formatDateTime(trade.entryTime)}
-														</div>
-													</Link>
-												</TableCell>
-												<TableCell>
-													<Link href={`/journal/${trade.id}`}>
-														{trade.exitPrice ? (
-															<>
-																<div className="font-mono text-sm">
-																	{parseFloat(trade.exitPrice).toFixed(2)}
-																</div>
-																<div className="text-muted-foreground text-xs">
-																	{formatDateTime(trade.exitTime)}
-																</div>
-															</>
-														) : (
-															<span className="text-muted-foreground">-</span>
-														)}
-													</Link>
-												</TableCell>
-												<TableCell className="font-mono">
-													<Link href={`/journal/${trade.id}`}>
-														{parseFloat(trade.quantity).toFixed(2)}
-													</Link>
-												</TableCell>
-												<TableCell>
-													<Link href={`/journal/${trade.id}`}>
-														<span
-															className={cn(
-																"font-mono font-semibold",
-																trade.netPnl
-																	? getPnLColorClass(trade.netPnl)
-																	: "text-muted-foreground",
-															)}
-														>
-															{trade.netPnl
-																? formatCurrency(parseFloat(trade.netPnl))
-																: "-"}
-														</span>
-													</Link>
-												</TableCell>
-												<TableCell>
-													<Link href={`/journal/${trade.id}`}>
-														{trade.status === "open" ? (
-															<span className="text-muted-foreground text-sm">
-																Open
-															</span>
-														) : trade.exitReason === "take_profit" ||
-															trade.takeProfitHit ? (
-															<span className="text-profit text-sm">TP</span>
-														) : trade.exitReason === "stop_loss" ||
-															trade.stopLossHit ? (
-															<span className="text-loss text-sm">SL</span>
-														) : trade.exitReason === "trailing_stop" ? (
-															<span className="text-accent text-sm">Trail</span>
-														) : trade.exitReason === "breakeven" ? (
-															<span className="text-breakeven text-sm">BE</span>
-														) : (
-															<span className="text-muted-foreground text-sm">
-																Manual
-															</span>
-														)}
-													</Link>
-												</TableCell>
-												<TableCell onClick={(e) => e.stopPropagation()}>
-													<DropdownMenu>
-														<DropdownMenuTrigger asChild>
-															<Button
-																className="h-8 w-8"
-																size="icon"
-																variant="ghost"
-															>
-																<MoreHorizontal className="h-4 w-4" />
-															</Button>
-														</DropdownMenuTrigger>
-														<DropdownMenuContent align="end">
-															<DropdownMenuItem asChild>
-																<Link href={`/journal/${trade.id}`}>
-																	View Details
-																</Link>
-															</DropdownMenuItem>
-															<DropdownMenuSeparator />
-															<DropdownMenuItem
-																className="text-destructive focus:text-destructive"
-																onClick={() => {
-																	setTradeToDelete(trade.id);
-																	setDeleteDialogOpen(true);
+						) : viewMode === "grouped" ? (
+							/* Grouped by Day View */
+							<div>
+								{tradesByDay.map((day) => (
+									<div key={day.date}>
+										<DayHeader
+											day={day}
+											isExpanded={expandedDays.has(day.date)}
+											onToggle={() => toggleDay(day.date)}
+										/>
+										{expandedDays.has(day.date) && (
+											<Table>
+												<TableHeader>
+													<TableRow>
+														<TableHead className="w-[40px]">
+															<Checkbox
+																checked={day.trades.every((t) =>
+																	selectedTrades.has(t.id),
+																)}
+																onCheckedChange={(checked) => {
+																	const newSelected = new Set(selectedTrades);
+																	for (const t of day.trades) {
+																		if (checked) {
+																			newSelected.add(t.id);
+																		} else {
+																			newSelected.delete(t.id);
+																		}
+																	}
+																	setSelectedTrades(newSelected);
 																}}
-															>
-																<Trash2 className="mr-2 h-4 w-4" />
-																Delete
-															</DropdownMenuItem>
-														</DropdownMenuContent>
-													</DropdownMenu>
-												</TableCell>
-											</TableRow>
-										))}
-									</TableBody>
-								</Table>
-
-								{hasNextPage && (
-									<div className="flex justify-center border-white/5 border-t p-4">
-										<Button
-											disabled={isFetchingNextPage}
-											onClick={() => fetchNextPage()}
-											size="sm"
-											variant="outline"
-										>
-											{isFetchingNextPage ? "Loading..." : "Load More"}
-										</Button>
+															/>
+														</TableHead>
+														<TableHead>Symbol</TableHead>
+														<TableHead>Side</TableHead>
+														<TableHead>Entry</TableHead>
+														<TableHead>Exit</TableHead>
+														<TableHead>Size</TableHead>
+														<TableHead>P&L</TableHead>
+														<TableHead>Setup</TableHead>
+														<TableHead>Exit</TableHead>
+														<TableHead className="w-[50px]" />
+													</TableRow>
+												</TableHeader>
+												<TableBody>
+													{day.trades.map((trade) => (
+														<TradeRow
+															isSelected={selectedTrades.has(trade.id)}
+															key={trade.id}
+															onDelete={() => {
+																setTradeToDelete(trade.id);
+																setDeleteDialogOpen(true);
+															}}
+															onSelect={(checked) =>
+																handleSelectTrade(trade.id, checked)
+															}
+															trade={trade}
+														/>
+													))}
+												</TableBody>
+											</Table>
+										)}
 									</div>
-								)}
-							</>
+								))}
+							</div>
+						) : (
+							/* List View */
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead className="w-[40px]">
+											<Checkbox
+												checked={
+													selectedTrades.size === allTrades.length &&
+													allTrades.length > 0
+												}
+												onCheckedChange={handleSelectAll}
+											/>
+										</TableHead>
+										<TableHead>Symbol</TableHead>
+										<TableHead>Side</TableHead>
+										<TableHead>Entry</TableHead>
+										<TableHead>Exit</TableHead>
+										<TableHead>Size</TableHead>
+										<TableHead>P&L</TableHead>
+										<TableHead>Setup</TableHead>
+										<TableHead>Exit</TableHead>
+										<TableHead className="w-[50px]" />
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{allTrades.map((trade) => (
+										<TradeRow
+											isSelected={selectedTrades.has(trade.id)}
+											key={trade.id}
+											onDelete={() => {
+												setTradeToDelete(trade.id);
+												setDeleteDialogOpen(true);
+											}}
+											onSelect={(checked) =>
+												handleSelectTrade(trade.id, checked)
+											}
+											trade={trade as Trade}
+										/>
+									))}
+								</TableBody>
+							</Table>
+						)}
+
+						{hasNextPage && (
+							<div className="flex justify-center border-white/5 border-t p-4">
+								<Button
+									disabled={isFetchingNextPage}
+									onClick={() => fetchNextPage()}
+									size="sm"
+									variant="outline"
+								>
+									{isFetchingNextPage ? "Loading..." : "Load More"}
+								</Button>
+							</div>
 						)}
 					</div>
 				</TabsContent>
 
-				<TabsContent className="space-y-4" value="trash">
+				<TabsContent className="mt-4 space-y-4" value="trash">
 					<div className="flex items-center justify-between">
 						<p className="text-muted-foreground text-sm">
 							Trades in trash can be restored or permanently deleted.

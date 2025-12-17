@@ -5,6 +5,7 @@ import {
 	BarChart3,
 	BookOpen,
 	Brain,
+	CalendarDays,
 	Check,
 	ChevronsUpDown,
 	FileSpreadsheet,
@@ -50,6 +51,11 @@ const mainNavItems = [
 		title: "Trades",
 		href: "/journal",
 		icon: BookOpen,
+	},
+	{
+		title: "Diary",
+		href: "/diary",
+		icon: CalendarDays,
 	},
 	{
 		title: "Analytics",
