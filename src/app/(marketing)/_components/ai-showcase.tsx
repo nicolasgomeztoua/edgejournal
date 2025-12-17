@@ -27,140 +27,158 @@ export function AIShowcase() {
 	const [showResponse, setShowResponse] = useState(false);
 
 	return (
-		<section className="relative py-24" id="ai">
-			{/* Background effects */}
-			<div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent" />
-			<div className="-translate-y-1/2 absolute top-1/2 left-1/3 h-64 w-64 rounded-full bg-chart-3/10 blur-[100px]" />
+		<section className="relative py-20 sm:py-24" id="ai">
+			<div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background via-primary/6 to-background" />
+			<div className="pointer-events-none absolute left-[10%] top-[15%] h-72 w-72 rounded-full bg-chart-3/12 blur-[120px]" />
+			<div className="pointer-events-none absolute right-[8%] bottom-[10%] h-72 w-72 rounded-full bg-primary/12 blur-[120px]" />
 
 			<div className="container relative mx-auto px-4">
-				{/* Section header */}
-				<div className="mx-auto max-w-2xl text-center">
-					<div className="mb-4 inline-flex items-center gap-2 rounded-full border border-chart-3/30 bg-chart-3/10 px-4 py-1.5 text-chart-3 text-sm">
-						<Sparkles className="h-4 w-4" />
-						AI-Powered
+				<div className="grid items-start gap-10 lg:grid-cols-[1fr,1.15fr] lg:gap-14">
+					{/* Copy */}
+					<div className="max-w-xl">
+						<div className="inline-flex items-center gap-2 rounded-full border border-chart-3/30 bg-chart-3/10 px-3 py-1.5 text-sm text-chart-3">
+							<Sparkles className="h-4 w-4" />
+							AI analyst for your journal
+						</div>
+						<h2 className="mt-6 font-semibold text-3xl tracking-tight sm:text-4xl">
+							Ask “why” and get answers you can verify
+						</h2>
+						<p className="mt-4 text-base text-muted-foreground leading-relaxed sm:text-lg">
+							Query your trades in plain English, then validate the insight with
+							filters and charts. Use your own provider keys—your trading data is
+							never used to train models.
+						</p>
+
+						<div className="mt-8 grid gap-3 sm:grid-cols-2">
+							<div className="rounded-2xl border border-border/60 bg-card/35 p-4 backdrop-blur">
+								<div className="text-muted-foreground text-xs">Examples</div>
+								<div className="mt-2 font-medium">
+									“Do I cut winners early?”
+								</div>
+								<p className="mt-2 text-muted-foreground text-sm">
+									Find behavior patterns across setups and sessions.
+								</p>
+							</div>
+							<div className="rounded-2xl border border-border/60 bg-card/35 p-4 backdrop-blur">
+								<div className="text-muted-foreground text-xs">Guardrails</div>
+								<div className="mt-2 font-medium">BYOK + privacy-first</div>
+								<p className="mt-2 text-muted-foreground text-sm">
+									You control the AI costs and the data flow.
+								</p>
+							</div>
+						</div>
 					</div>
-					<h2 className="font-bold text-3xl tracking-tight sm:text-4xl">
-						Ask anything about your trading
-					</h2>
-					<p className="mt-4 text-lg text-muted-foreground">
-						Natural language queries powered by your choice of AI. Get
-						personalized insights that would take hours to analyze manually.
-					</p>
-				</div>
 
-				{/* Interactive demo */}
-				<div className="mx-auto mt-12 max-w-3xl">
-					<Card className="overflow-hidden border-border/50 bg-card/80 backdrop-blur-sm">
-						{/* Chat header */}
-						<div className="flex items-center gap-3 border-border/50 border-b px-6 py-4">
-							<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-chart-3/20">
-								<Brain className="h-5 w-5 text-chart-3" />
-							</div>
-							<div>
-								<div className="font-medium">Trading AI Assistant</div>
-								<div className="text-muted-foreground text-sm">
-									Analyzing your performance data...
+					{/* Interactive demo */}
+					<div className="relative">
+						<div className="pointer-events-none absolute -inset-6 rounded-3xl bg-gradient-to-tr from-chart-3/14 via-transparent to-primary/10 blur-2xl" />
+						<Card className="relative overflow-hidden border-border/60 bg-card/50 backdrop-blur">
+							{/* Chat header */}
+							<div className="flex items-center gap-3 border-border/60 border-b px-6 py-4">
+								<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-chart-3/15">
+									<Brain className="h-5 w-5 text-chart-3" />
 								</div>
-							</div>
-						</div>
-
-						{/* Query selection */}
-						<div className="border-border/50 border-b px-6 py-4">
-							<div className="mb-3 text-muted-foreground text-sm">
-								Try asking:
-							</div>
-							<div className="flex flex-wrap gap-2">
-								{exampleQueries.map((query) => (
-									<Button
-										key={query}
-										onClick={() => {
-											setSelectedQuery(query);
-											setShowResponse(false);
-										}}
-										size="sm"
-										variant={selectedQuery === query ? "secondary" : "outline"}
-									>
-										{query}
-									</Button>
-								))}
-							</div>
-						</div>
-
-						{/* Chat content */}
-						<div className="min-h-[300px] p-6">
-							{/* User message */}
-							<div className="mb-6 flex justify-end">
-								<div className="max-w-[80%] rounded-2xl rounded-br-md bg-primary px-4 py-2 text-primary-foreground">
-									{selectedQuery}
-								</div>
-							</div>
-
-							{/* AI response */}
-							{showResponse ? (
-								<div className="flex gap-3">
-									<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-chart-3/20">
-										<Brain className="h-4 w-4 text-chart-3" />
+								<div>
+									<div className="font-medium">Edge AI</div>
+									<div className="text-muted-foreground text-sm">
+										Analyzing your trading data…
 									</div>
-									<div className="rounded-2xl rounded-tl-md bg-secondary px-4 py-3">
-										<div className="prose prose-sm prose-invert max-w-none">
-											{exampleResponse.split("\n").map((line) => {
-												if (line.startsWith("**") && line.endsWith("**")) {
-													return (
+								</div>
+							</div>
+
+							{/* Query selection */}
+							<div className="border-border/60 border-b px-6 py-4">
+								<div className="mb-3 text-muted-foreground text-sm">
+									Try asking:
+								</div>
+								<div className="flex flex-wrap gap-2">
+									{exampleQueries.map((query) => (
+										<Button
+											key={query}
+											onClick={() => {
+												setSelectedQuery(query);
+												setShowResponse(false);
+											}}
+											size="sm"
+											variant={selectedQuery === query ? "secondary" : "outline"}
+										>
+											{query}
+										</Button>
+									))}
+								</div>
+							</div>
+
+							{/* Chat content */}
+							<div className="min-h-[320px] p-6">
+								<div className="mb-6 flex justify-end">
+									<div className="max-w-[85%] rounded-2xl rounded-br-md bg-primary px-4 py-2 text-primary-foreground">
+										{selectedQuery}
+									</div>
+								</div>
+
+								{showResponse ? (
+									<div className="flex gap-3">
+										<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-chart-3/15">
+											<Brain className="h-4 w-4 text-chart-3" />
+										</div>
+										<div className="rounded-2xl rounded-tl-md bg-secondary px-4 py-3">
+											<div className="prose prose-sm prose-invert max-w-none">
+												{exampleResponse.split("\n").map((line) => {
+													if (line.startsWith("**") && line.endsWith("**")) {
+														return (
+															<p
+																className="mt-3 font-semibold first:mt-0"
+																key={`heading-${line}`}
+															>
+																{line.replace(/\*\*/g, "")}
+															</p>
+														);
+													}
+													if (line.startsWith("- ")) {
+														return (
+															<p
+																className="ml-4 text-muted-foreground"
+																key={`bullet-${line}`}
+															>
+																{line}
+															</p>
+														);
+													}
+													return line ? (
 														<p
-															className="mt-3 font-semibold first:mt-0"
-															key={`heading-${line}`}
-														>
-															{line.replace(/\*\*/g, "")}
-														</p>
-													);
-												}
-												if (line.startsWith("- ")) {
-													return (
-														<p
-															className="ml-4 text-muted-foreground"
-															key={`bullet-${line}`}
+															className="text-muted-foreground"
+															key={`text-${line}`}
 														>
 															{line}
 														</p>
-													);
-												}
-												return line ? (
-													<p
-														className="text-muted-foreground"
-														key={`text-${line}`}
-													>
-														{line}
-													</p>
-												) : null;
-											})}
+													) : null;
+												})}
+											</div>
 										</div>
 									</div>
-								</div>
-							) : (
-								<div className="flex items-center justify-center py-12">
-									<Button
-										className="gap-2"
-										onClick={() => setShowResponse(true)}
-									>
-										<Send className="h-4 w-4" />
-										See AI Response
-									</Button>
-								</div>
-							)}
-						</div>
-					</Card>
+								) : (
+									<div className="flex items-center justify-center py-12">
+										<Button
+											className="gap-2 shadow-sm shadow-primary/15"
+											onClick={() => setShowResponse(true)}
+										>
+											<Send className="h-4 w-4" />
+											See AI response
+										</Button>
+									</div>
+								)}
+							</div>
+						</Card>
 
-					{/* Provider badges */}
-					<div className="mt-6 flex items-center justify-center gap-4 text-muted-foreground text-sm">
-						<span>Works with:</span>
-						<div className="flex items-center gap-3">
-							<span className="rounded border border-border/50 px-2 py-1">
+						<div className="mt-4 flex flex-wrap items-center gap-3 text-muted-foreground text-xs">
+							<span>Works with:</span>
+							<span className="rounded-md border border-border/60 bg-card/30 px-2 py-1">
 								OpenAI
 							</span>
-							<span className="rounded border border-border/50 px-2 py-1">
+							<span className="rounded-md border border-border/60 bg-card/30 px-2 py-1">
 								Anthropic
 							</span>
-							<span className="rounded border border-border/50 px-2 py-1">
+							<span className="rounded-md border border-border/60 bg-card/30 px-2 py-1">
 								Google AI
 							</span>
 						</div>

@@ -12,12 +12,16 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
+import { useMemo, useState } from "react";
 
 const plans = [
 	{
 		name: "Free",
 		description: "Perfect for getting started",
-		price: "$0",
+		monthly: 0,
+		yearly: 0,
 		period: "forever",
 		features: [
 			"Up to 100 trades",
@@ -32,7 +36,8 @@ const plans = [
 	{
 		name: "Pro",
 		description: "For serious traders",
-		price: "$19",
+		monthly: 19,
+		yearly: 190,
 		period: "/month",
 		features: [
 			"Unlimited trades",
@@ -49,7 +54,8 @@ const plans = [
 	{
 		name: "Team",
 		description: "For prop firms & groups",
-		price: "$49",
+		monthly: 49,
+		yearly: 490,
 		period: "/user/mo",
 		features: [
 			"Everything in Pro",
@@ -66,22 +72,57 @@ const plans = [
 ];
 
 export function Pricing() {
+	const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
+
+	const displayPlans = useMemo(() => {
+		return plans.map((plan) => {
+			if (plan.period === "forever") {
+				return { ...plan, priceLabel: "$0", periodLabel: "forever" };
+			}
+
+			if (billing === "yearly") {
+				const suffix = plan.name === "Team" ? "/user/yr" : "/year";
+				return { ...plan, priceLabel: `$${plan.yearly}`, periodLabel: suffix };
+			}
+
+			return { ...plan, priceLabel: `$${plan.monthly}`, periodLabel: plan.period };
+		});
+	}, [billing]);
+
 	return (
-		<section className="relative py-24" id="pricing">
+		<section className="relative py-20 sm:py-24" id="pricing">
+			<div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background via-card/20 to-background" />
 			<div className="container mx-auto px-4">
 				{/* Section header */}
 				<div className="mx-auto max-w-2xl text-center">
-					<h2 className="font-bold text-3xl tracking-tight sm:text-4xl">
-						Simple, transparent pricing
+					<h2 className="font-semibold text-3xl tracking-tight sm:text-4xl">
+						Pricing that scales with discipline
 					</h2>
-					<p className="mt-4 text-lg text-muted-foreground">
-						Start free and scale as you grow. Bring your own AI keys or let us
-						handle it.
+					<p className="mt-4 text-base text-muted-foreground leading-relaxed sm:text-lg">
+						Start free, upgrade when the journal becomes a habit. Bring your
+						own AI keys (BYOK) or go Team for managed AI.
 					</p>
+
+					<div className="mt-8 flex justify-center">
+						<Tabs
+							defaultValue="monthly"
+							onValueChange={(value) =>
+								setBilling(value as "monthly" | "yearly")
+							}
+							value={billing}
+						>
+							<TabsList className="bg-card/40 backdrop-blur">
+								<TabsTrigger value="monthly">Monthly</TabsTrigger>
+								<TabsTrigger value="yearly">
+									Yearly <span className="text-primary">(-2 mo)</span>
+								</TabsTrigger>
+							</TabsList>
+						</Tabs>
+					</div>
 				</div>
 
 				{/* BYOK explanation */}
-				<div className="mx-auto mt-8 flex max-w-2xl items-center justify-center gap-3 rounded-lg border border-border/50 bg-card/50 px-6 py-4">
+				<div className="mx-auto mt-8 flex max-w-2xl items-center justify-center gap-3 rounded-2xl border border-border/60 bg-card/35 px-6 py-4 backdrop-blur">
 					<Key className="h-5 w-5 text-primary" />
 					<div className="text-sm">
 						<span className="font-medium">Bring Your Own Key (BYOK):</span>{" "}
@@ -94,15 +135,18 @@ export function Pricing() {
 
 				{/* Pricing cards */}
 				<div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-					{plans.map((plan) => (
+					{displayPlans.map((plan) => (
 						<Card
-							className={`relative flex flex-col ${
-								plan.popular
-									? "border-primary/50 shadow-lg shadow-primary/10"
-									: "border-border/50"
-							}`}
+							className={cn(
+								"relative flex flex-col overflow-hidden border-border/60 bg-card/35 backdrop-blur",
+								plan.popular && "border-primary/50 shadow-lg shadow-primary/15",
+							)}
 							key={plan.name}
 						>
+							{plan.popular && (
+								<div className="pointer-events-none absolute inset-0 opacity-60 [background:radial-gradient(circle_at_top,rgba(16,185,129,0.18),transparent_55%)]" />
+							)}
+
 							{plan.popular && (
 								<Badge className="-top-3 -translate-x-1/2 absolute left-1/2 gap-1">
 									<Sparkles className="h-3 w-3" />
@@ -122,8 +166,10 @@ export function Pricing() {
 
 							<CardContent className="flex-1">
 								<div className="mb-6">
-									<span className="font-bold text-4xl">{plan.price}</span>
-									<span className="text-muted-foreground">{plan.period}</span>
+									<span className="font-semibold text-4xl">
+										{plan.priceLabel}
+									</span>
+									<span className="text-muted-foreground">{plan.periodLabel}</span>
 								</div>
 
 								<ul className="space-y-3">
@@ -146,7 +192,7 @@ export function Pricing() {
 								) : (
 									<SignUpButton mode="modal">
 										<Button
-											className="w-full"
+											className="w-full shadow-sm shadow-primary/15"
 											variant={plan.popular ? "default" : "outline"}
 										>
 											{plan.cta}

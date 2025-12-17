@@ -39,8 +39,11 @@ export default function RootLayout({
 				},
 			}}
 		>
-			<html className={`${geist.variable} ${jetbrainsMono.variable}`} lang="en">
-				<body className="bg-slate-950 text-slate-100 antialiased">
+			<html
+				className={`dark ${geist.variable} ${jetbrainsMono.variable}`}
+				lang="en"
+			>
+				<body className="bg-background text-foreground antialiased">
 					<TRPCReactProvider>{children}</TRPCReactProvider>
 					<Toaster position="top-right" richColors />
 				</body>

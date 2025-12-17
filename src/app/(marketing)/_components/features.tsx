@@ -10,6 +10,7 @@ import {
 	Target,
 	TrendingUp,
 } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 const features = [
 	{
@@ -72,40 +73,107 @@ const features = [
 
 export function Features() {
 	return (
-		<section className="relative py-24" id="features">
-			{/* Subtle gradient */}
-			<div className="absolute inset-0 bg-gradient-to-b from-transparent via-card/30 to-transparent" />
+		<section className="relative py-20 sm:py-24" id="features">
+			<div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background via-card/25 to-background" />
+			<div className="pointer-events-none absolute inset-0 opacity-[0.05] bg-grid-fine landing-mask-fade-y" />
 
 			<div className="container relative mx-auto px-4">
-				{/* Section header */}
 				<div className="mx-auto max-w-2xl text-center">
-					<h2 className="font-bold text-3xl tracking-tight sm:text-4xl">
-						Everything you need to{" "}
-						<span className="text-primary">level up</span> your trading
+					<div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/40 px-3 py-1.5 text-sm backdrop-blur">
+						<Sparkles className="h-4 w-4 text-primary" />
+						<span className="text-muted-foreground">
+							A workflow that compounds
+						</span>
+					</div>
+					<h2 className="font-semibold text-3xl tracking-tight sm:text-4xl">
+						Build an edge you can actually repeat
 					</h2>
-					<p className="mt-4 text-lg text-muted-foreground">
-						A complete toolkit designed for serious traders who want to find
-						their edge and consistently improve.
+					<p className="mt-4 text-base text-muted-foreground leading-relaxed sm:text-lg">
+						Log context, measure outcomes, then tighten your rules. EdgeJournal
+						is built around a simple loop that turns trades into decisions you
+						can trust.
 					</p>
 				</div>
 
-				{/* Features grid */}
-				<div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-					{features.map((feature, index) => (
+				<div className="mt-12 grid gap-6 lg:grid-cols-3">
+					<Card className="border-border/60 bg-card/40 p-6 backdrop-blur">
+						<div className="flex items-center gap-3">
+							<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15">
+								<FileSpreadsheet className="h-5 w-5 text-primary" />
+							</div>
+							<div>
+								<div className="text-muted-foreground text-xs">01</div>
+								<div className="font-medium">Capture reality</div>
+							</div>
+						</div>
+						<p className="mt-4 text-muted-foreground text-sm leading-relaxed">
+							Manual entry or CSV import—track entries, exits, rules, emotions,
+							and screenshots. Don’t just store trades; store context.
+						</p>
+					</Card>
+
+					<Card className="border-border/60 bg-card/40 p-6 backdrop-blur">
+						<div className="flex items-center gap-3">
+							<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-chart-2/15">
+								<BarChart3 className="h-5 w-5 text-chart-2" />
+							</div>
+							<div>
+								<div className="text-muted-foreground text-xs">02</div>
+								<div className="font-medium">See patterns</div>
+							</div>
+						</div>
+						<p className="mt-4 text-muted-foreground text-sm leading-relaxed">
+							Segment by setup, time, instrument, and risk. Find the 20% that
+							drives your P&amp;L and the leaks that keep repeating.
+						</p>
+					</Card>
+
+					<Card className="border-border/60 bg-card/40 p-6 backdrop-blur">
+						<div className="flex items-center gap-3">
+							<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-chart-3/15">
+								<Brain className="h-5 w-5 text-chart-3" />
+							</div>
+							<div>
+								<div className="text-muted-foreground text-xs">03</div>
+								<div className="font-medium">Pressure-test with AI</div>
+							</div>
+						</div>
+						<p className="mt-4 text-muted-foreground text-sm leading-relaxed">
+							Ask natural-language questions about your own data. Get hypotheses
+							fast, then validate them with charts and filters.
+						</p>
+					</Card>
+				</div>
+
+				{/* Feature grid */}
+				<div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+					{features.map((feature) => (
 						<div
-							className="group relative rounded-xl border border-border/50 bg-card/50 p-6 transition-all hover:border-border hover:bg-card"
+							className="group relative rounded-2xl border border-border/60 bg-card/35 p-6 backdrop-blur transition-colors hover:bg-card/55"
 							key={feature.title}
-							style={{
-								animationDelay: `${index * 100}ms`,
-							}}
 						>
-							<feature.icon className={`h-10 w-10 ${feature.color}`} />
-							<h3 className="mt-4 font-semibold">{feature.title}</h3>
-							<p className="mt-2 text-muted-foreground text-sm leading-relaxed">
+							<div className="flex items-center gap-3">
+								<div className="flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-background/30">
+									<feature.icon className={`h-5 w-5 ${feature.color}`} />
+								</div>
+								<h3 className="font-medium leading-tight">{feature.title}</h3>
+							</div>
+							<p className="mt-3 text-muted-foreground text-sm leading-relaxed">
 								{feature.description}
 							</p>
 						</div>
 					))}
+				</div>
+
+				{/* Bottom note */}
+				<div className="mx-auto mt-10 max-w-3xl rounded-2xl border border-border/60 bg-card/35 p-6 text-center backdrop-blur">
+					<p className="text-muted-foreground text-sm leading-relaxed">
+						No fluff metrics. Every view is designed to answer one question:
+						<span className="text-foreground">
+							{" "}
+							“What should I do more (or less) of next week?”
+						</span>
+					</p>
 				</div>
 			</div>
 		</section>
