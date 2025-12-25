@@ -8,6 +8,7 @@ import {
 	Check,
 	ChevronsUpDown,
 	FileSpreadsheet,
+	FolderOpen,
 	LayoutDashboard,
 	Plus,
 	PlusCircle,
@@ -21,6 +22,7 @@ import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
+	DropdownMenuLabel,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -38,6 +40,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useAccount } from "@/contexts/account-context";
 import { cn } from "@/lib/utils";
+import { api } from "@/trpc/react";
 
 const mainNavItems = [
 	{
@@ -62,16 +65,41 @@ const mainNavItems = [
 	},
 ];
 
-const ACCOUNT_TYPE_COLORS = {
+// Updated account type colors for new types
+const ACCOUNT_TYPE_COLORS: Record<string, string> = {
+	prop_challenge: "bg-amber-500",
+	prop_funded: "bg-purple-500",
 	live: "bg-profit",
 	demo: "bg-accent",
-	paper: "bg-breakeven",
+};
+
+const ACCOUNT_TYPE_LABELS: Record<string, string> = {
+	prop_challenge: "Challenge",
+	prop_funded: "Funded",
+	live: "Live",
+	demo: "Demo",
 };
 
 export function AppSidebar() {
 	const pathname = usePathname();
 	const { accounts, selectedAccount, setSelectedAccountId, isLoading } =
 		useAccount();
+
+	// Fetch groups for group selector
+	const { data: groups = [] } = api.accounts.getGroups.useQuery();
+
+	// Group accounts by their group
+	const groupedAccounts = accounts.reduce(
+		(acc, account) => {
+			const groupId = account.groupId ?? "ungrouped";
+			if (!acc[groupId]) {
+				acc[groupId] = [];
+			}
+			acc[groupId].push(account);
+			return acc;
+		},
+		{} as Record<string | number, typeof accounts>,
+	);
 
 	return (
 		<Sidebar className="border-r border-white/5">
@@ -108,7 +136,7 @@ export function AppSidebar() {
 							{isLoading ? (
 								<div className="flex items-center gap-2">
 									<div className="h-2 w-2 animate-pulse rounded-full bg-muted-foreground/50" />
-									<span className="text-muted-foreground uppercase tracking-wider">
+									<span className="uppercase tracking-wider text-muted-foreground">
 										Loading...
 									</span>
 								</div>
@@ -124,9 +152,9 @@ export function AppSidebar() {
 										<span className="font-medium uppercase tracking-wider">
 											{selectedAccount.name}
 										</span>
-										{selectedAccount.broker && (
+										{selectedAccount.accountType.startsWith("prop_") && (
 											<span className="ml-1 text-muted-foreground">
-												({selectedAccount.broker})
+												({ACCOUNT_TYPE_LABELS[selectedAccount.accountType]})
 											</span>
 										)}
 									</div>
@@ -135,7 +163,7 @@ export function AppSidebar() {
 							) : (
 								<>
 									<Wallet className="h-3 w-3 text-muted-foreground" />
-									<span className="text-muted-foreground uppercase tracking-wider">
+									<span className="uppercase tracking-wider text-muted-foreground">
 										No account
 									</span>
 									<ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
@@ -143,7 +171,7 @@ export function AppSidebar() {
 							)}
 						</button>
 					</DropdownMenuTrigger>
-					<DropdownMenuContent align="start" className="w-[220px]">
+					<DropdownMenuContent align="start" className="w-[240px]">
 						{accounts.length === 0 ? (
 							<DropdownMenuItem asChild>
 								<Link
@@ -156,31 +184,109 @@ export function AppSidebar() {
 							</DropdownMenuItem>
 						) : (
 							<>
-								{accounts.map((account) => (
-									<DropdownMenuItem
-										className="flex items-center gap-2 font-mono text-xs"
-										key={account.id}
-										onClick={() => setSelectedAccountId(account.id)}
-									>
-										<div
-											className={cn(
-												"h-2 w-2 rounded-full",
-												ACCOUNT_TYPE_COLORS[account.accountType],
-											)}
-										/>
-										<div className="flex-1 truncate">
-											<span>{account.name}</span>
-											{account.broker && (
-												<span className="ml-1 text-muted-foreground">
-													({account.broker})
-												</span>
-											)}
+								{/* Groups with accounts */}
+								{groups.map((group) => {
+									const groupAccounts = groupedAccounts[group.id] || [];
+									if (groupAccounts.length === 0) return null;
+
+									return (
+										<div key={group.id}>
+											<DropdownMenuLabel className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+												<FolderOpen className="h-3 w-3" />
+												{group.name}
+											</DropdownMenuLabel>
+											{groupAccounts.map((account) => (
+												<DropdownMenuItem
+													className="flex items-center gap-2 pl-6 font-mono text-xs"
+													key={account.id}
+													onClick={() => setSelectedAccountId(account.id)}
+												>
+													<div
+														className={cn(
+															"h-2 w-2 rounded-full",
+															ACCOUNT_TYPE_COLORS[account.accountType],
+														)}
+													/>
+													<div className="flex-1 truncate">
+														<span>{account.name}</span>
+														{account.accountType === "prop_challenge" &&
+															account.challengeStatus && (
+																<span
+																	className={cn(
+																		"ml-1 text-[10px]",
+																		account.challengeStatus === "passed" &&
+																			"text-green-500",
+																		account.challengeStatus === "failed" &&
+																			"text-red-500",
+																		account.challengeStatus === "active" &&
+																			"text-amber-500",
+																	)}
+																>
+																	({account.challengeStatus})
+																</span>
+															)}
+													</div>
+													{selectedAccount?.id === account.id && (
+														<Check className="h-4 w-4 text-primary" />
+													)}
+												</DropdownMenuItem>
+											))}
 										</div>
-										{selectedAccount?.id === account.id && (
-											<Check className="h-4 w-4 text-primary" />
-										)}
-									</DropdownMenuItem>
-								))}
+									);
+								})}
+
+								{/* Ungrouped accounts */}
+								{groupedAccounts.ungrouped &&
+									groupedAccounts.ungrouped.length > 0 && (
+										<>
+											{groups.length > 0 && <DropdownMenuSeparator />}
+											{groups.length > 0 && (
+												<DropdownMenuLabel className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+													Ungrouped
+												</DropdownMenuLabel>
+											)}
+											{groupedAccounts.ungrouped.map((account) => (
+												<DropdownMenuItem
+													className={cn(
+														"flex items-center gap-2 font-mono text-xs",
+														groups.length > 0 && "pl-6",
+													)}
+													key={account.id}
+													onClick={() => setSelectedAccountId(account.id)}
+												>
+													<div
+														className={cn(
+															"h-2 w-2 rounded-full",
+															ACCOUNT_TYPE_COLORS[account.accountType],
+														)}
+													/>
+													<div className="flex-1 truncate">
+														<span>{account.name}</span>
+														{account.accountType === "prop_challenge" &&
+															account.challengeStatus && (
+																<span
+																	className={cn(
+																		"ml-1 text-[10px]",
+																		account.challengeStatus === "passed" &&
+																			"text-green-500",
+																		account.challengeStatus === "failed" &&
+																			"text-red-500",
+																		account.challengeStatus === "active" &&
+																			"text-amber-500",
+																	)}
+																>
+																	({account.challengeStatus})
+																</span>
+															)}
+													</div>
+													{selectedAccount?.id === account.id && (
+														<Check className="h-4 w-4 text-primary" />
+													)}
+												</DropdownMenuItem>
+											))}
+										</>
+									)}
+
 								<DropdownMenuSeparator />
 								<DropdownMenuItem asChild>
 									<Link
@@ -199,20 +305,29 @@ export function AppSidebar() {
 				{/* Add Trade Dropdown */}
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
-						<Button className="mt-3 w-full font-mono text-xs uppercase tracking-wider" size="sm">
+						<Button
+							className="mt-3 w-full font-mono text-xs uppercase tracking-wider"
+							size="sm"
+						>
 							<Plus className="mr-2 h-4 w-4" />
 							Add Trade
 						</Button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="start" className="w-[200px]">
 						<DropdownMenuItem asChild>
-							<Link className="flex items-center gap-2 font-mono text-xs" href="/trade/new">
+							<Link
+								className="flex items-center gap-2 font-mono text-xs"
+								href="/trade/new"
+							>
 								<Plus className="h-4 w-4" />
 								Log Trade
 							</Link>
 						</DropdownMenuItem>
 						<DropdownMenuItem asChild>
-							<Link className="flex items-center gap-2 font-mono text-xs" href="/import">
+							<Link
+								className="flex items-center gap-2 font-mono text-xs"
+								href="/import"
+							>
 								<FileSpreadsheet className="h-4 w-4" />
 								Import CSV
 							</Link>
@@ -232,8 +347,8 @@ export function AppSidebar() {
 								<SidebarMenuItem key={item.href}>
 									<SidebarMenuButton
 										asChild
-										isActive={pathname === item.href}
 										className="font-mono text-xs uppercase tracking-wider"
+										isActive={pathname === item.href}
 									>
 										<Link href={item.href}>
 											<item.icon className="h-4 w-4" />
@@ -252,8 +367,8 @@ export function AppSidebar() {
 					<SidebarMenuItem>
 						<SidebarMenuButton
 							asChild
-							isActive={pathname === "/settings"}
 							className="font-mono text-xs uppercase tracking-wider"
+							isActive={pathname === "/settings"}
 						>
 							<Link href="/settings">
 								<Settings className="h-4 w-4" />

@@ -749,7 +749,7 @@ export default function TradeDetailPage() {
 						</Link>
 					</Button>
 					<div>
-						<span className="mb-1 block font-mono text-xs uppercase tracking-wider text-primary">
+						<span className="mb-1 block font-mono text-primary text-xs uppercase tracking-wider">
 							Trade Details
 						</span>
 						<div className="flex items-center gap-3">
@@ -771,8 +771,8 @@ export default function TradeDetailPage() {
 								{trade.direction.toUpperCase()}
 							</Badge>
 							<Badge
-								variant={trade.status === "open" ? "secondary" : "default"}
 								className="font-mono text-[10px] uppercase tracking-wider"
+								variant={trade.status === "open" ? "secondary" : "default"}
 							>
 								{trade.status === "open" ? (
 									<Clock className="mr-1 h-3 w-3" />
@@ -816,10 +816,10 @@ export default function TradeDetailPage() {
 					) : (
 						<>
 							<Button
+								className="font-mono text-xs uppercase tracking-wider"
 								onClick={() => setIsEditing(true)}
 								size="sm"
 								variant="outline"
-								className="font-mono text-xs uppercase tracking-wider"
 							>
 								<Edit className="mr-2 h-3.5 w-3.5" />
 								Edit
@@ -828,7 +828,10 @@ export default function TradeDetailPage() {
 							{trade.status === "open" && (
 								<Dialog onOpenChange={setIsClosing} open={isClosing}>
 									<DialogTrigger asChild>
-										<Button size="sm" className="font-mono text-xs uppercase tracking-wider">
+										<Button
+											className="font-mono text-xs uppercase tracking-wider"
+											size="sm"
+										>
 											<XCircle className="mr-2 h-3.5 w-3.5" />
 											Close
 										</Button>
@@ -979,7 +982,7 @@ export default function TradeDetailPage() {
 					<div className="relative flex flex-wrap items-end justify-between gap-6">
 						{/* Main P&L */}
 						<div>
-							<p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+							<p className="mb-2 font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 								Net Profit / Loss
 							</p>
 							<p
@@ -1029,7 +1032,7 @@ export default function TradeDetailPage() {
 						<div className="flex gap-8">
 							{stats?.percentChange != null && (
 								<div className="text-right">
-									<p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+									<p className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 										Change
 									</p>
 									<p
@@ -1045,7 +1048,7 @@ export default function TradeDetailPage() {
 							)}
 							{stats?.rMultiple != null && (
 								<div className="text-right">
-									<p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+									<p className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 										R Multiple
 									</p>
 									<p
@@ -1066,20 +1069,32 @@ export default function TradeDetailPage() {
 
 			{/* Main Content */}
 			<Tabs className="space-y-6" defaultValue="details">
-				<TabsList className="bg-white/[0.02] border border-white/5">
-					<TabsTrigger className="gap-2 font-mono text-xs uppercase tracking-wider data-[state=active]:bg-white/10" value="details">
+				<TabsList className="border border-white/5 bg-white/[0.02]">
+					<TabsTrigger
+						className="gap-2 font-mono text-xs uppercase tracking-wider data-[state=active]:bg-white/10"
+						value="details"
+					>
 						<FileText className="h-3.5 w-3.5" />
 						Details
 					</TabsTrigger>
-					<TabsTrigger className="gap-2 font-mono text-xs uppercase tracking-wider data-[state=active]:bg-white/10" value="executions">
+					<TabsTrigger
+						className="gap-2 font-mono text-xs uppercase tracking-wider data-[state=active]:bg-white/10"
+						value="executions"
+					>
 						<ArrowDownRight className="h-3.5 w-3.5" />
 						Executions
 					</TabsTrigger>
-					<TabsTrigger className="gap-2 font-mono text-xs uppercase tracking-wider data-[state=active]:bg-white/10" value="chart">
+					<TabsTrigger
+						className="gap-2 font-mono text-xs uppercase tracking-wider data-[state=active]:bg-white/10"
+						value="chart"
+					>
 						<BarChart3 className="h-3.5 w-3.5" />
 						Chart
 					</TabsTrigger>
-					<TabsTrigger className="gap-2 font-mono text-xs uppercase tracking-wider data-[state=active]:bg-white/10" value="screenshots">
+					<TabsTrigger
+						className="gap-2 font-mono text-xs uppercase tracking-wider data-[state=active]:bg-white/10"
+						value="screenshots"
+					>
 						<Camera className="h-3.5 w-3.5" />
 						Screenshots
 					</TabsTrigger>

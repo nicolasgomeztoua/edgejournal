@@ -20,8 +20,8 @@ function StatsOverview() {
 			<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
 				{[...Array(4)].map((_, i) => (
 					<div
-						key={`skeleton-stat-${i.toString()}`}
 						className="rounded border border-white/5 bg-white/[0.02] p-4"
+						key={`skeleton-stat-${i.toString()}`}
 					>
 						<Skeleton className="mb-3 h-3 w-16" />
 						<Skeleton className="mb-2 h-6 w-24" />
@@ -74,16 +74,18 @@ function StatsOverview() {
 		<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
 			{cards.map((card) => (
 				<div
-					key={card.title}
 					className="rounded border border-white/5 bg-white/[0.02] p-4 transition-all hover:border-white/10"
+					key={card.title}
 				>
 					<div className="flex items-center justify-between">
-						<span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+						<span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 							{card.title}
 						</span>
 						<card.icon className="h-3 w-3 text-muted-foreground" />
 					</div>
-					<div className={cn("mt-2 font-mono font-bold text-xl", card.colorClass)}>
+					<div
+						className={cn("mt-2 font-bold font-mono text-xl", card.colorClass)}
+					>
 						{card.value}
 					</div>
 					<p className="mt-1 font-mono text-[10px] text-muted-foreground">
@@ -137,7 +139,7 @@ function WinLossChart() {
 
 	if (!stats || stats.totalTrades === 0) {
 		return (
-			<div className="flex h-[300px] items-center justify-center font-mono text-xs text-muted-foreground">
+			<div className="flex h-[300px] items-center justify-center font-mono text-muted-foreground text-xs">
 				No trade data available
 			</div>
 		);
@@ -183,7 +185,11 @@ function PnLDistributionChart() {
 				{
 					type: "category" as const,
 					position: "bottom" as const,
-					label: { color: "#64748b", fontFamily: "JetBrains Mono, monospace", fontSize: 9 },
+					label: {
+						color: "#64748b",
+						fontFamily: "JetBrains Mono, monospace",
+						fontSize: 9,
+					},
 					line: { color: "#1e293b" },
 				},
 				{
@@ -208,7 +214,7 @@ function PnLDistributionChart() {
 
 	if (!data?.items || data.items.length === 0) {
 		return (
-			<div className="flex h-[300px] items-center justify-center font-mono text-xs text-muted-foreground">
+			<div className="flex h-[300px] items-center justify-center font-mono text-muted-foreground text-xs">
 				No trade data available
 			</div>
 		);
@@ -258,7 +264,11 @@ function CumulativePnLChart() {
 				{
 					type: "category" as const,
 					position: "bottom" as const,
-					label: { color: "#64748b", fontFamily: "JetBrains Mono, monospace", fontSize: 9 },
+					label: {
+						color: "#64748b",
+						fontFamily: "JetBrains Mono, monospace",
+						fontSize: 9,
+					},
 					line: { color: "#1e293b" },
 				},
 				{
@@ -283,7 +293,7 @@ function CumulativePnLChart() {
 
 	if (!data?.items || data.items.length === 0) {
 		return (
-			<div className="flex h-[300px] items-center justify-center font-mono text-xs text-muted-foreground">
+			<div className="flex h-[300px] items-center justify-center font-mono text-muted-foreground text-xs">
 				No trade data available
 			</div>
 		);
@@ -306,7 +316,7 @@ function ChartTerminal({
 	return (
 		<div className="overflow-hidden rounded border border-white/10 bg-black/50">
 			{/* Terminal header */}
-			<div className="flex items-center justify-between border-b border-white/5 bg-white/[0.02] px-4 py-2">
+			<div className="flex items-center justify-between border-white/5 border-b bg-white/[0.02] px-4 py-2">
 				<div className="flex items-center gap-2">
 					<div className="h-2.5 w-2.5 rounded-full bg-loss/60" />
 					<div className="h-2.5 w-2.5 rounded-full bg-breakeven/60" />
@@ -320,14 +330,14 @@ function ChartTerminal({
 				<div className="w-14" />
 			</div>
 			{/* Chart header */}
-			<div className="border-b border-white/5 px-4 py-3">
+			<div className="border-white/5 border-b px-4 py-3">
 				<h3 className="font-medium text-sm">{title}</h3>
-				<p className="font-mono text-[10px] text-muted-foreground">{description}</p>
+				<p className="font-mono text-[10px] text-muted-foreground">
+					{description}
+				</p>
 			</div>
 			{/* Chart content */}
-			<div className="p-4">
-				{children}
-			</div>
+			<div className="p-4">{children}</div>
 		</div>
 	);
 }
@@ -337,11 +347,11 @@ export default function AnalyticsPage() {
 		<div className="space-y-6">
 			{/* Header */}
 			<div>
-				<span className="mb-2 block font-mono text-xs uppercase tracking-wider text-primary">
+				<span className="mb-2 block font-mono text-primary text-xs uppercase tracking-wider">
 					Performance
 				</span>
 				<h1 className="font-bold text-3xl tracking-tight">Analytics</h1>
-				<p className="mt-1 font-mono text-sm text-muted-foreground">
+				<p className="mt-1 font-mono text-muted-foreground text-sm">
 					Visualize your trading performance
 				</p>
 			</div>
@@ -352,23 +362,23 @@ export default function AnalyticsPage() {
 			{/* Charts */}
 			<div className="grid gap-6 lg:grid-cols-2">
 				<ChartTerminal
-					title="Win/Loss Distribution"
 					description="Breakdown of trade outcomes"
+					title="Win/Loss Distribution"
 				>
 					<WinLossChart />
 				</ChartTerminal>
 
 				<ChartTerminal
-					title="Cumulative P&L"
 					description="Equity curve over time"
+					title="Cumulative P&L"
 				>
 					<CumulativePnLChart />
 				</ChartTerminal>
 
 				<div className="lg:col-span-2">
 					<ChartTerminal
-						title="P&L by Trade"
 						description="Individual trade results (last 50)"
+						title="P&L by Trade"
 					>
 						<PnLDistributionChart />
 					</ChartTerminal>

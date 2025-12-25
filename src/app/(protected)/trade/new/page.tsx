@@ -178,7 +178,7 @@ export default function NewTradePage() {
 					</Link>
 				</Button>
 				<div>
-					<span className="mb-1 block font-mono text-xs uppercase tracking-wider text-primary">
+					<span className="mb-1 block font-mono text-primary text-xs uppercase tracking-wider">
 						New Entry
 					</span>
 					<h1 className="font-bold text-2xl tracking-tight">Log Trade</h1>
@@ -194,7 +194,7 @@ export default function NewTradePage() {
 					<div className="rounded border border-white/10 bg-white/[0.02] p-4">
 						<div className="mb-3 flex items-center gap-2">
 							<Wallet className="h-4 w-4 text-muted-foreground" />
-							<span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+							<span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 								Trading Account
 							</span>
 						</div>
@@ -209,7 +209,11 @@ export default function NewTradePage() {
 							</SelectTrigger>
 							<SelectContent>
 								{accounts.map((acc) => (
-									<SelectItem key={acc.id} value={acc.id.toString()} className="font-mono text-xs">
+									<SelectItem
+										className="font-mono text-xs"
+										key={acc.id}
+										value={acc.id.toString()}
+									>
 										{acc.name} {acc.broker ? `(${acc.broker})` : ""}
 									</SelectItem>
 								))}
@@ -220,12 +224,12 @@ export default function NewTradePage() {
 
 				{/* Instrument Type */}
 				<div className="space-y-4 rounded border border-white/10 bg-white/[0.02] p-4">
-					<div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+					<div className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 						Instrument
 					</div>
 					<div className="space-y-4">
 						<div className="space-y-2">
-							<Label className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+							<Label className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 								Type
 							</Label>
 							<Tabs
@@ -235,16 +239,16 @@ export default function NewTradePage() {
 								}}
 								value={instrumentType}
 							>
-								<TabsList className="grid w-full grid-cols-2 bg-white/[0.02] border border-white/5">
+								<TabsList className="grid w-full grid-cols-2 border border-white/5 bg-white/[0.02]">
 									<TabsTrigger
-										value="futures"
 										className="font-mono text-xs uppercase tracking-wider data-[state=active]:bg-white/10"
+										value="futures"
 									>
 										Futures
 									</TabsTrigger>
 									<TabsTrigger
-										value="forex"
 										className="font-mono text-xs uppercase tracking-wider data-[state=active]:bg-white/10"
+										value="forex"
 									>
 										Forex
 									</TabsTrigger>
@@ -253,7 +257,7 @@ export default function NewTradePage() {
 						</div>
 
 						<div className="space-y-2">
-							<Label className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+							<Label className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 								Symbol <span className="text-loss">*</span>
 							</Label>
 							<Select onValueChange={setSymbol} value={symbol}>
@@ -262,7 +266,11 @@ export default function NewTradePage() {
 								</SelectTrigger>
 								<SelectContent>
 									{symbols.map((s) => (
-										<SelectItem key={s.value} value={s.value} className="font-mono text-xs">
+										<SelectItem
+											className="font-mono text-xs"
+											key={s.value}
+											value={s.value}
+										>
 											{s.label}
 										</SelectItem>
 									))}
@@ -274,19 +282,19 @@ export default function NewTradePage() {
 
 				{/* Entry Details */}
 				<div className="space-y-4 rounded border border-white/10 bg-white/[0.02] p-4">
-					<div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+					<div className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 						Entry
 					</div>
 					<div className="space-y-4">
 						<div className="space-y-2">
-							<Label className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+							<Label className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 								Direction
 							</Label>
 							<Tabs
 								onValueChange={(v) => setDirection(v as "long" | "short")}
 								value={direction}
 							>
-								<TabsList className="grid w-full grid-cols-2 bg-white/[0.02] border border-white/5">
+								<TabsList className="grid w-full grid-cols-2 border border-white/5 bg-white/[0.02]">
 									<TabsTrigger
 										className="font-mono text-xs uppercase tracking-wider data-[state=active]:bg-profit/20 data-[state=active]:text-profit"
 										value="long"
@@ -305,7 +313,7 @@ export default function NewTradePage() {
 
 						<div className="grid gap-4 sm:grid-cols-2">
 							<div className="space-y-2">
-								<Label className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+								<Label className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 									Entry Price <span className="text-loss">*</span>
 								</Label>
 								<Input
@@ -319,8 +327,9 @@ export default function NewTradePage() {
 							</div>
 
 							<div className="space-y-2">
-								<Label className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-									{instrumentType === "futures" ? "Contracts" : "Lot Size"} <span className="text-loss">*</span>
+								<Label className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
+									{instrumentType === "futures" ? "Contracts" : "Lot Size"}{" "}
+									<span className="text-loss">*</span>
 								</Label>
 								<Input
 									className="font-mono text-sm"
@@ -335,26 +344,26 @@ export default function NewTradePage() {
 
 						<div className="grid gap-4 sm:grid-cols-2">
 							<div className="space-y-2">
-								<Label className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+								<Label className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 									Entry Date <span className="text-loss">*</span>
 								</Label>
 								<Input
+									className="font-mono text-sm"
 									onChange={(e) => setEntryDate(e.target.value)}
 									type="date"
 									value={entryDate}
-									className="font-mono text-sm"
 								/>
 							</div>
 
 							<div className="space-y-2">
-								<Label className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+								<Label className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 									Entry Time <span className="text-loss">*</span>
 								</Label>
 								<Input
+									className="font-mono text-sm"
 									onChange={(e) => setEntryTime(e.target.value)}
 									type="time"
 									value={entryTime}
-									className="font-mono text-sm"
 								/>
 							</div>
 						</div>
@@ -364,16 +373,14 @@ export default function NewTradePage() {
 				{/* Exit Details */}
 				<div className="rounded border border-white/10 bg-white/[0.02] p-4">
 					<div className="flex items-center justify-between pb-4">
-						<div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+						<div className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 							Exit
 						</div>
 						<div className="flex items-center gap-2">
 							<Checkbox
 								checked={isStillOpen}
 								id="stillOpen"
-								onCheckedChange={(checked) =>
-									setIsStillOpen(checked === true)
-								}
+								onCheckedChange={(checked) => setIsStillOpen(checked === true)}
 							/>
 							<Label
 								className="cursor-pointer font-mono text-[10px] uppercase tracking-wider"
@@ -387,7 +394,7 @@ export default function NewTradePage() {
 						<div className="space-y-4">
 							<div className="grid gap-4 sm:grid-cols-2">
 								<div className="space-y-2">
-									<Label className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+									<Label className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 										Exit Price <span className="text-loss">*</span>
 									</Label>
 									<Input
@@ -401,7 +408,7 @@ export default function NewTradePage() {
 								</div>
 
 								<div className="space-y-2">
-									<Label className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+									<Label className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 										Fees / Commission
 									</Label>
 									<Input
@@ -417,26 +424,26 @@ export default function NewTradePage() {
 
 							<div className="grid gap-4 sm:grid-cols-2">
 								<div className="space-y-2">
-									<Label className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+									<Label className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 										Exit Date <span className="text-loss">*</span>
 									</Label>
 									<Input
+										className="font-mono text-sm"
 										onChange={(e) => setExitDate(e.target.value)}
 										type="date"
 										value={exitDate}
-										className="font-mono text-sm"
 									/>
 								</div>
 
 								<div className="space-y-2">
-									<Label className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+									<Label className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 										Exit Time <span className="text-loss">*</span>
 									</Label>
 									<Input
+										className="font-mono text-sm"
 										onChange={(e) => setExitTime(e.target.value)}
 										type="time"
 										value={exitTime}
-										className="font-mono text-sm"
 									/>
 								</div>
 							</div>
@@ -446,12 +453,12 @@ export default function NewTradePage() {
 
 				{/* Risk Management */}
 				<div className="space-y-4 rounded border border-white/10 bg-white/[0.02] p-4">
-					<div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+					<div className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 						Risk Management
 					</div>
 					<div className="grid gap-4 sm:grid-cols-2">
 						<div className="space-y-2">
-							<Label className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+							<Label className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 								Stop Loss
 							</Label>
 							<Input
@@ -465,7 +472,7 @@ export default function NewTradePage() {
 						</div>
 
 						<div className="space-y-2">
-							<Label className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+							<Label className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 								Take Profit
 							</Label>
 							<Input
@@ -482,13 +489,13 @@ export default function NewTradePage() {
 
 				{/* Trade Context */}
 				<div className="space-y-4 rounded border border-white/10 bg-white/[0.02] p-4">
-					<div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+					<div className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 						Trade Context
 					</div>
 					<div className="space-y-4">
 						<div className="grid gap-4 sm:grid-cols-2">
 							<div className="space-y-2">
-								<Label className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+								<Label className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 									Setup Type
 								</Label>
 								<Select onValueChange={setSetupType} value={setupType}>
@@ -497,7 +504,11 @@ export default function NewTradePage() {
 									</SelectTrigger>
 									<SelectContent>
 										{SETUP_TYPES.map((setup) => (
-											<SelectItem key={setup} value={setup} className="font-mono text-xs">
+											<SelectItem
+												className="font-mono text-xs"
+												key={setup}
+												value={setup}
+											>
 												{setup}
 											</SelectItem>
 										))}
@@ -506,7 +517,7 @@ export default function NewTradePage() {
 							</div>
 
 							<div className="space-y-2">
-								<Label className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+								<Label className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 									Emotional State
 								</Label>
 								<Select
@@ -529,7 +540,11 @@ export default function NewTradePage() {
 									</SelectTrigger>
 									<SelectContent>
 										{EMOTIONAL_STATES.map((state) => (
-											<SelectItem key={state.value} value={state.value} className="font-mono text-xs">
+											<SelectItem
+												className="font-mono text-xs"
+												key={state.value}
+												value={state.value}
+											>
 												{state.label}
 											</SelectItem>
 										))}
@@ -539,15 +554,15 @@ export default function NewTradePage() {
 						</div>
 
 						<div className="space-y-2">
-							<Label className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+							<Label className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 								Notes
 							</Label>
 							<Textarea
+								className="font-mono text-sm"
 								onChange={(e) => setNotes(e.target.value)}
 								placeholder="What was your reasoning? What did you learn?"
 								rows={4}
 								value={notes}
-								className="font-mono text-sm"
 							/>
 						</div>
 					</div>
@@ -555,10 +570,19 @@ export default function NewTradePage() {
 
 				{/* Submit */}
 				<div className="flex justify-end gap-4">
-					<Button asChild type="button" variant="outline" className="font-mono text-xs uppercase tracking-wider">
+					<Button
+						asChild
+						className="font-mono text-xs uppercase tracking-wider"
+						type="button"
+						variant="outline"
+					>
 						<Link href="/journal">Cancel</Link>
 					</Button>
-					<Button disabled={isPending} type="submit" className="font-mono text-xs uppercase tracking-wider">
+					<Button
+						className="font-mono text-xs uppercase tracking-wider"
+						disabled={isPending}
+						type="submit"
+					>
 						{isPending && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
 						Log Trade
 					</Button>

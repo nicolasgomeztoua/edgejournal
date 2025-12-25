@@ -17,10 +17,8 @@ const badgeVariants = cva(
 					"border-transparent bg-destructive text-white focus-visible:ring-destructive/50 [a&]:hover:bg-destructive/90",
 				outline:
 					"border-white/10 text-foreground [a&]:hover:border-white/20 [a&]:hover:bg-white/[0.02]",
-				profit:
-					"border-profit/20 bg-profit/10 text-profit",
-				loss:
-					"border-loss/20 bg-loss/10 text-loss",
+				profit: "border-profit/20 bg-profit/10 text-profit",
+				loss: "border-loss/20 bg-loss/10 text-loss",
 			},
 		},
 		defaultVariants: {

@@ -3,16 +3,11 @@ import type { CSVParser, ParsedTrade, ParseError, ParseResult } from "./types";
 /**
  * ProjectX CSV Parser
  *
- * Requires TWO CSV files from ProjectX:
- * 1. Trades CSV - Main trade data (entry, exit, P&L)
- * 2. Orders CSV - Order flow with SL/TP levels and execution status
+ * Parses the Trades CSV export from ProjectX platform.
+ * Users manually input stop loss values after import.
  *
  * Trades CSV columns:
  * - Id, ContractName, EnteredAt, ExitedAt, EntryPrice, ExitPrice, Fees, PnL, Size, Type, etc.
- *
- * Orders CSV columns:
- * - Id, ContractName, Status, Type, Size, Side, CreatedAt, FilledAt, StopPrice, LimitPrice,
- *   ExecutePrice, PositionDisposition, CreationDisposition, etc.
  */
 
 // Futures contract month codes
@@ -134,97 +129,10 @@ function parseCSV(csvContent: string): {
 	return { headers, rows };
 }
 
-interface OrderInfo {
-	stopLoss?: string;
-	takeProfit?: string;
-	stopLossHit: boolean;
-	takeProfitHit: boolean;
-	exitType: "sl" | "tp" | "manual" | "unknown";
-}
-
-/**
- * Extract SL/TP info from orders for a specific trade
- */
-function getOrderInfoForTrade(
-	orders: Record<string, string>[],
-	contractName: string,
-	entryTime: Date,
-	exitTime: Date,
-): OrderInfo {
-	// Find orders for this contract within the trade timeframe
-	const relevantOrders = orders.filter((order) => {
-		const orderContract = order.contractname || "";
-		const createdAt = order.createdat
-			? parseProjectXDate(order.createdat)
-			: null;
-
-		if (orderContract !== contractName || !createdAt) return false;
-
-		// Order should be created around entry time (within a few minutes before exit)
-		const entryMs = entryTime.getTime();
-		const exitMs = exitTime.getTime();
-		const orderMs = createdAt.getTime();
-
-		// Allow orders created from 1 minute before entry to exit time
-		return orderMs >= entryMs - 60000 && orderMs <= exitMs;
-	});
-
-	let stopLoss: string | undefined;
-	let takeProfit: string | undefined;
-	let stopLossHit = false;
-	let takeProfitHit = false;
-	let exitType: "sl" | "tp" | "manual" | "unknown" = "unknown";
-
-	for (const order of relevantOrders) {
-		const disposition = order.creationdisposition || "";
-		const status = order.status || "";
-		const stopPrice = order.stopprice || "";
-		const limitPrice = order.limitprice || "";
-		const positionDisposition = order.positiondisposition || "";
-
-		// Extract SL level
-		if (disposition.toLowerCase() === "stoploss" && stopPrice) {
-			stopLoss = stopPrice;
-			if (
-				status.toLowerCase() === "filled" &&
-				positionDisposition.toLowerCase() === "closing"
-			) {
-				stopLossHit = true;
-				exitType = "sl";
-			}
-		}
-
-		// Extract TP level
-		if (disposition.toLowerCase() === "takeprofit" && limitPrice) {
-			takeProfit = limitPrice;
-			if (
-				status.toLowerCase() === "filled" &&
-				positionDisposition.toLowerCase() === "closing"
-			) {
-				takeProfitHit = true;
-				exitType = "tp";
-			}
-		}
-
-		// Check for manual close
-		if (
-			disposition.toLowerCase() === "closeposition" &&
-			status.toLowerCase() === "filled"
-		) {
-			if (!stopLossHit && !takeProfitHit) {
-				exitType = "manual";
-			}
-		}
-	}
-
-	return { stopLoss, takeProfit, stopLossHit, takeProfitHit, exitType };
-}
-
 export const projectxParser: CSVParser = {
 	platform: "projectx",
 	name: "ProjectX",
-	description:
-		"Import trades from ProjectX platform (requires Trades + Orders CSVs)",
+	description: "Import trades from ProjectX platform",
 
 	getExpectedColumns(): string[] {
 		return [
@@ -260,28 +168,14 @@ export const projectxParser: CSVParser = {
 	},
 
 	async parse(csvContent: string): Promise<ParseResult> {
-		// This is the single-file parse - just parses trades without SL/TP info
-		return parseProjectXTrades(csvContent, null);
+		return parseProjectXTrades(csvContent);
 	},
 };
 
 /**
- * Parse ProjectX with both Trades and Orders CSVs
+ * Parse ProjectX Trades CSV
  */
-export async function parseProjectXWithOrders(
-	tradesCSV: string,
-	ordersCSV: string,
-): Promise<ParseResult> {
-	return parseProjectXTrades(tradesCSV, ordersCSV);
-}
-
-/**
- * Internal parse function that handles both modes
- */
-function parseProjectXTrades(
-	tradesCSV: string,
-	ordersCSV: string | null,
-): ParseResult {
+function parseProjectXTrades(tradesCSV: string): ParseResult {
 	const trades: ParsedTrade[] = [];
 	const errors: ParseError[] = [];
 	const warnings: string[] = [];
@@ -296,7 +190,7 @@ function parseProjectXTrades(
 			errors: [
 				{
 					row: 0,
-					message: "Trades CSV must have headers and at least one data row",
+					message: "CSV must have headers and at least one data row",
 				},
 			],
 			warnings: [],
@@ -304,18 +198,6 @@ function parseProjectXTrades(
 			parsedRows: 0,
 			skippedRows: 0,
 		};
-	}
-
-	// Parse orders CSV if provided
-	let orderRows: Record<string, string>[] = [];
-	if (ordersCSV) {
-		const { rows } = parseCSV(ordersCSV);
-		orderRows = rows;
-		if (rows.length === 0) {
-			warnings.push("Orders CSV was empty - SL/TP data will not be available");
-		}
-	} else {
-		warnings.push("No Orders CSV provided - SL/TP data will not be available");
 	}
 
 	let parsedRows = 0;
@@ -365,22 +247,6 @@ function parseProjectXTrades(
 				totalFees += parseFloat(commissions);
 			}
 
-			// Get SL/TP info from orders if available
-			let orderInfo: OrderInfo = {
-				stopLossHit: false,
-				takeProfitHit: false,
-				exitType: "unknown",
-			};
-
-			if (orderRows.length > 0) {
-				orderInfo = getOrderInfoForTrade(
-					orderRows,
-					contractName,
-					entryTime,
-					exitTime,
-				);
-			}
-
 			const trade: ParsedTrade = {
 				symbol: symbol.toUpperCase(),
 				instrumentType: "futures",
@@ -390,17 +256,9 @@ function parseProjectXTrades(
 				exitPrice: exitPrice,
 				exitTime,
 				quantity: size,
-				stopLoss: orderInfo.stopLoss,
-				takeProfit: orderInfo.takeProfit,
-				stopLossHit: orderInfo.stopLossHit,
-				takeProfitHit: orderInfo.takeProfitHit,
 				fees: totalFees > 0 ? totalFees.toFixed(2) : undefined,
 				profit: pnl || undefined,
 				externalId: externalId || undefined,
-				comment:
-					orderInfo.exitType !== "unknown"
-						? `Exit: ${orderInfo.exitType.toUpperCase()}`
-						: undefined,
 			};
 
 			trades.push(trade);
@@ -420,14 +278,6 @@ function parseProjectXTrades(
 		);
 	}
 
-	if (orderRows.length > 0) {
-		const tradesWithSL = trades.filter((t) => t.stopLoss).length;
-		const tradesWithTP = trades.filter((t) => t.takeProfit).length;
-		warnings.push(
-			`Found SL levels for ${tradesWithSL} trades, TP levels for ${tradesWithTP} trades`,
-		);
-	}
-
 	return {
 		success: parsedRows > 0,
 		trades,
@@ -437,23 +287,4 @@ function parseProjectXTrades(
 		parsedRows,
 		skippedRows,
 	};
-}
-
-/**
- * Validate Orders CSV headers
- */
-export function validateOrdersCSV(headers: string[]): boolean {
-	const normalizedHeaders = headers.map((h) => h.toLowerCase().trim());
-	const requiredColumns = [
-		"id",
-		"contractname",
-		"status",
-		"creationdisposition",
-		"stopprice",
-		"limitprice",
-	];
-
-	return requiredColumns.every((col) =>
-		normalizedHeaders.some((h) => h === col || h.replace(/\s+/g, "") === col),
-	);
 }

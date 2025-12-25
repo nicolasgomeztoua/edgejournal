@@ -1,47 +1,129 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
-import { accounts, trades } from "@/server/db/schema";
+import { accountGroups, accounts, trades } from "@/server/db/schema";
 
 // Platform enum values (must match schema)
 const platformEnum = z.enum(["mt4", "mt5", "projectx", "ninjatrader", "other"]);
 
-// Input schemas
-const createAccountSchema = z.object({
-	name: z.string().min(1).max(100),
-	broker: z.string().optional(),
-	platform: platformEnum.default("other"),
-	accountType: z.enum(["live", "demo", "paper"]).default("live"),
-	initialBalance: z.string().optional(),
-	currency: z.string().default("USD"),
-	accountNumber: z.string().optional(),
-	notes: z.string().optional(),
-	color: z.string().optional(),
-	isDefault: z.boolean().optional(),
+// Account type enum (matches new schema)
+const accountTypeEnum = z.enum([
+	"prop_challenge",
+	"prop_funded",
+	"live",
+	"demo",
+]);
+
+// Drawdown type enum
+const drawdownTypeEnum = z.enum(["trailing", "static", "eod"]);
+
+// Payout frequency enum
+const payoutFrequencyEnum = z.enum(["weekly", "bi_weekly", "monthly"]);
+
+// Challenge status enum
+const challengeStatusEnum = z.enum(["active", "passed", "failed"]);
+
+// Prop firm fields schema (optional, only for prop accounts)
+const propFieldsSchema = z.object({
+	// Drawdown rules
+	maxDrawdown: z.string().optional(), // % as string
+	drawdownType: drawdownTypeEnum.optional(),
+	dailyLossLimit: z.string().optional(), // % as string
+
+	// Challenge rules (for prop_challenge)
+	profitTarget: z.string().optional(), // % as string
+	consistencyRule: z.string().optional(), // % as string
+	minTradingDays: z.number().optional(),
+	challengeStartDate: z.string().optional(), // ISO date string
+	challengeEndDate: z.string().optional(), // ISO date string
+	challengeStatus: challengeStatusEnum.optional(),
+
+	// Funded rules (for prop_funded)
+	profitSplit: z.string().optional(), // % as string
+	payoutFrequency: payoutFrequencyEnum.optional(),
+
+	// Linking
+	linkedAccountId: z.number().optional(),
+	groupId: z.number().optional(),
 });
 
-const updateAccountSchema = z.object({
+// Input schemas
+const createAccountSchema = z
+	.object({
+		name: z.string().min(1).max(100),
+		broker: z.string().optional(),
+		platform: platformEnum.default("other"),
+		accountType: accountTypeEnum.default("live"),
+		initialBalance: z.string().optional(),
+		currency: z.string().default("USD"),
+		accountNumber: z.string().optional(),
+		notes: z.string().optional(),
+		color: z.string().optional(),
+		isDefault: z.boolean().optional(),
+	})
+	.merge(propFieldsSchema);
+
+const updateAccountSchema = z
+	.object({
+		id: z.number(),
+		name: z.string().min(1).max(100).optional(),
+		broker: z.string().optional(),
+		platform: platformEnum.optional(),
+		accountType: accountTypeEnum.optional(),
+		initialBalance: z.string().optional(),
+		currency: z.string().optional(),
+		accountNumber: z.string().optional(),
+		notes: z.string().optional(),
+		color: z.string().optional(),
+		isActive: z.boolean().optional(),
+		isDefault: z.boolean().optional(),
+	})
+	.merge(propFieldsSchema);
+
+// Group schemas
+const createGroupSchema = z.object({
+	name: z.string().min(1).max(100),
+	description: z.string().optional(),
+	color: z.string().optional(),
+});
+
+const updateGroupSchema = z.object({
 	id: z.number(),
 	name: z.string().min(1).max(100).optional(),
-	broker: z.string().optional(),
-	platform: platformEnum.optional(),
-	accountType: z.enum(["live", "demo", "paper"]).optional(),
-	initialBalance: z.string().optional(),
-	currency: z.string().optional(),
-	accountNumber: z.string().optional(),
-	notes: z.string().optional(),
+	description: z.string().optional(),
 	color: z.string().optional(),
-	isActive: z.boolean().optional(),
-	isDefault: z.boolean().optional(),
+});
+
+// Convert to funded schema
+const convertToFundedSchema = z.object({
+	challengeAccountId: z.number(),
+	// New funded account details
+	name: z.string().min(1).max(100),
+	initialBalance: z.string(),
+	// Prop firm rules for funded account
+	maxDrawdown: z.string().optional(),
+	drawdownType: drawdownTypeEnum.optional(),
+	dailyLossLimit: z.string().optional(),
+	profitSplit: z.string().optional(),
+	payoutFrequency: payoutFrequencyEnum.optional(),
+	consistencyRule: z.string().optional(),
 });
 
 export const accountsRouter = createTRPCRouter({
+	// ============================================================================
+	// ACCOUNT QUERIES
+	// ============================================================================
+
 	// Get all accounts for current user
 	getAll: protectedProcedure.query(async ({ ctx }) => {
 		const userAccounts = await ctx.db.query.accounts.findMany({
 			where: eq(accounts.userId, ctx.user.id),
 			orderBy: [desc(accounts.isDefault), desc(accounts.createdAt)],
+			with: {
+				group: true,
+				linkedAccount: true,
+			},
 		});
 
 		return userAccounts;
@@ -86,6 +168,11 @@ export const accountsRouter = createTRPCRouter({
 		.query(async ({ ctx, input }) => {
 			const account = await ctx.db.query.accounts.findFirst({
 				where: and(eq(accounts.id, input.id), eq(accounts.userId, ctx.user.id)),
+				with: {
+					group: true,
+					linkedAccount: true,
+					linkedFromAccounts: true,
+				},
 			});
 
 			if (!account) {
@@ -94,6 +181,40 @@ export const accountsRouter = createTRPCRouter({
 
 			return account;
 		}),
+
+	// Get linked account (for challenge/funded pairs)
+	getLinkedAccount: protectedProcedure
+		.input(z.object({ id: z.number() }))
+		.query(async ({ ctx, input }) => {
+			const account = await ctx.db.query.accounts.findFirst({
+				where: and(eq(accounts.id, input.id), eq(accounts.userId, ctx.user.id)),
+			});
+
+			if (!account) {
+				throw new Error("Account not found");
+			}
+
+			// If this is a funded account, get its linked challenge
+			if (account.linkedAccountId) {
+				return ctx.db.query.accounts.findFirst({
+					where: eq(accounts.id, account.linkedAccountId),
+				});
+			}
+
+			// If this is a challenge account, find any funded accounts linked to it
+			const linkedFunded = await ctx.db.query.accounts.findFirst({
+				where: and(
+					eq(accounts.linkedAccountId, input.id),
+					eq(accounts.userId, ctx.user.id),
+				),
+			});
+
+			return linkedFunded;
+		}),
+
+	// ============================================================================
+	// ACCOUNT MUTATIONS
+	// ============================================================================
 
 	// Create a new account
 	create: protectedProcedure
@@ -114,13 +235,27 @@ export const accountsRouter = createTRPCRouter({
 
 			const isFirstAccount = existingAccounts.length === 0;
 
+			// Prepare values with proper date parsing
+			const values = {
+				...input,
+				userId: ctx.user.id,
+				isDefault: input.isDefault ?? isFirstAccount,
+				challengeStartDate: input.challengeStartDate
+					? new Date(input.challengeStartDate)
+					: undefined,
+				challengeEndDate: input.challengeEndDate
+					? new Date(input.challengeEndDate)
+					: undefined,
+				// Set default challenge status for new challenge accounts
+				challengeStatus:
+					input.accountType === "prop_challenge"
+						? (input.challengeStatus ?? "active")
+						: input.challengeStatus,
+			};
+
 			const [newAccount] = await ctx.db
 				.insert(accounts)
-				.values({
-					...input,
-					userId: ctx.user.id,
-					isDefault: input.isDefault ?? isFirstAccount,
-				})
+				.values(values)
 				.returning();
 
 			return newAccount;
@@ -149,10 +284,107 @@ export const accountsRouter = createTRPCRouter({
 					.where(eq(accounts.userId, ctx.user.id));
 			}
 
+			// Prepare values with proper date parsing
+			const values = {
+				...updateData,
+				challengeStartDate: updateData.challengeStartDate
+					? new Date(updateData.challengeStartDate)
+					: undefined,
+				challengeEndDate: updateData.challengeEndDate
+					? new Date(updateData.challengeEndDate)
+					: undefined,
+			};
+
 			const [updated] = await ctx.db
 				.update(accounts)
-				.set(updateData)
+				.set(values)
 				.where(eq(accounts.id, id))
+				.returning();
+
+			return updated;
+		}),
+
+	// Convert challenge account to funded (Mark as Passed)
+	convertToFunded: protectedProcedure
+		.input(convertToFundedSchema)
+		.mutation(async ({ ctx, input }) => {
+			const { challengeAccountId, ...fundedAccountData } = input;
+
+			// Verify ownership and that it's a challenge account
+			const challengeAccount = await ctx.db.query.accounts.findFirst({
+				where: and(
+					eq(accounts.id, challengeAccountId),
+					eq(accounts.userId, ctx.user.id),
+				),
+			});
+
+			if (!challengeAccount) {
+				throw new Error("Challenge account not found");
+			}
+
+			if (challengeAccount.accountType !== "prop_challenge") {
+				throw new Error("Account is not a prop challenge account");
+			}
+
+			// Mark the challenge as passed
+			await ctx.db
+				.update(accounts)
+				.set({ challengeStatus: "passed" })
+				.where(eq(accounts.id, challengeAccountId));
+
+			// Create the new funded account linked to the challenge
+			const [fundedAccount] = await ctx.db
+				.insert(accounts)
+				.values({
+					userId: ctx.user.id,
+					name: fundedAccountData.name,
+					broker: challengeAccount.broker,
+					platform: challengeAccount.platform,
+					accountType: "prop_funded",
+					initialBalance: fundedAccountData.initialBalance,
+					currency: challengeAccount.currency,
+					accountNumber: challengeAccount.accountNumber,
+					color: challengeAccount.color,
+					// Prop firm fields
+					maxDrawdown: fundedAccountData.maxDrawdown,
+					drawdownType: fundedAccountData.drawdownType,
+					dailyLossLimit: fundedAccountData.dailyLossLimit,
+					profitSplit: fundedAccountData.profitSplit,
+					payoutFrequency: fundedAccountData.payoutFrequency,
+					consistencyRule: fundedAccountData.consistencyRule,
+					// Link to challenge
+					linkedAccountId: challengeAccountId,
+					// Keep in same group if applicable
+					groupId: challengeAccount.groupId,
+				})
+				.returning();
+
+			return {
+				challengeAccount: { ...challengeAccount, challengeStatus: "passed" },
+				fundedAccount,
+			};
+		}),
+
+	// Mark challenge as failed
+	markChallengeFailed: protectedProcedure
+		.input(z.object({ id: z.number() }))
+		.mutation(async ({ ctx, input }) => {
+			const account = await ctx.db.query.accounts.findFirst({
+				where: and(eq(accounts.id, input.id), eq(accounts.userId, ctx.user.id)),
+			});
+
+			if (!account) {
+				throw new Error("Account not found");
+			}
+
+			if (account.accountType !== "prop_challenge") {
+				throw new Error("Account is not a prop challenge account");
+			}
+
+			const [updated] = await ctx.db
+				.update(accounts)
+				.set({ challengeStatus: "failed" })
+				.where(eq(accounts.id, input.id))
 				.returning();
 
 			return updated;
@@ -205,10 +437,7 @@ export const accountsRouter = createTRPCRouter({
 			});
 
 			if (associatedTrades) {
-				// Option 1: Prevent deletion
-				// throw new Error("Cannot delete account with associated trades");
-
-				// Option 2: Unassign trades from this account (set accountId to null)
+				// Unassign trades from this account (set accountId to null)
 				await ctx.db
 					.update(trades)
 					.set({ accountId: null })
@@ -279,6 +508,184 @@ export const accountsRouter = createTRPCRouter({
 				totalPnl,
 				initialBalance: parseFloat(account.initialBalance ?? "0"),
 				currentBalance,
+			};
+		}),
+
+	// ============================================================================
+	// ACCOUNT GROUPS
+	// ============================================================================
+
+	// Get all groups for current user
+	getGroups: protectedProcedure.query(async ({ ctx }) => {
+		const groups = await ctx.db.query.accountGroups.findMany({
+			where: eq(accountGroups.userId, ctx.user.id),
+			orderBy: [desc(accountGroups.createdAt)],
+			with: {
+				accounts: true,
+			},
+		});
+
+		return groups;
+	}),
+
+	// Get group by ID with accounts
+	getGroupById: protectedProcedure
+		.input(z.object({ id: z.number() }))
+		.query(async ({ ctx, input }) => {
+			const group = await ctx.db.query.accountGroups.findFirst({
+				where: and(
+					eq(accountGroups.id, input.id),
+					eq(accountGroups.userId, ctx.user.id),
+				),
+				with: {
+					accounts: true,
+				},
+			});
+
+			if (!group) {
+				throw new Error("Group not found");
+			}
+
+			return group;
+		}),
+
+	// Create a new group
+	createGroup: protectedProcedure
+		.input(createGroupSchema)
+		.mutation(async ({ ctx, input }) => {
+			const [newGroup] = await ctx.db
+				.insert(accountGroups)
+				.values({
+					...input,
+					userId: ctx.user.id,
+				})
+				.returning();
+
+			return newGroup;
+		}),
+
+	// Update a group
+	updateGroup: protectedProcedure
+		.input(updateGroupSchema)
+		.mutation(async ({ ctx, input }) => {
+			const { id, ...updateData } = input;
+
+			// Verify ownership
+			const existingGroup = await ctx.db.query.accountGroups.findFirst({
+				where: and(
+					eq(accountGroups.id, id),
+					eq(accountGroups.userId, ctx.user.id),
+				),
+			});
+
+			if (!existingGroup) {
+				throw new Error("Group not found");
+			}
+
+			const [updated] = await ctx.db
+				.update(accountGroups)
+				.set(updateData)
+				.where(eq(accountGroups.id, id))
+				.returning();
+
+			return updated;
+		}),
+
+	// Delete a group
+	deleteGroup: protectedProcedure
+		.input(z.object({ id: z.number() }))
+		.mutation(async ({ ctx, input }) => {
+			const existingGroup = await ctx.db.query.accountGroups.findFirst({
+				where: and(
+					eq(accountGroups.id, input.id),
+					eq(accountGroups.userId, ctx.user.id),
+				),
+			});
+
+			if (!existingGroup) {
+				throw new Error("Group not found");
+			}
+
+			// Remove group assignment from accounts (don't delete the accounts)
+			await ctx.db
+				.update(accounts)
+				.set({ groupId: null })
+				.where(eq(accounts.groupId, input.id));
+
+			await ctx.db.delete(accountGroups).where(eq(accountGroups.id, input.id));
+
+			return { success: true };
+		}),
+
+	// Get cumulative stats for a group
+	getGroupStats: protectedProcedure
+		.input(z.object({ id: z.number() }))
+		.query(async ({ ctx, input }) => {
+			// Verify ownership
+			const group = await ctx.db.query.accountGroups.findFirst({
+				where: and(
+					eq(accountGroups.id, input.id),
+					eq(accountGroups.userId, ctx.user.id),
+				),
+				with: {
+					accounts: true,
+				},
+			});
+
+			if (!group) {
+				throw new Error("Group not found");
+			}
+
+			const accountIds = group.accounts.map((a) => a.id);
+
+			if (accountIds.length === 0) {
+				return {
+					totalTrades: 0,
+					wins: 0,
+					losses: 0,
+					winRate: 0,
+					totalPnl: 0,
+					totalInitialBalance: 0,
+					totalCurrentBalance: 0,
+					accountCount: 0,
+				};
+			}
+
+			// Get all closed trades for accounts in this group
+			const groupTrades = await ctx.db.query.trades.findMany({
+				where: and(
+					inArray(trades.accountId, accountIds),
+					eq(trades.status, "closed"),
+				),
+			});
+
+			const totalTrades = groupTrades.length;
+			const wins = groupTrades.filter(
+				(t) => t.netPnl && parseFloat(t.netPnl) > 0,
+			).length;
+			const losses = groupTrades.filter(
+				(t) => t.netPnl && parseFloat(t.netPnl) < 0,
+			).length;
+
+			const totalPnl = groupTrades.reduce(
+				(sum, t) => sum + (t.netPnl ? parseFloat(t.netPnl) : 0),
+				0,
+			);
+
+			const totalInitialBalance = group.accounts.reduce(
+				(sum, a) => sum + parseFloat(a.initialBalance ?? "0"),
+				0,
+			);
+
+			return {
+				totalTrades,
+				wins,
+				losses,
+				winRate: totalTrades > 0 ? (wins / totalTrades) * 100 : 0,
+				totalPnl,
+				totalInitialBalance,
+				totalCurrentBalance: totalInitialBalance + totalPnl,
+				accountCount: accountIds.length,
 			};
 		}),
 });

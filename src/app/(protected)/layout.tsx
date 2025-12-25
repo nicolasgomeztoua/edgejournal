@@ -17,11 +17,14 @@ export default function ProtectedLayout({
 			<SidebarProvider>
 				<AppSidebar />
 				<SidebarInset className="bg-background">
-					<header className="relative flex h-12 shrink-0 items-center gap-2 border-b border-white/5 bg-black/20 px-4">
+					<header className="relative flex h-12 shrink-0 items-center gap-2 border-white/5 border-b bg-black/20 px-4">
 						{/* Subtle grid pattern */}
 						<div className="grid-bg pointer-events-none absolute inset-0 opacity-30" />
-						<SidebarTrigger className="relative -ml-1 text-muted-foreground hover:text-foreground" />
-						<Separator className="relative mr-2 h-4 bg-white/10" orientation="vertical" />
+						<SidebarTrigger className="-ml-1 relative text-muted-foreground hover:text-foreground" />
+						<Separator
+							className="relative mr-2 h-4 bg-white/10"
+							orientation="vertical"
+						/>
 					</header>
 					<main className="relative flex-1 overflow-auto p-6">
 						{/* Background grid for content area */}

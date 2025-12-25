@@ -16,8 +16,7 @@
 		var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, "SF Mono", Menlo,
 		Consolas, "Liberation Mono", monospace;
 	/* Display uses same as sans (Manrope) - clean, modern, readable */
-	--font-display:
-		var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+	--font-display: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
 @theme inline {
@@ -157,30 +156,39 @@
 	body {
 		@apply bg-background text-foreground antialiased;
 	}
-	
+
 	/* Fix for font descenders (g, j, p, q, y) - prevent clipping */
-	h1, h2, h3, h4, h5, h6 {
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6 {
 		line-height: 1.15;
 		padding-bottom: 0.15em;
 		overflow: visible;
-}
+	}
 
 	/* Ensure inline text elements have proper line-height for descenders */
 	p {
 		line-height: 1.6;
 	}
-	
+
 	/* Fix descender clipping in buttons and small text */
-	button, a, span {
+	button,
+	a,
+	span {
 		line-height: 1.5;
 		overflow: visible;
 	}
-	
+
 	/* Ensure monospace text has room for descenders */
-	.font-mono, code, pre {
+	.font-mono,
+	code,
+	pre {
 		line-height: 1.6;
 	}
-	
+
 	/* Selection color */
 	::selection {
 		background-color: var(--primary);
@@ -231,21 +239,21 @@
 	z-index: 9999;
 	opacity: 0.03;
 	background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-	}
+}
 
 /* Grid background */
 .grid-bg {
-		background-image:
+	background-image:
 		linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
 		linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
 	background-size: 80px 80px;
-	}
+}
 
 /* Scan lines effect */
 .scanlines {
 	background: repeating-linear-gradient(
 		0deg,
-			transparent,
+		transparent,
 		transparent 2px,
 		rgba(0, 0, 0, 0.03) 2px,
 		rgba(0, 0, 0, 0.03) 4px
@@ -275,7 +283,7 @@
 	-webkit-background-clip: text;
 	-webkit-text-fill-color: transparent;
 	background-clip: text;
-	}
+}
 
 /* Animated gradient border */
 @property --angle {
@@ -287,7 +295,7 @@
 .animated-border {
 	--angle: 0deg;
 	border: 1px solid transparent;
-	background: 
+	background:
 		linear-gradient(var(--background), var(--background)) padding-box,
 		conic-gradient(from var(--angle), #d4ff00, #00d4ff, #d4ff00) border-box;
 	animation: rotate-border 4s linear infinite;
@@ -315,7 +323,8 @@
 
 /* Pulse dot */
 @keyframes pulse-dot {
-	0%, 100% {
+	0%,
+	100% {
 		opacity: 1;
 		transform: scale(1);
 	}
@@ -351,19 +360,41 @@
 	animation: fade-in-up 0.6s ease-out forwards;
 }
 
-.stagger-children > *:nth-child(1) { animation-delay: 0.1s; }
-.stagger-children > *:nth-child(2) { animation-delay: 0.2s; }
-.stagger-children > *:nth-child(3) { animation-delay: 0.3s; }
-.stagger-children > *:nth-child(4) { animation-delay: 0.4s; }
-.stagger-children > *:nth-child(5) { animation-delay: 0.5s; }
-.stagger-children > *:nth-child(6) { animation-delay: 0.6s; }
-.stagger-children > *:nth-child(7) { animation-delay: 0.7s; }
-.stagger-children > *:nth-child(8) { animation-delay: 0.8s; }
+.stagger-children > *:nth-child(1) {
+	animation-delay: 0.1s;
+}
+.stagger-children > *:nth-child(2) {
+	animation-delay: 0.2s;
+}
+.stagger-children > *:nth-child(3) {
+	animation-delay: 0.3s;
+}
+.stagger-children > *:nth-child(4) {
+	animation-delay: 0.4s;
+}
+.stagger-children > *:nth-child(5) {
+	animation-delay: 0.5s;
+}
+.stagger-children > *:nth-child(6) {
+	animation-delay: 0.6s;
+}
+.stagger-children > *:nth-child(7) {
+	animation-delay: 0.7s;
+}
+.stagger-children > *:nth-child(8) {
+	animation-delay: 0.8s;
+}
 
 /* Typing cursor */
 @keyframes blink {
-	0%, 50% { opacity: 1; }
-	51%, 100% { opacity: 0; }
+	0%,
+	50% {
+		opacity: 1;
+	}
+	51%,
+	100% {
+		opacity: 0;
+	}
 }
 
 .cursor-blink::after {
@@ -404,10 +435,14 @@
 
 /* Terminal card style */
 .terminal-card {
-	background: linear-gradient(180deg, rgba(20, 20, 20, 0.8) 0%, rgba(10, 10, 10, 0.9) 100%);
+	background: linear-gradient(
+		180deg,
+		rgba(20, 20, 20, 0.8) 0%,
+		rgba(10, 10, 10, 0.9) 100%
+	);
 	border: 1px solid rgba(255, 255, 255, 0.05);
 	backdrop-filter: blur(20px);
-	}
+}
 
 .terminal-card::before {
 	content: "";
@@ -416,7 +451,12 @@
 	left: 0;
 	right: 0;
 	height: 1px;
-	background: linear-gradient(90deg, transparent, rgba(212, 255, 0, 0.3), transparent);
+	background: linear-gradient(
+		90deg,
+		transparent,
+		rgba(212, 255, 0, 0.3),
+		transparent
+	);
 }
 
 /* Scrollbar styling */

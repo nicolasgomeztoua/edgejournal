@@ -43,7 +43,6 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAccount } from "@/contexts/account-context";
 import type { ParsedTrade, TradingPlatform } from "@/lib/csv-parsers";
 import { getParser, TRADING_PLATFORMS } from "@/lib/csv-parsers";
-import { parseProjectXWithOrders } from "@/lib/csv-parsers/projectx-parser";
 import { api } from "@/trpc/react";
 
 type Step = "select-account" | "upload" | "mapping" | "preview" | "complete";
@@ -85,7 +84,7 @@ const PLATFORM_INFO: Record<
 		status: "coming-soon",
 	},
 	projectx: {
-		description: "Auto-import from ProjectX export",
+		description: "Auto-import from ProjectX Trades CSV export",
 		status: "ready",
 	},
 	ninjatrader: {
@@ -118,12 +117,6 @@ export default function ImportPage() {
 	// Platform parsing state
 	const [parsedTrades, setParsedTrades] = useState<ParsedTrade[]>([]);
 	const [parseErrors, setParseErrors] = useState<string[]>([]);
-
-	// ProjectX two-file upload state
-	const [tradesCSV, setTradesCSV] = useState<string | null>(null);
-	const [ordersCSV, setOrdersCSV] = useState<string | null>(null);
-	const [tradesFileName, setTradesFileName] = useState<string>("");
-	const [ordersFileName, setOrdersFileName] = useState<string>("");
 
 	const [importing, setImporting] = useState(false);
 	const [importedCount, setImportedCount] = useState(0);
@@ -160,9 +153,7 @@ export default function ImportPage() {
 			for (let i = 1; i < lines.length; i++) {
 				const line = lines[i];
 				if (!line) continue;
-				const values = line
-					.split(",")
-					.map((v) => v.trim().replace(/"/g, ""));
+				const values = line.split(",").map((v) => v.trim().replace(/"/g, ""));
 				const row: ParsedRow = {};
 				parsedHeaders.forEach((header, index) => {
 					row[header] = values[index] || "";
@@ -392,7 +383,7 @@ export default function ImportPage() {
 					</Link>
 				</Button>
 				<div>
-					<span className="mb-1 block font-mono text-xs uppercase tracking-wider text-primary">
+					<span className="mb-1 block font-mono text-primary text-xs uppercase tracking-wider">
 						Data Import
 					</span>
 					<h1 className="font-bold text-2xl tracking-tight">Import Trades</h1>
@@ -459,7 +450,7 @@ export default function ImportPage() {
 			{/* Step: Select Account */}
 			{step === "select-account" && (
 				<div className="overflow-hidden rounded border border-white/10 bg-black/50">
-					<div className="flex items-center justify-between border-b border-white/5 bg-white/[0.02] px-4 py-2">
+					<div className="flex items-center justify-between border-white/5 border-b bg-white/[0.02] px-4 py-2">
 						<div className="flex items-center gap-2">
 							<div className="h-2.5 w-2.5 rounded-full bg-loss/60" />
 							<div className="h-2.5 w-2.5 rounded-full bg-breakeven/60" />
@@ -470,7 +461,7 @@ export default function ImportPage() {
 						</span>
 						<div className="w-14" />
 					</div>
-					<div className="border-b border-white/5 px-6 py-4">
+					<div className="border-white/5 border-b px-6 py-4">
 						<h3 className="font-medium">Select Account</h3>
 						<p className="font-mono text-[10px] text-muted-foreground">
 							Choose which trading account to import trades into
@@ -528,7 +519,7 @@ export default function ImportPage() {
 											{PLATFORM_INFO[accountPlatform]?.description}
 											{platformStatus === "coming-soon" && (
 												<span className="mt-1 block text-yellow-500">
-													⚠️ Auto-parsing coming soon. Manual column mapping will
+													Auto-parsing coming soon. Manual column mapping will
 													be used.
 												</span>
 											)}
@@ -538,9 +529,9 @@ export default function ImportPage() {
 
 								<div className="flex justify-end">
 									<Button
+										className="font-mono text-xs uppercase tracking-wider"
 										disabled={!selectedImportAccountId}
 										onClick={() => setStep("upload")}
-										className="font-mono text-xs uppercase tracking-wider"
 									>
 										Continue
 										<ArrowRight className="ml-2 h-3.5 w-3.5" />
@@ -556,20 +547,18 @@ export default function ImportPage() {
 			{step === "upload" && (
 				<Card>
 					<CardHeader>
-						<CardTitle>
-							Upload CSV {accountPlatform === "projectx" ? "Files" : "File"}
-						</CardTitle>
+						<CardTitle>Upload CSV File</CardTitle>
 						<CardDescription>
 							Importing to: <strong>{selectedImportAccount?.name}</strong>
 							{accountPlatform === "projectx" && (
 								<span className="mt-1 block text-primary">
-									ProjectX requires both "Trades" and "Orders" CSV exports
+									Export your Trades CSV from ProjectX
 								</span>
 							)}
 						</CardDescription>
 					</CardHeader>
 					<CardContent className="space-y-6">
-						{platformStatus !== "ready" && accountPlatform !== "projectx" && (
+						{platformStatus !== "ready" && (
 							<div>
 								<span className="font-medium text-sm">Instrument Type</span>
 								<Tabs
@@ -587,231 +576,44 @@ export default function ImportPage() {
 							</div>
 						)}
 
-						{/* ProjectX Two-File Upload */}
-						{accountPlatform === "projectx" ? (
-							<div className="space-y-4">
-								<Alert>
-									<Info className="h-4 w-4" />
-									<AlertTitle>How to export from ProjectX</AlertTitle>
-									<AlertDescription>
-										<ol className="mt-2 list-inside list-decimal space-y-1 text-sm">
-											<li>
-												Go to the <strong>Trades</strong> tab and export CSV
-											</li>
-											<li>
-												Go to the <strong>Orders</strong> tab and export CSV
-											</li>
-											<li>Upload both files below</li>
-										</ol>
-									</AlertDescription>
-								</Alert>
+						{/* Standard Single-File Upload */}
+						<section
+							aria-label="File drop zone"
+							className="flex flex-col items-center justify-center rounded-lg border-2 border-border border-dashed p-12 transition-colors hover:border-primary/50"
+							onDragOver={(e) => e.preventDefault()}
+							onDrop={handleDrop}
+						>
+							<FileSpreadsheet className="mb-4 h-12 w-12 text-muted-foreground" />
+							<p className="mb-2 font-medium text-lg">
+								Drop your CSV file here
+							</p>
+							<p className="mb-4 text-muted-foreground text-sm">
+								or click to browse
+							</p>
+							<input
+								accept=".csv"
+								className="hidden"
+								id="csv-upload"
+								onChange={handleFileUpload}
+								type="file"
+							/>
+							<Button asChild>
+								<label className="cursor-pointer" htmlFor="csv-upload">
+									<Upload className="mr-2 h-4 w-4" />
+									Select File
+								</label>
+							</Button>
+						</section>
 
-								{/* Trades CSV Upload */}
-								<div className="space-y-2">
-									<span className="font-medium text-sm">
-										Trades CSV <span className="text-destructive">*</span>
-									</span>
-									<div
-										className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition-colors ${
-											tradesCSV
-												? "border-profit bg-profit/5"
-												: "border-border hover:border-primary/50"
-										}`}
-									>
-										{tradesCSV ? (
-											<div className="flex items-center gap-2 text-profit">
-												<Check className="h-5 w-5" />
-												<span className="font-medium">{tradesFileName}</span>
-												<Button
-													onClick={() => {
-														setTradesCSV(null);
-														setTradesFileName("");
-													}}
-													size="sm"
-													variant="ghost"
-												>
-													Remove
-												</Button>
-											</div>
-										) : (
-											<>
-												<FileSpreadsheet className="mb-2 h-8 w-8 text-muted-foreground" />
-												<input
-													accept=".csv"
-													className="hidden"
-													id="trades-csv-upload"
-													onChange={(e) => {
-														const file = e.target.files?.[0];
-														if (file) {
-															const reader = new FileReader();
-															reader.onload = (event) => {
-																setTradesCSV(event.target?.result as string);
-																setTradesFileName(file.name);
-															};
-															reader.readAsText(file);
-														}
-													}}
-													type="file"
-												/>
-												<Button asChild size="sm" variant="outline">
-													<label
-														className="cursor-pointer"
-														htmlFor="trades-csv-upload"
-													>
-														<Upload className="mr-2 h-4 w-4" />
-														Select Trades CSV
-													</label>
-												</Button>
-											</>
-										)}
-									</div>
-								</div>
-
-								{/* Orders CSV Upload */}
-								<div className="space-y-2">
-									<span className="font-medium text-sm">
-										Orders CSV <span className="text-destructive">*</span>
-									</span>
-									<div
-										className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition-colors ${
-											ordersCSV
-												? "border-profit bg-profit/5"
-												: "border-border hover:border-primary/50"
-										}`}
-									>
-										{ordersCSV ? (
-											<div className="flex items-center gap-2 text-profit">
-												<Check className="h-5 w-5" />
-												<span className="font-medium">{ordersFileName}</span>
-												<Button
-													onClick={() => {
-														setOrdersCSV(null);
-														setOrdersFileName("");
-													}}
-													size="sm"
-													variant="ghost"
-												>
-													Remove
-												</Button>
-											</div>
-										) : (
-											<>
-												<FileSpreadsheet className="mb-2 h-8 w-8 text-muted-foreground" />
-												<input
-													accept=".csv"
-													className="hidden"
-													id="orders-csv-upload"
-													onChange={(e) => {
-														const file = e.target.files?.[0];
-														if (file) {
-															const reader = new FileReader();
-															reader.onload = (event) => {
-																setOrdersCSV(event.target?.result as string);
-																setOrdersFileName(file.name);
-															};
-															reader.readAsText(file);
-														}
-													}}
-													type="file"
-												/>
-												<Button asChild size="sm" variant="outline">
-													<label
-														className="cursor-pointer"
-														htmlFor="orders-csv-upload"
-													>
-														<Upload className="mr-2 h-4 w-4" />
-														Select Orders CSV
-													</label>
-												</Button>
-											</>
-										)}
-									</div>
-								</div>
-
-								<div className="flex justify-between pt-4">
-									<Button
-										onClick={() => setStep("select-account")}
-										variant="outline"
-									>
-										<ArrowLeft className="mr-2 h-4 w-4" />
-										Back
-									</Button>
-									<Button
-										disabled={!tradesCSV || !ordersCSV}
-										onClick={async () => {
-											if (!tradesCSV || !ordersCSV) return;
-
-											const result = await parseProjectXWithOrders(
-												tradesCSV,
-												ordersCSV,
-											);
-
-											if (result.success && result.trades.length > 0) {
-												setParsedTrades(result.trades);
-												setParseErrors([
-													...result.errors.map(
-														(e) => `Row ${e.row}: ${e.message}`,
-													),
-													...result.warnings,
-												]);
-												setStep("preview");
-											} else {
-												toast.error("Failed to parse CSVs");
-												setParseErrors(
-													result.errors.map(
-														(e) => `Row ${e.row}: ${e.message}`,
-													),
-												);
-											}
-										}}
-									>
-										Continue
-										<ArrowRight className="ml-2 h-4 w-4" />
-									</Button>
-								</div>
-							</div>
-						) : (
-							/* Standard Single-File Upload */
-							<>
-								<section
-									aria-label="File drop zone"
-									className="flex flex-col items-center justify-center rounded-lg border-2 border-border border-dashed p-12 transition-colors hover:border-primary/50"
-									onDragOver={(e) => e.preventDefault()}
-									onDrop={handleDrop}
-								>
-									<FileSpreadsheet className="mb-4 h-12 w-12 text-muted-foreground" />
-									<p className="mb-2 font-medium text-lg">
-										Drop your CSV file here
-									</p>
-									<p className="mb-4 text-muted-foreground text-sm">
-										or click to browse
-									</p>
-									<input
-										accept=".csv"
-										className="hidden"
-										id="csv-upload"
-										onChange={handleFileUpload}
-										type="file"
-									/>
-									<Button asChild>
-										<label className="cursor-pointer" htmlFor="csv-upload">
-											<Upload className="mr-2 h-4 w-4" />
-											Select File
-										</label>
-									</Button>
-								</section>
-
-								<div className="flex justify-between">
-									<Button
-										onClick={() => setStep("select-account")}
-										variant="outline"
-									>
-										<ArrowLeft className="mr-2 h-4 w-4" />
-										Back
-									</Button>
-								</div>
-							</>
-						)}
+						<div className="flex justify-between">
+							<Button
+								onClick={() => setStep("select-account")}
+								variant="outline"
+							>
+								<ArrowLeft className="mr-2 h-4 w-4" />
+								Back
+							</Button>
+						</div>
 					</CardContent>
 				</Card>
 			)}
@@ -908,9 +710,6 @@ export default function ImportPage() {
 										<TableHead>Entry</TableHead>
 										<TableHead>Exit</TableHead>
 										<TableHead>Qty</TableHead>
-										{accountPlatform === "projectx" && (
-											<TableHead>Exit Type</TableHead>
-										)}
 									</TableRow>
 								</TableHeader>
 								<TableBody>
@@ -940,14 +739,6 @@ export default function ImportPage() {
 												(csvRow ? getMappedValue(csvRow, "quantity") : "") ||
 												"1";
 
-											// Determine exit type for ProjectX
-											let exitType = "";
-											if (trade?.stopLossHit) exitType = "SL";
-											else if (trade?.takeProfitHit) exitType = "TP";
-											else if (trade?.stopLoss || trade?.takeProfit)
-												exitType = "Manual";
-											else exitType = "-";
-
 											return (
 												<TableRow key={`trade-preview-${i.toString()}`}>
 													<TableCell className="font-mono text-xs">
@@ -974,22 +765,6 @@ export default function ImportPage() {
 													<TableCell className="font-mono text-xs">
 														{quantity}
 													</TableCell>
-													{accountPlatform === "projectx" && (
-														<TableCell>
-															<Badge
-																className={`text-xs ${
-																	exitType === "SL"
-																		? "border-loss/50 text-loss"
-																		: exitType === "TP"
-																			? "border-profit/50 text-profit"
-																			: "border-muted text-muted-foreground"
-																}`}
-																variant="outline"
-															>
-																{exitType}
-															</Badge>
-														</TableCell>
-													)}
 												</TableRow>
 											);
 										})}
@@ -1000,34 +775,6 @@ export default function ImportPage() {
 							<p className="text-center text-muted-foreground text-sm">
 								Showing first 10 of {totalRows} trades
 							</p>
-						)}
-
-						{/* ProjectX summary */}
-						{accountPlatform === "projectx" && parsedTrades.length > 0 && (
-							<div className="grid grid-cols-3 gap-4 rounded-lg border bg-muted/30 p-4">
-								<div className="text-center">
-									<div className="font-semibold text-lg text-profit">
-										{parsedTrades.filter((t) => t.takeProfitHit).length}
-									</div>
-									<div className="text-muted-foreground text-xs">TP Hits</div>
-								</div>
-								<div className="text-center">
-									<div className="font-semibold text-lg text-loss">
-										{parsedTrades.filter((t) => t.stopLossHit).length}
-									</div>
-									<div className="text-muted-foreground text-xs">SL Hits</div>
-								</div>
-								<div className="text-center">
-									<div className="font-semibold text-lg text-muted-foreground">
-										{
-											parsedTrades.filter(
-												(t) => !t.stopLossHit && !t.takeProfitHit,
-											).length
-										}
-									</div>
-									<div className="text-muted-foreground text-xs">Manual</div>
-								</div>
-							</div>
 						)}
 
 						<div className="flex justify-between">
@@ -1052,7 +799,7 @@ export default function ImportPage() {
 			{/* Step: Complete */}
 			{step === "complete" && (
 				<div className="overflow-hidden rounded border border-white/10 bg-black/50">
-					<div className="flex items-center justify-between border-b border-white/5 bg-white/[0.02] px-4 py-2">
+					<div className="flex items-center justify-between border-white/5 border-b bg-white/[0.02] px-4 py-2">
 						<div className="flex items-center gap-2">
 							<div className="h-2.5 w-2.5 rounded-full bg-loss/60" />
 							<div className="h-2.5 w-2.5 rounded-full bg-breakeven/60" />
@@ -1074,6 +821,7 @@ export default function ImportPage() {
 						</p>
 						<div className="flex gap-4">
 							<Button
+								className="font-mono text-xs uppercase tracking-wider"
 								onClick={() => {
 									setStep("upload");
 									setCsvData([]);
@@ -1081,20 +829,14 @@ export default function ImportPage() {
 									setMapping({});
 									setParsedTrades([]);
 									setParseErrors([]);
-									// Reset ProjectX state
-									setTradesCSV(null);
-									setOrdersCSV(null);
-									setTradesFileName("");
-									setOrdersFileName("");
 								}}
 								variant="outline"
-								className="font-mono text-xs uppercase tracking-wider"
 							>
 								Import More
 							</Button>
 							<Button
-								onClick={() => router.push("/journal")}
 								className="font-mono text-xs uppercase tracking-wider"
+								onClick={() => router.push("/journal")}
 							>
 								View Journal
 							</Button>

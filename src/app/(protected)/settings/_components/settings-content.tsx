@@ -2,11 +2,14 @@
 
 import { useUser } from "@clerk/nextjs";
 import {
+	Award,
 	Check,
 	Edit,
 	Eye,
 	EyeOff,
+	FolderOpen,
 	Key,
+	Link2,
 	Loader2,
 	Plus,
 	Save,
@@ -14,7 +17,9 @@ import {
 	Sparkles,
 	Star,
 	Trash2,
+	Trophy,
 	Wallet,
+	XCircle,
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -73,16 +78,32 @@ const AI_PROVIDERS = [
 	},
 ];
 
-const ACCOUNT_TYPE_COLORS = {
+// Updated account type colors and labels
+const ACCOUNT_TYPE_COLORS: Record<string, string> = {
+	prop_challenge: "bg-amber-500",
+	prop_funded: "bg-purple-500",
 	live: "bg-green-500",
 	demo: "bg-blue-500",
-	paper: "bg-amber-500",
 };
 
-const ACCOUNT_TYPE_LABELS = {
+const ACCOUNT_TYPE_LABELS: Record<string, string> = {
+	prop_challenge: "Prop Challenge",
+	prop_funded: "Prop Funded",
 	live: "Live",
 	demo: "Demo",
-	paper: "Paper",
+};
+
+// Challenge status colors used inline in account badges
+const _CHALLENGE_STATUS_COLORS: Record<string, string> = {
+	active: "bg-amber-500",
+	passed: "bg-green-500",
+	failed: "bg-red-500",
+};
+
+const CHALLENGE_STATUS_LABELS: Record<string, string> = {
+	active: "Active",
+	passed: "Passed",
+	failed: "Failed",
 };
 
 const PLATFORM_LABELS: Record<string, string> = {
@@ -91,6 +112,58 @@ const PLATFORM_LABELS: Record<string, string> = {
 	projectx: "ProjectX",
 	ninjatrader: "NinjaTrader",
 	other: "Manual",
+};
+
+type AccountType = "prop_challenge" | "prop_funded" | "live" | "demo";
+type DrawdownType = "trailing" | "static" | "eod";
+type PayoutFrequency = "weekly" | "bi_weekly" | "monthly";
+
+interface AccountFormState {
+	name: string;
+	broker: string;
+	platform: "mt4" | "mt5" | "projectx" | "ninjatrader" | "other";
+	accountType: AccountType;
+	initialBalance: string;
+	currency: string;
+	accountNumber: string;
+	notes: string;
+	color: string;
+	// Prop firm fields
+	maxDrawdown: string;
+	drawdownType: DrawdownType | "";
+	dailyLossLimit: string;
+	profitTarget: string;
+	consistencyRule: string;
+	minTradingDays: string;
+	challengeStartDate: string;
+	challengeEndDate: string;
+	profitSplit: string;
+	payoutFrequency: PayoutFrequency | "";
+	groupId: string;
+}
+
+const defaultAccountForm: AccountFormState = {
+	name: "",
+	broker: "",
+	platform: "other",
+	accountType: "live",
+	initialBalance: "",
+	currency: "USD",
+	accountNumber: "",
+	notes: "",
+	color: "#6366f1",
+	// Prop firm defaults
+	maxDrawdown: "",
+	drawdownType: "",
+	dailyLossLimit: "",
+	profitTarget: "",
+	consistencyRule: "",
+	minTradingDays: "",
+	challengeStartDate: "",
+	challengeEndDate: "",
+	profitSplit: "",
+	payoutFrequency: "",
+	groupId: "",
 };
 
 export function SettingsContent() {
@@ -103,15 +176,31 @@ export function SettingsContent() {
 	// Account management state
 	const [isAccountDialogOpen, setIsAccountDialogOpen] = useState(false);
 	const [editingAccount, setEditingAccount] = useState<number | null>(null);
-	const [accountForm, setAccountForm] = useState({
+	const [accountForm, setAccountForm] =
+		useState<AccountFormState>(defaultAccountForm);
+
+	// Convert to funded dialog state
+	const [isConvertDialogOpen, setIsConvertDialogOpen] = useState(false);
+	const [convertingAccountId, setConvertingAccountId] = useState<number | null>(
+		null,
+	);
+	const [convertForm, setConvertForm] = useState({
 		name: "",
-		broker: "",
-		platform: "other" as "mt4" | "mt5" | "projectx" | "ninjatrader" | "other",
-		accountType: "live" as "live" | "demo" | "paper",
 		initialBalance: "",
-		currency: "USD",
-		accountNumber: "",
-		notes: "",
+		maxDrawdown: "",
+		drawdownType: "" as DrawdownType | "",
+		dailyLossLimit: "",
+		profitSplit: "",
+		payoutFrequency: "" as PayoutFrequency | "",
+		consistencyRule: "",
+	});
+
+	// Group management state
+	const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false);
+	const [editingGroup, setEditingGroup] = useState<number | null>(null);
+	const [groupForm, setGroupForm] = useState({
+		name: "",
+		description: "",
 		color: "#6366f1",
 	});
 
@@ -122,6 +211,10 @@ export function SettingsContent() {
 		refetch: refetchAccountsList,
 	} = api.accounts.getAll.useQuery();
 
+	const { data: groups = [], refetch: refetchGroups } =
+		api.accounts.getGroups.useQuery();
+
+	// Account mutations
 	const createAccount = api.accounts.create.useMutation({
 		onSuccess: () => {
 			toast.success("Account created");
@@ -171,10 +264,71 @@ export function SettingsContent() {
 		},
 	});
 
+	const convertToFunded = api.accounts.convertToFunded.useMutation({
+		onSuccess: () => {
+			toast.success("Challenge marked as passed! Funded account created.");
+			setIsConvertDialogOpen(false);
+			setConvertingAccountId(null);
+			refetchAccountsList();
+			refetchAccounts();
+		},
+		onError: (error) => {
+			toast.error(error.message || "Failed to convert account");
+		},
+	});
+
+	const markChallengeFailed = api.accounts.markChallengeFailed.useMutation({
+		onSuccess: () => {
+			toast.success("Challenge marked as failed");
+			refetchAccountsList();
+			refetchAccounts();
+		},
+		onError: (error) => {
+			toast.error(error.message || "Failed to mark challenge as failed");
+		},
+	});
+
+	// Group mutations
+	const createGroup = api.accounts.createGroup.useMutation({
+		onSuccess: () => {
+			toast.success("Group created");
+			setIsGroupDialogOpen(false);
+			resetGroupForm();
+			refetchGroups();
+		},
+		onError: (error) => {
+			toast.error(error.message || "Failed to create group");
+		},
+	});
+
+	const updateGroup = api.accounts.updateGroup.useMutation({
+		onSuccess: () => {
+			toast.success("Group updated");
+			setIsGroupDialogOpen(false);
+			setEditingGroup(null);
+			resetGroupForm();
+			refetchGroups();
+		},
+		onError: (error) => {
+			toast.error(error.message || "Failed to update group");
+		},
+	});
+
+	const deleteGroup = api.accounts.deleteGroup.useMutation({
+		onSuccess: () => {
+			toast.success("Group deleted");
+			refetchGroups();
+			refetchAccountsList();
+		},
+		onError: (error) => {
+			toast.error(error.message || "Failed to delete group");
+		},
+	});
+
 	// Check URL params for tab
 	useEffect(() => {
 		const tab = searchParams.get("tab");
-		if (tab === "accounts") {
+		if (tab === "accounts" || tab === "groups") {
 			setActiveTab("accounts");
 		}
 	}, [searchParams]);
@@ -221,15 +375,13 @@ export function SettingsContent() {
 	}, [userSettings]);
 
 	const resetAccountForm = () => {
-		setAccountForm({
+		setAccountForm(defaultAccountForm);
+	};
+
+	const resetGroupForm = () => {
+		setGroupForm({
 			name: "",
-			broker: "",
-			platform: "other",
-			accountType: "live",
-			initialBalance: "",
-			currency: "USD",
-			accountNumber: "",
-			notes: "",
+			description: "",
 			color: "#6366f1",
 		});
 	};
@@ -239,21 +391,47 @@ export function SettingsContent() {
 		setAccountForm({
 			name: account.name,
 			broker: account.broker ?? "",
-			platform:
-				(account.platform as
-					| "mt4"
-					| "mt5"
-					| "projectx"
-					| "ninjatrader"
-					| "other") ?? "other",
-			accountType: account.accountType,
+			platform: account.platform ?? "other",
+			accountType: account.accountType as AccountType,
 			initialBalance: account.initialBalance ?? "",
 			currency: account.currency ?? "USD",
 			accountNumber: account.accountNumber ?? "",
 			notes: account.notes ?? "",
 			color: account.color ?? "#6366f1",
+			// Prop firm fields
+			maxDrawdown: account.maxDrawdown ?? "",
+			drawdownType: (account.drawdownType as DrawdownType) ?? "",
+			dailyLossLimit: account.dailyLossLimit ?? "",
+			profitTarget: account.profitTarget ?? "",
+			consistencyRule: account.consistencyRule ?? "",
+			minTradingDays: account.minTradingDays?.toString() ?? "",
+			challengeStartDate: account.challengeStartDate
+				? (new Date(account.challengeStartDate).toISOString().split("T")[0] ??
+					"")
+				: "",
+			challengeEndDate: account.challengeEndDate
+				? (new Date(account.challengeEndDate).toISOString().split("T")[0] ?? "")
+				: "",
+			profitSplit: account.profitSplit ?? "",
+			payoutFrequency: (account.payoutFrequency as PayoutFrequency) ?? "",
+			groupId: account.groupId?.toString() ?? "",
 		});
 		setIsAccountDialogOpen(true);
+	};
+
+	const openConvertDialog = (account: (typeof accounts)[0]) => {
+		setConvertingAccountId(account.id);
+		setConvertForm({
+			name: `${account.name} (Funded)`,
+			initialBalance: account.initialBalance ?? "",
+			maxDrawdown: account.maxDrawdown ?? "",
+			drawdownType: (account.drawdownType as DrawdownType) ?? "",
+			dailyLossLimit: account.dailyLossLimit ?? "",
+			profitSplit: "80",
+			payoutFrequency: "monthly",
+			consistencyRule: account.consistencyRule ?? "",
+		});
+		setIsConvertDialogOpen(true);
 	};
 
 	const handleAccountSubmit = () => {
@@ -262,14 +440,82 @@ export function SettingsContent() {
 			return;
 		}
 
+		const submitData = {
+			name: accountForm.name,
+			broker: accountForm.broker || undefined,
+			platform: accountForm.platform,
+			accountType: accountForm.accountType,
+			initialBalance: accountForm.initialBalance || undefined,
+			currency: accountForm.currency,
+			accountNumber: accountForm.accountNumber || undefined,
+			notes: accountForm.notes || undefined,
+			color: accountForm.color || undefined,
+			// Prop fields (only include if set)
+			maxDrawdown: accountForm.maxDrawdown || undefined,
+			drawdownType: accountForm.drawdownType || undefined,
+			dailyLossLimit: accountForm.dailyLossLimit || undefined,
+			profitTarget: accountForm.profitTarget || undefined,
+			consistencyRule: accountForm.consistencyRule || undefined,
+			minTradingDays: accountForm.minTradingDays
+				? parseInt(accountForm.minTradingDays, 10)
+				: undefined,
+			challengeStartDate: accountForm.challengeStartDate || undefined,
+			challengeEndDate: accountForm.challengeEndDate || undefined,
+			profitSplit: accountForm.profitSplit || undefined,
+			payoutFrequency: accountForm.payoutFrequency || undefined,
+			groupId: accountForm.groupId ? parseInt(accountForm.groupId, 10) : undefined,
+		};
+
 		if (editingAccount) {
 			updateAccount.mutate({
 				id: editingAccount,
-				...accountForm,
+				...submitData,
 			});
 		} else {
-			createAccount.mutate(accountForm);
+			createAccount.mutate(submitData);
 		}
+	};
+
+	const handleConvertSubmit = () => {
+		if (!convertingAccountId) return;
+
+		convertToFunded.mutate({
+			challengeAccountId: convertingAccountId,
+			name: convertForm.name,
+			initialBalance: convertForm.initialBalance,
+			maxDrawdown: convertForm.maxDrawdown || undefined,
+			drawdownType: convertForm.drawdownType || undefined,
+			dailyLossLimit: convertForm.dailyLossLimit || undefined,
+			profitSplit: convertForm.profitSplit || undefined,
+			payoutFrequency: convertForm.payoutFrequency || undefined,
+			consistencyRule: convertForm.consistencyRule || undefined,
+		});
+	};
+
+	const handleGroupSubmit = () => {
+		if (!groupForm.name.trim()) {
+			toast.error("Group name is required");
+			return;
+		}
+
+		if (editingGroup) {
+			updateGroup.mutate({
+				id: editingGroup,
+				...groupForm,
+			});
+		} else {
+			createGroup.mutate(groupForm);
+		}
+	};
+
+	const openEditGroup = (group: (typeof groups)[0]) => {
+		setEditingGroup(group.id);
+		setGroupForm({
+			name: group.name,
+			description: group.description ?? "",
+			color: group.color ?? "#6366f1",
+		});
+		setIsGroupDialogOpen(true);
 	};
 
 	const toggleShowKey = (provider: string) => {
@@ -278,19 +524,22 @@ export function SettingsContent() {
 
 	const handleSave = async () => {
 		setSaving(true);
-
-		// Simulate save - in production, this would call a tRPC mutation
 		await new Promise((resolve) => setTimeout(resolve, 1000));
-
 		toast.success("Settings saved successfully");
 		setSaving(false);
 	};
+
+	const isPropAccount =
+		accountForm.accountType === "prop_challenge" ||
+		accountForm.accountType === "prop_funded";
+	const isChallenge = accountForm.accountType === "prop_challenge";
+	const isFunded = accountForm.accountType === "prop_funded";
 
 	return (
 		<div className="mx-auto max-w-3xl space-y-6">
 			{/* Header */}
 			<div>
-				<span className="mb-2 block font-mono text-xs uppercase tracking-wider text-primary">
+				<span className="mb-2 block font-mono text-primary text-xs uppercase tracking-wider">
 					Configuration
 				</span>
 				<h1 className="font-bold text-3xl tracking-tight">Settings</h1>
@@ -300,22 +549,22 @@ export function SettingsContent() {
 			</div>
 
 			<Tabs onValueChange={setActiveTab} value={activeTab}>
-				<TabsList className="grid w-full grid-cols-3 bg-white/[0.02] border border-white/5">
+				<TabsList className="grid w-full grid-cols-3 border border-white/5 bg-white/[0.02]">
 					<TabsTrigger
-						value="general"
 						className="font-mono text-xs uppercase tracking-wider data-[state=active]:bg-white/10"
+						value="general"
 					>
 						General
 					</TabsTrigger>
 					<TabsTrigger
-						value="accounts"
 						className="font-mono text-xs uppercase tracking-wider data-[state=active]:bg-white/10"
+						value="accounts"
 					>
 						Accounts
 					</TabsTrigger>
 					<TabsTrigger
-						value="ai"
 						className="font-mono text-xs uppercase tracking-wider data-[state=active]:bg-white/10"
+						value="ai"
 					>
 						AI Providers
 					</TabsTrigger>
@@ -327,7 +576,7 @@ export function SettingsContent() {
 					<div className="rounded border border-white/10 bg-white/[0.02] p-4">
 						<div className="mb-4 flex items-center gap-2">
 							<Shield className="h-4 w-4 text-muted-foreground" />
-							<span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+							<span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 								Profile
 							</span>
 						</div>
@@ -465,6 +714,7 @@ export function SettingsContent() {
 							</div>
 
 							<Button
+								className="font-mono text-xs uppercase tracking-wider"
 								disabled={updateSettings.isPending}
 								onClick={() => {
 									updateSettings.mutate({
@@ -477,7 +727,6 @@ export function SettingsContent() {
 										breakevenThreshold: settings.breakevenThreshold,
 									});
 								}}
-								className="font-mono text-xs uppercase tracking-wider"
 							>
 								{updateSettings.isPending && (
 									<Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
@@ -490,6 +739,155 @@ export function SettingsContent() {
 
 				{/* Trading Accounts Tab */}
 				<TabsContent className="space-y-6" value="accounts">
+					{/* Account Groups Section */}
+					<Card>
+						<CardHeader>
+							<div className="flex items-center justify-between">
+								<div>
+									<CardTitle className="flex items-center gap-2">
+										<FolderOpen className="h-5 w-5" />
+										Account Groups
+									</CardTitle>
+									<CardDescription>
+										Group accounts for copy trading or combined stats
+									</CardDescription>
+								</div>
+								<Dialog
+									onOpenChange={(open) => {
+										setIsGroupDialogOpen(open);
+										if (!open) {
+											setEditingGroup(null);
+											resetGroupForm();
+										}
+									}}
+									open={isGroupDialogOpen}
+								>
+									<DialogTrigger asChild>
+										<Button
+											className="font-mono text-xs uppercase tracking-wider"
+											variant="outline"
+										>
+											<Plus className="mr-2 h-3.5 w-3.5" />
+											Add Group
+										</Button>
+									</DialogTrigger>
+									<DialogContent>
+										<DialogHeader>
+											<DialogTitle>
+												{editingGroup ? "Edit Group" : "Create Group"}
+											</DialogTitle>
+											<DialogDescription>
+												{editingGroup
+													? "Update your account group details"
+													: "Create a new group to combine account statistics"}
+											</DialogDescription>
+										</DialogHeader>
+										<div className="space-y-4">
+											<div className="space-y-2">
+												<Label>Group Name *</Label>
+												<Input
+													onChange={(e) =>
+														setGroupForm({ ...groupForm, name: e.target.value })
+													}
+													placeholder="e.g., Copy Trading Group"
+													value={groupForm.name}
+												/>
+											</div>
+											<div className="space-y-2">
+												<Label>Description</Label>
+												<Input
+													onChange={(e) =>
+														setGroupForm({
+															...groupForm,
+															description: e.target.value,
+														})
+													}
+													placeholder="Optional description"
+													value={groupForm.description}
+												/>
+											</div>
+										</div>
+										<DialogFooter>
+											<Button
+												onClick={() => {
+													setIsGroupDialogOpen(false);
+													setEditingGroup(null);
+													resetGroupForm();
+												}}
+												variant="outline"
+											>
+												Cancel
+											</Button>
+											<Button
+												disabled={
+													createGroup.isPending || updateGroup.isPending
+												}
+												onClick={handleGroupSubmit}
+											>
+												{(createGroup.isPending || updateGroup.isPending) && (
+													<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+												)}
+												{editingGroup ? "Update" : "Create"}
+											</Button>
+										</DialogFooter>
+									</DialogContent>
+								</Dialog>
+							</div>
+						</CardHeader>
+						<CardContent>
+							{groups.length === 0 ? (
+								<p className="py-4 text-center text-muted-foreground text-sm">
+									No groups yet. Create one to combine account statistics.
+								</p>
+							) : (
+								<div className="space-y-2">
+									{groups.map((group) => (
+										<div
+											className="flex items-center justify-between rounded border border-white/10 bg-white/[0.02] p-3"
+											key={group.id}
+										>
+											<div>
+												<span className="font-medium font-mono text-sm">
+													{group.name}
+												</span>
+												<p className="font-mono text-muted-foreground text-xs">
+													{group.accounts?.length || 0} accounts
+													{group.description && ` • ${group.description}`}
+												</p>
+											</div>
+											<div className="flex items-center gap-2">
+												<Button
+													onClick={() => openEditGroup(group)}
+													size="sm"
+													variant="ghost"
+												>
+													<Edit className="h-4 w-4" />
+												</Button>
+												<Button
+													disabled={deleteGroup.isPending}
+													onClick={() => {
+														if (
+															confirm(
+																"Delete this group? Accounts will be unassigned.",
+															)
+														) {
+															deleteGroup.mutate({ id: group.id });
+														}
+													}}
+													size="sm"
+													variant="ghost"
+												>
+													<Trash2 className="h-4 w-4 text-destructive" />
+												</Button>
+											</div>
+										</div>
+									))}
+								</div>
+							)}
+						</CardContent>
+					</Card>
+
+					{/* Trading Accounts Section */}
 					<Card>
 						<CardHeader>
 							<div className="flex items-center justify-between">
@@ -518,7 +916,7 @@ export function SettingsContent() {
 											Add Account
 										</Button>
 									</DialogTrigger>
-									<DialogContent>
+									<DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
 										<DialogHeader>
 											<DialogTitle>
 												{editingAccount ? "Edit Account" : "Create Account"}
@@ -530,6 +928,7 @@ export function SettingsContent() {
 											</DialogDescription>
 										</DialogHeader>
 										<div className="space-y-4">
+											{/* Basic Info */}
 											<div className="space-y-2">
 												<Label>Account Name *</Label>
 												<Input
@@ -543,19 +942,41 @@ export function SettingsContent() {
 													value={accountForm.name}
 												/>
 											</div>
+
 											<div className="grid gap-4 sm:grid-cols-2">
 												<div className="space-y-2">
-													<Label>Platform *</Label>
+													<Label>Account Type</Label>
 													<Select
 														onValueChange={(value) =>
 															setAccountForm({
 																...accountForm,
-																platform: value as
-																	| "mt4"
-																	| "mt5"
-																	| "projectx"
-																	| "ninjatrader"
-																	| "other",
+																accountType: value as AccountType,
+															})
+														}
+														value={accountForm.accountType}
+													>
+														<SelectTrigger>
+															<SelectValue />
+														</SelectTrigger>
+														<SelectContent>
+															<SelectItem value="prop_challenge">
+																Prop Challenge
+															</SelectItem>
+															<SelectItem value="prop_funded">
+																Prop Funded
+															</SelectItem>
+															<SelectItem value="live">Live</SelectItem>
+															<SelectItem value="demo">Demo</SelectItem>
+														</SelectContent>
+													</Select>
+												</div>
+												<div className="space-y-2">
+													<Label>Platform</Label>
+													<Select
+														onValueChange={(value) =>
+															setAccountForm({
+																...accountForm,
+																platform: value as typeof accountForm.platform,
 															})
 														}
 														value={accountForm.platform}
@@ -575,34 +996,11 @@ export function SettingsContent() {
 															</SelectItem>
 														</SelectContent>
 													</Select>
-													<p className="text-muted-foreground text-xs">
-														Used for CSV import format
-													</p>
-												</div>
-												<div className="space-y-2">
-													<Label>Account Type</Label>
-													<Select
-														onValueChange={(value) =>
-															setAccountForm({
-																...accountForm,
-																accountType: value as "live" | "demo" | "paper",
-															})
-														}
-														value={accountForm.accountType}
-													>
-														<SelectTrigger>
-															<SelectValue />
-														</SelectTrigger>
-														<SelectContent>
-															<SelectItem value="live">Live</SelectItem>
-															<SelectItem value="demo">Demo</SelectItem>
-															<SelectItem value="paper">Paper</SelectItem>
-														</SelectContent>
-													</Select>
 												</div>
 											</div>
+
 											<div className="space-y-2">
-												<Label>Broker (optional)</Label>
+												<Label>Broker</Label>
 												<Input
 													onChange={(e) =>
 														setAccountForm({
@@ -610,10 +1008,11 @@ export function SettingsContent() {
 															broker: e.target.value,
 														})
 													}
-													placeholder="e.g., IC Markets, OANDA"
+													placeholder="e.g., Apex, Topstep, FTMO"
 													value={accountForm.broker}
 												/>
 											</div>
+
 											<div className="grid gap-4 sm:grid-cols-2">
 												<div className="space-y-2">
 													<Label>Initial Balance</Label>
@@ -624,7 +1023,7 @@ export function SettingsContent() {
 																initialBalance: e.target.value,
 															})
 														}
-														placeholder="0.00"
+														placeholder="50000"
 														type="number"
 														value={accountForm.initialBalance}
 													/>
@@ -651,19 +1050,284 @@ export function SettingsContent() {
 													</Select>
 												</div>
 											</div>
-											<div className="space-y-2">
-												<Label>Account Number (optional)</Label>
-												<Input
-													onChange={(e) =>
-														setAccountForm({
-															...accountForm,
-															accountNumber: e.target.value,
-														})
-													}
-													placeholder="For your reference"
-													value={accountForm.accountNumber}
-												/>
-											</div>
+
+											{/* Group Assignment */}
+											{groups.length > 0 && (
+												<div className="space-y-2">
+													<Label>
+														Account Group{" "}
+														<span className="font-normal text-muted-foreground">
+															(optional)
+														</span>
+													</Label>
+													<Select
+														onValueChange={(value) =>
+															setAccountForm({
+																...accountForm,
+																groupId: value === "none" ? "" : value,
+															})
+														}
+														value={accountForm.groupId || "none"}
+													>
+														<SelectTrigger>
+															<SelectValue placeholder="No group" />
+														</SelectTrigger>
+														<SelectContent>
+															<SelectItem value="none">No group</SelectItem>
+															{groups.map((group) => (
+																<SelectItem
+																	key={group.id}
+																	value={group.id.toString()}
+																>
+																	{group.name}
+																</SelectItem>
+															))}
+														</SelectContent>
+													</Select>
+												</div>
+											)}
+
+											{/* Prop Firm Rules */}
+											{isPropAccount && (
+												<>
+													<Separator />
+													<div className="space-y-1">
+														<h4 className="font-medium text-sm">
+															Prop Firm Rules
+														</h4>
+														<p className="text-muted-foreground text-xs">
+															Configure your prop firm account parameters
+														</p>
+													</div>
+
+													<div className="grid gap-4 sm:grid-cols-2">
+														<div className="space-y-2">
+															<Label>Max Drawdown (%)</Label>
+															<Input
+																onChange={(e) =>
+																	setAccountForm({
+																		...accountForm,
+																		maxDrawdown: e.target.value,
+																	})
+																}
+																placeholder="6.00"
+																step="0.01"
+																type="number"
+																value={accountForm.maxDrawdown}
+															/>
+														</div>
+														<div className="space-y-2">
+															<Label>Drawdown Type</Label>
+															<Select
+																onValueChange={(value) =>
+																	setAccountForm({
+																		...accountForm,
+																		drawdownType: value as DrawdownType,
+																	})
+																}
+																value={accountForm.drawdownType}
+															>
+																<SelectTrigger>
+																	<SelectValue placeholder="Select type" />
+																</SelectTrigger>
+																<SelectContent>
+																	<SelectItem value="trailing">
+																		Trailing
+																	</SelectItem>
+																	<SelectItem value="static">Static</SelectItem>
+																	<SelectItem value="eod">
+																		End of Day (EOD)
+																	</SelectItem>
+																</SelectContent>
+															</Select>
+														</div>
+													</div>
+
+													<div className="grid gap-4 sm:grid-cols-2">
+														<div className="space-y-2">
+															<Label>
+																Daily Loss Limit (%){" "}
+																<span className="font-normal text-muted-foreground">
+																	(optional)
+																</span>
+															</Label>
+															<Input
+																onChange={(e) =>
+																	setAccountForm({
+																		...accountForm,
+																		dailyLossLimit: e.target.value,
+																	})
+																}
+																placeholder="3.00"
+																step="0.01"
+																type="number"
+																value={accountForm.dailyLossLimit}
+															/>
+														</div>
+														<div className="space-y-2">
+															<Label>
+																Consistency Rule (%){" "}
+																<span className="font-normal text-muted-foreground">
+																	(optional)
+																</span>
+															</Label>
+															<Input
+																onChange={(e) =>
+																	setAccountForm({
+																		...accountForm,
+																		consistencyRule: e.target.value,
+																	})
+																}
+																placeholder="30"
+																step="1"
+																type="number"
+																value={accountForm.consistencyRule}
+															/>
+															<p className="text-[10px] text-muted-foreground">
+																Max single day profit as % of target
+															</p>
+														</div>
+													</div>
+
+													{/* Challenge-specific fields */}
+													{isChallenge && (
+														<>
+															<div className="grid gap-4 sm:grid-cols-2">
+																<div className="space-y-2">
+																	<Label>Profit Target (%)</Label>
+																	<Input
+																		onChange={(e) =>
+																			setAccountForm({
+																				...accountForm,
+																				profitTarget: e.target.value,
+																			})
+																		}
+																		placeholder="8.00"
+																		step="0.01"
+																		type="number"
+																		value={accountForm.profitTarget}
+																	/>
+																</div>
+																<div className="space-y-2">
+																	<Label>
+																		Min Trading Days{" "}
+																		<span className="font-normal text-muted-foreground">
+																			(optional)
+																		</span>
+																	</Label>
+																	<Input
+																		onChange={(e) =>
+																			setAccountForm({
+																				...accountForm,
+																				minTradingDays: e.target.value,
+																			})
+																		}
+																		placeholder="5"
+																		type="number"
+																		value={accountForm.minTradingDays}
+																	/>
+																</div>
+															</div>
+															<div className="grid gap-4 sm:grid-cols-2">
+<div className="space-y-2">
+																<Label>
+																	Start Date{" "}
+																	<span className="font-normal text-muted-foreground">
+																		(optional)
+																	</span>
+																</Label>
+																<Input
+																		onChange={(e) =>
+																			setAccountForm({
+																				...accountForm,
+																				challengeStartDate: e.target.value,
+																			})
+																		}
+																		type="date"
+																		value={accountForm.challengeStartDate}
+																	/>
+																</div>
+<div className="space-y-2">
+																<Label>
+																	End Date{" "}
+																	<span className="font-normal text-muted-foreground">
+																		(optional)
+																	</span>
+																</Label>
+																<Input
+																		onChange={(e) =>
+																			setAccountForm({
+																				...accountForm,
+																				challengeEndDate: e.target.value,
+																			})
+																		}
+																		type="date"
+																		value={accountForm.challengeEndDate}
+																	/>
+																</div>
+															</div>
+														</>
+													)}
+
+													{/* Funded-specific fields */}
+													{isFunded && (
+														<div className="grid gap-4 sm:grid-cols-2">
+															<div className="space-y-2">
+																<Label>
+																	Profit Split (%){" "}
+																	<span className="font-normal text-muted-foreground">
+																		(optional)
+																	</span>
+																</Label>
+																<Input
+																	onChange={(e) =>
+																		setAccountForm({
+																			...accountForm,
+																			profitSplit: e.target.value,
+																		})
+																	}
+																	placeholder="80"
+																	step="1"
+																	type="number"
+																	value={accountForm.profitSplit}
+																/>
+															</div>
+															<div className="space-y-2">
+																<Label>
+																	Payout Frequency{" "}
+																	<span className="font-normal text-muted-foreground">
+																		(optional)
+																	</span>
+																</Label>
+																<Select
+																	onValueChange={(value) =>
+																		setAccountForm({
+																			...accountForm,
+																			payoutFrequency: value as PayoutFrequency,
+																		})
+																	}
+																	value={accountForm.payoutFrequency}
+																>
+																	<SelectTrigger>
+																		<SelectValue placeholder="Select frequency" />
+																	</SelectTrigger>
+																	<SelectContent>
+																		<SelectItem value="weekly">
+																			Weekly
+																		</SelectItem>
+																		<SelectItem value="bi_weekly">
+																			Bi-Weekly
+																		</SelectItem>
+																		<SelectItem value="monthly">
+																			Monthly
+																		</SelectItem>
+																	</SelectContent>
+																</Select>
+															</div>
+														</div>
+													)}
+												</>
+											)}
 										</div>
 										<DialogFooter>
 											<Button
@@ -721,7 +1385,7 @@ export function SettingsContent() {
 													)}
 												/>
 												<div>
-													<div className="flex items-center gap-2">
+													<div className="flex flex-wrap items-center gap-2">
 														<span className="font-medium font-mono text-sm">
 															{account.name}
 														</span>
@@ -734,9 +1398,51 @@ export function SettingsContent() {
 																Default
 															</Badge>
 														)}
-														<Badge className="font-mono text-[10px]" variant="outline">
+														<Badge
+															className="font-mono text-[10px]"
+															variant="outline"
+														>
 															{ACCOUNT_TYPE_LABELS[account.accountType]}
 														</Badge>
+														{account.accountType === "prop_challenge" &&
+															account.challengeStatus && (
+																<Badge
+																	className={cn(
+																		"font-mono text-[10px]",
+																		account.challengeStatus === "passed" &&
+																			"bg-green-500/20 text-green-500",
+																		account.challengeStatus === "failed" &&
+																			"bg-red-500/20 text-red-500",
+																		account.challengeStatus === "active" &&
+																			"bg-amber-500/20 text-amber-500",
+																	)}
+																>
+																	{
+																		CHALLENGE_STATUS_LABELS[
+																			account.challengeStatus
+																		]
+																	}
+																</Badge>
+															)}
+														{account.linkedAccountId && (
+															<Badge
+																className="gap-1 font-mono text-[10px]"
+																variant="secondary"
+															>
+																<Link2 className="h-2.5 w-2.5" />
+																Linked
+															</Badge>
+														)}
+														{account.groupId && (
+															<Badge
+																className="gap-1 font-mono text-[10px]"
+																variant="secondary"
+															>
+																<FolderOpen className="h-2.5 w-2.5" />
+																{groups.find((g) => g.id === account.groupId)
+																	?.name || "Group"}
+															</Badge>
+														)}
 													</div>
 													<p className="font-mono text-muted-foreground text-xs">
 														{PLATFORM_LABELS[account.platform ?? "other"]}
@@ -745,10 +1451,45 @@ export function SettingsContent() {
 															? `$${parseFloat(account.initialBalance).toLocaleString()}`
 															: "$0"}{" "}
 														{account.currency}
+														{account.maxDrawdown &&
+															` • ${account.maxDrawdown}% DD`}
 													</p>
 												</div>
 											</div>
-											<div className="flex items-center gap-2">
+											<div className="flex items-center gap-1">
+												{/* Mark as Passed button for active challenges */}
+												{account.accountType === "prop_challenge" &&
+													account.challengeStatus === "active" && (
+														<>
+															<Button
+																className="text-green-500 hover:text-green-400"
+																onClick={() => openConvertDialog(account)}
+																size="sm"
+																title="Mark as Passed"
+																variant="ghost"
+															>
+																<Trophy className="h-4 w-4" />
+															</Button>
+															<Button
+																className="text-red-500 hover:text-red-400"
+																disabled={markChallengeFailed.isPending}
+																onClick={() => {
+																	if (
+																		confirm("Mark this challenge as failed?")
+																	) {
+																		markChallengeFailed.mutate({
+																			id: account.id,
+																		});
+																	}
+																}}
+																size="sm"
+																title="Mark as Failed"
+																variant="ghost"
+															>
+																<XCircle className="h-4 w-4" />
+															</Button>
+														</>
+													)}
 												{!account.isDefault && (
 													<Button
 														disabled={setDefaultAccount.isPending}
@@ -756,6 +1497,7 @@ export function SettingsContent() {
 															setDefaultAccount.mutate({ id: account.id })
 														}
 														size="sm"
+														title="Set as Default"
 														variant="ghost"
 													>
 														<Star className="h-4 w-4" />
@@ -764,6 +1506,7 @@ export function SettingsContent() {
 												<Button
 													onClick={() => openEditAccount(account)}
 													size="sm"
+													title="Edit"
 													variant="ghost"
 												>
 													<Edit className="h-4 w-4" />
@@ -780,6 +1523,7 @@ export function SettingsContent() {
 														}
 													}}
 													size="sm"
+													title="Delete"
 													variant="ghost"
 												>
 													<Trash2 className="h-4 w-4 text-destructive" />
@@ -791,6 +1535,150 @@ export function SettingsContent() {
 							)}
 						</CardContent>
 					</Card>
+
+					{/* Convert to Funded Dialog */}
+					<Dialog
+						onOpenChange={(open) => {
+							setIsConvertDialogOpen(open);
+							if (!open) setConvertingAccountId(null);
+						}}
+						open={isConvertDialogOpen}
+					>
+						<DialogContent>
+							<DialogHeader>
+								<DialogTitle className="flex items-center gap-2">
+									<Award className="h-5 w-5 text-green-500" />
+									Mark Challenge as Passed
+								</DialogTitle>
+								<DialogDescription>
+									Create a new funded account linked to this challenge.
+									Configure your funded account settings below.
+								</DialogDescription>
+							</DialogHeader>
+							<div className="space-y-4">
+								<div className="space-y-2">
+									<Label>Funded Account Name *</Label>
+									<Input
+										onChange={(e) =>
+											setConvertForm({ ...convertForm, name: e.target.value })
+										}
+										value={convertForm.name}
+									/>
+								</div>
+								<div className="space-y-2">
+									<Label>Starting Balance *</Label>
+									<Input
+										onChange={(e) =>
+											setConvertForm({
+												...convertForm,
+												initialBalance: e.target.value,
+											})
+										}
+										placeholder="50000"
+										type="number"
+										value={convertForm.initialBalance}
+									/>
+								</div>
+								<Separator />
+								<div className="grid gap-4 sm:grid-cols-2">
+									<div className="space-y-2">
+										<Label>Max Drawdown (%)</Label>
+										<Input
+											onChange={(e) =>
+												setConvertForm({
+													...convertForm,
+													maxDrawdown: e.target.value,
+												})
+											}
+											placeholder="6.00"
+											step="0.01"
+											type="number"
+											value={convertForm.maxDrawdown}
+										/>
+									</div>
+									<div className="space-y-2">
+										<Label>Drawdown Type</Label>
+										<Select
+											onValueChange={(value) =>
+												setConvertForm({
+													...convertForm,
+													drawdownType: value as DrawdownType,
+												})
+											}
+											value={convertForm.drawdownType}
+										>
+											<SelectTrigger>
+												<SelectValue placeholder="Select type" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="trailing">Trailing</SelectItem>
+												<SelectItem value="static">Static</SelectItem>
+												<SelectItem value="eod">End of Day (EOD)</SelectItem>
+											</SelectContent>
+										</Select>
+									</div>
+								</div>
+								<div className="grid gap-4 sm:grid-cols-2">
+									<div className="space-y-2">
+										<Label>Profit Split (%)</Label>
+										<Input
+											onChange={(e) =>
+												setConvertForm({
+													...convertForm,
+													profitSplit: e.target.value,
+												})
+											}
+											placeholder="80"
+											type="number"
+											value={convertForm.profitSplit}
+										/>
+									</div>
+									<div className="space-y-2">
+										<Label>Payout Frequency</Label>
+										<Select
+											onValueChange={(value) =>
+												setConvertForm({
+													...convertForm,
+													payoutFrequency: value as PayoutFrequency,
+												})
+											}
+											value={convertForm.payoutFrequency}
+										>
+											<SelectTrigger>
+												<SelectValue placeholder="Select frequency" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="weekly">Weekly</SelectItem>
+												<SelectItem value="bi_weekly">Bi-Weekly</SelectItem>
+												<SelectItem value="monthly">Monthly</SelectItem>
+											</SelectContent>
+										</Select>
+									</div>
+								</div>
+							</div>
+							<DialogFooter>
+								<Button
+									onClick={() => {
+										setIsConvertDialogOpen(false);
+										setConvertingAccountId(null);
+									}}
+									variant="outline"
+								>
+									Cancel
+								</Button>
+								<Button
+									className="bg-green-600 hover:bg-green-700"
+									disabled={convertToFunded.isPending}
+									onClick={handleConvertSubmit}
+								>
+									{convertToFunded.isPending && (
+										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									)}
+									Create Funded Account
+								</Button>
+							</DialogFooter>
+						</DialogContent>
+					</Dialog>
 				</TabsContent>
 
 				{/* AI Providers Tab */}
@@ -902,9 +1790,9 @@ export function SettingsContent() {
 			{/* Save Button */}
 			<div className="flex justify-end">
 				<Button
+					className="font-mono text-xs uppercase tracking-wider"
 					disabled={saving}
 					onClick={handleSave}
-					className="font-mono text-xs uppercase tracking-wider"
 				>
 					{saving ? (
 						<Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />

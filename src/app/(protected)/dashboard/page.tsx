@@ -111,45 +111,45 @@ function StatCard({
 	return (
 		<div className="rounded border border-white/5 bg-white/[0.02] p-4 transition-all hover:border-white/10">
 			<div className="flex items-center justify-between">
-				<span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+				<span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 					{title}
 				</span>
 				{Icon && <Icon className="h-3 w-3 text-muted-foreground" />}
 			</div>
 			<div className="mt-2 flex items-center justify-between">
-					<div>
-						<div
-							className={cn(
-							"font-mono font-bold text-xl",
-								trend === "up" && "text-profit",
-								trend === "down" && "text-loss",
-							)}
-						>
-							{value}
-						</div>
-						{subtitle && (
+				<div>
+					<div
+						className={cn(
+							"font-bold font-mono text-xl",
+							trend === "up" && "text-profit",
+							trend === "down" && "text-loss",
+						)}
+					>
+						{value}
+					</div>
+					{subtitle && (
 						<p className="mt-1 font-mono text-[10px] text-muted-foreground">
 							{subtitle}
 						</p>
-						)}
-					</div>
-					{gauge && (
-						<div className="relative flex items-center justify-center">
-							<CircularProgress
-								color={gauge.color}
-								max={gauge.max}
-							size={48}
-							strokeWidth={5}
-								value={gauge.value}
-							/>
-							<div className="absolute inset-0 flex items-center justify-center">
-							<span className="font-mono text-[10px] font-semibold">
-									{Math.round(gauge.value)}%
-								</span>
-							</div>
-						</div>
 					)}
 				</div>
+				{gauge && (
+					<div className="relative flex items-center justify-center">
+						<CircularProgress
+							color={gauge.color}
+							max={gauge.max}
+							size={48}
+							strokeWidth={5}
+							value={gauge.value}
+						/>
+						<div className="absolute inset-0 flex items-center justify-center">
+							<span className="font-mono font-semibold text-[10px]">
+								{Math.round(gauge.value)}%
+							</span>
+						</div>
+					</div>
+				)}
+			</div>
 		</div>
 	);
 }
@@ -165,8 +165,8 @@ function StatsGrid() {
 			<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
 				{[...Array(5)].map((_, i) => (
 					<div
-						key={`skeleton-card-${i.toString()}`}
 						className="rounded border border-white/5 bg-white/[0.02] p-4"
+						key={`skeleton-card-${i.toString()}`}
 					>
 						<Skeleton className="mb-3 h-3 w-16" />
 						<Skeleton className="mb-2 h-6 w-20" />
@@ -239,7 +239,7 @@ function PerformanceSummary() {
 	return (
 		<div className="overflow-hidden rounded border border-white/10 bg-black/50">
 			{/* Terminal header */}
-			<div className="flex items-center justify-between border-b border-white/5 bg-white/[0.02] px-4 py-2">
+			<div className="flex items-center justify-between border-white/5 border-b bg-white/[0.02] px-4 py-2">
 				<div className="flex items-center gap-2">
 					<div className="h-2.5 w-2.5 rounded-full bg-loss/60" />
 					<div className="h-2.5 w-2.5 rounded-full bg-breakeven/60" />
@@ -256,7 +256,7 @@ function PerformanceSummary() {
 				{/* Win/Loss Distribution */}
 				<div>
 					<div className="mb-2 flex items-center justify-between">
-						<span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+						<span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 							Win/Loss Distribution
 						</span>
 						<div className="flex items-center gap-3 font-mono text-[10px]">
@@ -284,32 +284,32 @@ function PerformanceSummary() {
 				{/* Key Metrics */}
 				<div className="grid grid-cols-2 gap-4 pt-2">
 					<div>
-						<div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+						<div className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 							Gross Profit
 						</div>
-						<div className="mt-1 font-mono font-bold text-lg text-profit">
+						<div className="mt-1 font-bold font-mono text-lg text-profit">
 							{formatCurrency(stats.grossProfit)}
 						</div>
 					</div>
 					<div>
-						<div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+						<div className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 							Gross Loss
 						</div>
-						<div className="mt-1 font-mono font-bold text-lg text-loss">
+						<div className="mt-1 font-bold font-mono text-lg text-loss">
 							{formatCurrency(stats.grossLoss)}
 						</div>
 					</div>
 				</div>
 
 				{/* Expectancy */}
-				<div className="border-t border-white/5 pt-3">
+				<div className="border-white/5 border-t pt-3">
 					<div className="flex items-center justify-between">
-						<span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+						<span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 							Expectancy
 						</span>
 						<span
 							className={cn(
-								"font-mono font-bold",
+								"font-bold font-mono",
 								stats.totalTrades > 0
 									? getPnLColorClass(stats.totalPnl / stats.totalTrades)
 									: "text-muted-foreground",
@@ -337,14 +337,14 @@ export default function DashboardPage() {
 			{/* Header */}
 			<div className="flex items-center justify-between">
 				<div>
-					<span className="mb-2 block font-mono text-xs uppercase tracking-wider text-primary">
+					<span className="mb-2 block font-mono text-primary text-xs uppercase tracking-wider">
 						Dashboard
 					</span>
 					<h1 className="font-bold text-3xl tracking-tight">
 						Trading Overview
 					</h1>
 					{selectedAccount && (
-						<p className="mt-1 font-mono text-sm text-muted-foreground">
+						<p className="mt-1 font-mono text-muted-foreground text-sm">
 							{selectedAccount.name}
 							{selectedAccount.broker && (
 								<span className="text-muted-foreground/70">

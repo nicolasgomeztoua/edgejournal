@@ -228,15 +228,19 @@ export default function AIInsightsPage() {
 			{/* Header */}
 			<div className="flex items-center justify-between">
 				<div>
-					<span className="mb-2 block font-mono text-xs uppercase tracking-wider text-primary">
+					<span className="mb-2 block font-mono text-primary text-xs uppercase tracking-wider">
 						Analysis
 					</span>
 					<h1 className="font-bold text-3xl tracking-tight">AI Insights</h1>
-					<p className="mt-1 font-mono text-sm text-muted-foreground">
+					<p className="mt-1 font-mono text-muted-foreground text-sm">
 						Ask questions about your trading performance
 					</p>
 				</div>
-				<Button asChild variant="outline" className="font-mono text-xs uppercase tracking-wider">
+				<Button
+					asChild
+					className="font-mono text-xs uppercase tracking-wider"
+					variant="outline"
+				>
 					<Link href="/settings">
 						<Key className="mr-2 h-3.5 w-3.5" />
 						API Keys
@@ -258,7 +262,12 @@ export default function AIInsightsPage() {
 							</p>
 						</div>
 					</div>
-					<Button asChild size="sm" variant="outline" className="font-mono text-xs uppercase tracking-wider">
+					<Button
+						asChild
+						className="font-mono text-xs uppercase tracking-wider"
+						size="sm"
+						variant="outline"
+					>
 						<Link href="/settings">
 							<Settings className="mr-2 h-3.5 w-3.5" />
 							Settings
@@ -270,7 +279,7 @@ export default function AIInsightsPage() {
 			{/* Terminal Chat Container */}
 			<div className="flex flex-1 flex-col overflow-hidden rounded border border-white/10 bg-black/50">
 				{/* Terminal header */}
-				<div className="flex items-center justify-between border-b border-white/5 bg-white/[0.02] px-4 py-2">
+				<div className="flex items-center justify-between border-white/5 border-b bg-white/[0.02] px-4 py-2">
 					<div className="flex items-center gap-2">
 						<div className="h-2.5 w-2.5 rounded-full bg-loss/60" />
 						<div className="h-2.5 w-2.5 rounded-full bg-breakeven/60" />
@@ -299,10 +308,10 @@ export default function AIInsightsPage() {
 							<div className="flex flex-wrap justify-center gap-2">
 								{EXAMPLE_QUERIES.map((query) => (
 									<button
+										className="rounded border border-white/10 bg-white/[0.02] px-3 py-1.5 font-mono text-[10px] text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
 										key={query}
 										onClick={() => setInput(query)}
 										type="button"
-										className="rounded border border-white/10 bg-white/[0.02] px-3 py-1.5 font-mono text-[10px] text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
 									>
 										{query}
 									</button>
@@ -312,17 +321,14 @@ export default function AIInsightsPage() {
 					) : (
 						<div className="space-y-4">
 							{messages.map((message) => (
-								<div
-									className="flex gap-3"
-									key={message.id}
-								>
+								<div className="flex gap-3" key={message.id}>
 									{/* Command prompt character */}
-									<span className="mt-0.5 font-mono text-sm text-muted-foreground">
+									<span className="mt-0.5 font-mono text-muted-foreground text-sm">
 										{message.role === "user" ? "$" : "→"}
 									</span>
 									<div className="flex-1">
 										{message.role === "assistant" ? (
-											<div className="font-mono text-sm text-muted-foreground">
+											<div className="font-mono text-muted-foreground text-sm">
 												{message.content.split("\n").map((line) => {
 													if (line.startsWith("**") && line.includes(":**")) {
 														const [title] = line.split(":**");
@@ -353,26 +359,28 @@ export default function AIInsightsPage() {
 														);
 													}
 													return line ? (
-														<p key={`text-${line}`}>
-															{line}
-														</p>
+														<p key={`text-${line}`}>{line}</p>
 													) : (
 														<br key={`br-${message.id}-${Math.random()}`} />
 													);
 												})}
 											</div>
 										) : (
-											<p className="font-mono text-sm text-primary">{message.content}</p>
+											<p className="font-mono text-primary text-sm">
+												{message.content}
+											</p>
 										)}
 									</div>
 								</div>
 							))}
 							{isLoading && (
 								<div className="flex gap-3">
-									<span className="mt-0.5 font-mono text-sm text-muted-foreground">→</span>
+									<span className="mt-0.5 font-mono text-muted-foreground text-sm">
+										→
+									</span>
 									<div className="flex items-center gap-2">
 										<Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
-										<span className="font-mono text-sm text-muted-foreground">
+										<span className="font-mono text-muted-foreground text-sm">
 											Analyzing trades<span className="animate-blink">_</span>
 										</span>
 									</div>
@@ -383,7 +391,7 @@ export default function AIInsightsPage() {
 				</ScrollArea>
 
 				{/* Input */}
-				<div className="border-t border-white/5 bg-white/[0.02] p-4">
+				<div className="border-white/5 border-t bg-white/[0.02] p-4">
 					<form
 						className="flex gap-3"
 						onSubmit={(e) => {
@@ -391,19 +399,21 @@ export default function AIInsightsPage() {
 							handleSend();
 						}}
 					>
-						<span className="mt-2 font-mono text-sm text-muted-foreground">$</span>
+						<span className="mt-2 font-mono text-muted-foreground text-sm">
+							$
+						</span>
 						<Input
+							className="flex-1 border-white/10 bg-transparent font-mono text-sm"
 							disabled={isLoading}
 							onChange={(e) => setInput(e.target.value)}
 							placeholder="Enter query..."
 							value={input}
-							className="flex-1 border-white/10 bg-transparent font-mono text-sm"
 						/>
 						<Button
-							disabled={isLoading || !input.trim()}
-							type="submit"
-							size="sm"
 							className="font-mono text-xs uppercase tracking-wider"
+							disabled={isLoading || !input.trim()}
+							size="sm"
+							type="submit"
 						>
 							<Send className="h-3.5 w-3.5" />
 						</Button>

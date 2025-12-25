@@ -49,9 +49,25 @@ export const exitReasonEnum = pgEnum("exit_reason", [
 	"breakeven", // Moved to breakeven and stopped out
 ]);
 export const accountTypeEnum = pgEnum("account_type", [
+	"prop_challenge",
+	"prop_funded",
 	"live",
 	"demo",
-	"paper",
+]);
+export const drawdownTypeEnum = pgEnum("drawdown_type", [
+	"trailing",
+	"static",
+	"eod",
+]);
+export const payoutFrequencyEnum = pgEnum("payout_frequency", [
+	"weekly",
+	"bi_weekly",
+	"monthly",
+]);
+export const challengeStatusEnum = pgEnum("challenge_status", [
+	"active",
+	"passed",
+	"failed",
 ]);
 export const tradingPlatformEnum = pgEnum("trading_platform", [
 	"mt4", // MetaTrader 4
@@ -82,6 +98,30 @@ export const users = createTable(
 		),
 	},
 	(t) => [index("user_clerk_id_idx").on(t.clerkId)],
+);
+
+// ============================================================================
+// ACCOUNT GROUPS TABLE (for copy trading)
+// ============================================================================
+
+export const accountGroups = createTable(
+	"account_group",
+	{
+		id: integer().primaryKey().generatedByDefaultAsIdentity(),
+		userId: integer("user_id")
+			.notNull()
+			.references(() => users.id, { onDelete: "cascade" }),
+		name: text("name").notNull(), // e.g., "Copy Trading Group A"
+		description: text("description"),
+		color: text("color").default("#6366f1"), // For UI distinction
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.$defaultFn(() => new Date()),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+			() => new Date(),
+		),
+	},
+	(t) => [index("account_group_user_id_idx").on(t.userId)],
 );
 
 // ============================================================================
@@ -119,6 +159,34 @@ export const accounts = createTable(
 		notes: text("notes"),
 		color: text("color").default("#6366f1"), // For UI distinction
 
+		// ========== PROP FIRM FIELDS ==========
+		// Drawdown rules
+		maxDrawdown: decimal("max_drawdown", { precision: 10, scale: 2 }), // Max drawdown % (e.g., 6.00 for 6%)
+		drawdownType: drawdownTypeEnum("drawdown_type"), // trailing, static, or eod
+		dailyLossLimit: decimal("daily_loss_limit", { precision: 10, scale: 2 }), // Max daily loss %
+
+		// Challenge rules (for prop_challenge accounts)
+		profitTarget: decimal("profit_target", { precision: 10, scale: 2 }), // Profit target %
+		consistencyRule: decimal("consistency_rule", { precision: 10, scale: 2 }), // Max single day profit as % of target
+		minTradingDays: integer("min_trading_days"), // Minimum required trading days
+		challengeStartDate: timestamp("challenge_start_date", {
+			withTimezone: true,
+		}), // When challenge started
+		challengeEndDate: timestamp("challenge_end_date", { withTimezone: true }), // Challenge deadline
+		challengeStatus: challengeStatusEnum("challenge_status"), // active, passed, failed
+
+		// Funded account rules (for prop_funded accounts)
+		profitSplit: decimal("profit_split", { precision: 10, scale: 2 }), // Profit sharing % (e.g., 80.00 for 80%)
+		payoutFrequency: payoutFrequencyEnum("payout_frequency"), // weekly, bi_weekly, monthly
+
+		// Account linking (funded → challenge) - self-referencing FK
+		linkedAccountId: integer("linked_account_id"),
+
+		// Account groups (for copy trading)
+		groupId: integer("group_id").references(() => accountGroups.id, {
+			onDelete: "set null",
+		}),
+
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.$defaultFn(() => new Date()),
@@ -129,6 +197,8 @@ export const accounts = createTable(
 	(t) => [
 		index("account_user_id_idx").on(t.userId),
 		index("account_is_default_idx").on(t.isDefault),
+		index("account_group_id_idx").on(t.groupId),
+		index("account_linked_account_id_idx").on(t.linkedAccountId),
 	],
 );
 
@@ -173,17 +243,20 @@ export const trades = createTable(
 		// Actual outcome
 		stopLossHit: boolean("stop_loss_hit").default(false),
 		takeProfitHit: boolean("take_profit_hit").default(false),
-		
+
 		// Trailing stop support
 		trailedStopLoss: decimal("trailed_stop_loss", { precision: 20, scale: 8 }), // Final trailed SL (if different from original)
 		wasTrailed: boolean("was_trailed").default(false), // Whether SL was trailed during the trade
-		
+
 		// Exit reason tracking
 		exitReason: exitReasonEnum("exit_reason"), // How the trade was closed
-		
+
 		// Partial exit tracking
 		isPartiallyExited: boolean("is_partially_exited").default(false), // Has partial exits
-		remainingQuantity: decimal("remaining_quantity", { precision: 20, scale: 8 }), // Remaining position after partials
+		remainingQuantity: decimal("remaining_quantity", {
+			precision: 20,
+			scale: 8,
+		}), // Remaining position after partials
 
 		// P&L
 		realizedPnl: decimal("realized_pnl", { precision: 20, scale: 2 }),
@@ -237,10 +310,10 @@ export const tradeExecutions = createTable(
 		quantity: decimal("quantity", { precision: 20, scale: 8 }).notNull(),
 		executedAt: timestamp("executed_at", { withTimezone: true }).notNull(),
 		fees: decimal("fees", { precision: 20, scale: 2 }).default("0"),
-		
+
 		// P&L for this specific execution (for partial exits)
 		realizedPnl: decimal("realized_pnl", { precision: 20, scale: 2 }),
-		
+
 		// Notes for this execution
 		notes: text("notes"),
 
@@ -400,11 +473,23 @@ export const aiMessages = createTable(
 
 export const usersRelations = relations(users, ({ many, one }) => ({
 	accounts: many(accounts),
+	accountGroups: many(accountGroups),
 	trades: many(trades),
 	tags: many(tags),
 	settings: one(userSettings),
 	aiConversations: many(aiConversations),
 }));
+
+export const accountGroupsRelations = relations(
+	accountGroups,
+	({ one, many }) => ({
+		user: one(users, {
+			fields: [accountGroups.userId],
+			references: [users.id],
+		}),
+		accounts: many(accounts),
+	}),
+);
 
 export const accountsRelations = relations(accounts, ({ one, many }) => ({
 	user: one(users, {
@@ -412,6 +497,18 @@ export const accountsRelations = relations(accounts, ({ one, many }) => ({
 		references: [users.id],
 	}),
 	trades: many(trades),
+	group: one(accountGroups, {
+		fields: [accounts.groupId],
+		references: [accountGroups.id],
+	}),
+	linkedAccount: one(accounts, {
+		fields: [accounts.linkedAccountId],
+		references: [accounts.id],
+		relationName: "linkedAccounts",
+	}),
+	linkedFromAccounts: many(accounts, {
+		relationName: "linkedAccounts",
+	}),
 }));
 
 export const tradesRelations = relations(trades, ({ one, many }) => ({
@@ -498,6 +595,8 @@ export const aiMessagesRelations = relations(aiMessages, ({ one }) => ({
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+export type AccountGroup = typeof accountGroups.$inferSelect;
+export type NewAccountGroup = typeof accountGroups.$inferInsert;
 export type Account = typeof accounts.$inferSelect;
 export type NewAccount = typeof accounts.$inferInsert;
 export type Trade = typeof trades.$inferSelect;

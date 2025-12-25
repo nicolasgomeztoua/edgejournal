@@ -23,12 +23,14 @@ export function CTA() {
 					<h2 className="font-bold text-4xl leading-tight tracking-tight sm:text-5xl lg:text-6xl">
 						Ready to find your
 						<br />
-						<span className="text-glow-primary text-primary">trading edge?</span>
+						<span className="text-glow-primary text-primary">
+							trading edge?
+						</span>
 					</h2>
 
 					<p className="mx-auto mt-6 max-w-xl font-mono text-base text-muted-foreground">
-						Join thousands of traders who use EdgeJournal to track, analyze,
-						and improve their trading performance.
+						Join thousands of traders who use EdgeJournal to track, analyze, and
+						improve their trading performance.
 					</p>
 
 					{/* CTA buttons */}
@@ -56,7 +58,9 @@ export function CTA() {
 					<h2 className="font-bold text-4xl leading-tight tracking-tight sm:text-5xl lg:text-6xl">
 						Ready to continue
 						<br />
-						<span className="text-glow-primary text-primary">your journey?</span>
+						<span className="text-glow-primary text-primary">
+							your journey?
+						</span>
 					</h2>
 
 					<p className="mx-auto mt-6 max-w-xl font-mono text-base text-muted-foreground">

@@ -13,12 +13,27 @@ interface Account {
 	id: number;
 	name: string;
 	broker: string | null;
-	accountType: "live" | "demo" | "paper";
+	platform: string | null;
+	accountType: "prop_challenge" | "prop_funded" | "live" | "demo";
 	initialBalance: string | null;
 	currency: string | null;
 	isActive: boolean | null;
 	isDefault: boolean | null;
 	color: string | null;
+	// Prop firm fields
+	maxDrawdown: string | null;
+	drawdownType: "trailing" | "static" | "eod" | null;
+	dailyLossLimit: string | null;
+	profitTarget: string | null;
+	consistencyRule: string | null;
+	minTradingDays: number | null;
+	challengeStartDate: Date | null;
+	challengeEndDate: Date | null;
+	challengeStatus: "active" | "passed" | "failed" | null;
+	profitSplit: string | null;
+	payoutFrequency: "weekly" | "bi_weekly" | "monthly" | null;
+	linkedAccountId: number | null;
+	groupId: number | null;
 }
 
 interface AccountContextType {

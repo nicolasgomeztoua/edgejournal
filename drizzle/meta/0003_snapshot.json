@@ -1,9 +1,102 @@
 {
-	"id": "b0609b17-f195-4630-92a2-6de51ec191d4",
-	"prevId": "57f8cce0-ccfc-48b4-96ee-17972035c75f",
+	"id": "7b64ad74-f837-484c-acb7-4876a3fe4e99",
+	"prevId": "b0609b17-f195-4630-92a2-6de51ec191d4",
 	"version": "7",
 	"dialect": "postgresql",
 	"tables": {
+		"public.account_group": {
+			"name": "account_group",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "integer",
+					"primaryKey": true,
+					"notNull": true,
+					"identity": {
+						"type": "byDefault",
+						"name": "account_group_id_seq",
+						"schema": "public",
+						"increment": "1",
+						"startWith": "1",
+						"minValue": "1",
+						"maxValue": "2147483647",
+						"cache": "1",
+						"cycle": false
+					}
+				},
+				"user_id": {
+					"name": "user_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"name": {
+					"name": "name",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"description": {
+					"name": "description",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"color": {
+					"name": "color",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"default": "'#6366f1'"
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp with time zone",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp with time zone",
+					"primaryKey": false,
+					"notNull": false
+				}
+			},
+			"indexes": {
+				"account_group_user_id_idx": {
+					"name": "account_group_user_id_idx",
+					"columns": [
+						{
+							"expression": "user_id",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": false,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				}
+			},
+			"foreignKeys": {
+				"account_group_user_id_user_id_fk": {
+					"name": "account_group_user_id_user_id_fk",
+					"tableFrom": "account_group",
+					"tableTo": "user",
+					"columnsFrom": ["user_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
 		"public.account": {
 			"name": "account",
 			"schema": "",
@@ -106,6 +199,87 @@
 					"notNull": false,
 					"default": "'#6366f1'"
 				},
+				"max_drawdown": {
+					"name": "max_drawdown",
+					"type": "numeric(10, 2)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"drawdown_type": {
+					"name": "drawdown_type",
+					"type": "drawdown_type",
+					"typeSchema": "public",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"daily_loss_limit": {
+					"name": "daily_loss_limit",
+					"type": "numeric(10, 2)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"profit_target": {
+					"name": "profit_target",
+					"type": "numeric(10, 2)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"consistency_rule": {
+					"name": "consistency_rule",
+					"type": "numeric(10, 2)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"min_trading_days": {
+					"name": "min_trading_days",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"challenge_start_date": {
+					"name": "challenge_start_date",
+					"type": "timestamp with time zone",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"challenge_end_date": {
+					"name": "challenge_end_date",
+					"type": "timestamp with time zone",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"challenge_status": {
+					"name": "challenge_status",
+					"type": "challenge_status",
+					"typeSchema": "public",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"profit_split": {
+					"name": "profit_split",
+					"type": "numeric(10, 2)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"payout_frequency": {
+					"name": "payout_frequency",
+					"type": "payout_frequency",
+					"typeSchema": "public",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"linked_account_id": {
+					"name": "linked_account_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"group_id": {
+					"name": "group_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false
+				},
 				"created_at": {
 					"name": "created_at",
 					"type": "timestamp with time zone",
@@ -149,6 +323,36 @@
 					"concurrently": false,
 					"method": "btree",
 					"with": {}
+				},
+				"account_group_id_idx": {
+					"name": "account_group_id_idx",
+					"columns": [
+						{
+							"expression": "group_id",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": false,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				},
+				"account_linked_account_id_idx": {
+					"name": "account_linked_account_id_idx",
+					"columns": [
+						{
+							"expression": "linked_account_id",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": false,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
 				}
 			},
 			"foreignKeys": {
@@ -159,6 +363,15 @@
 					"columnsFrom": ["user_id"],
 					"columnsTo": ["id"],
 					"onDelete": "cascade",
+					"onUpdate": "no action"
+				},
+				"account_group_id_account_group_id_fk": {
+					"name": "account_group_id_account_group_id_fk",
+					"tableFrom": "account",
+					"tableTo": "account_group",
+					"columnsFrom": ["group_id"],
+					"columnsTo": ["id"],
+					"onDelete": "set null",
 					"onUpdate": "no action"
 				}
 			},
@@ -1239,7 +1452,17 @@
 		"public.account_type": {
 			"name": "account_type",
 			"schema": "public",
-			"values": ["live", "demo", "paper"]
+			"values": ["prop_challenge", "prop_funded", "live", "demo"]
+		},
+		"public.challenge_status": {
+			"name": "challenge_status",
+			"schema": "public",
+			"values": ["active", "passed", "failed"]
+		},
+		"public.drawdown_type": {
+			"name": "drawdown_type",
+			"schema": "public",
+			"values": ["trailing", "static", "eod"]
 		},
 		"public.emotional_state": {
 			"name": "emotional_state",
@@ -1280,6 +1503,11 @@
 			"name": "instrument_type",
 			"schema": "public",
 			"values": ["futures", "forex"]
+		},
+		"public.payout_frequency": {
+			"name": "payout_frequency",
+			"schema": "public",
+			"values": ["weekly", "bi_weekly", "monthly"]
 		},
 		"public.trade_direction": {
 			"name": "trade_direction",
