@@ -16,12 +16,18 @@ export default function ProtectedLayout({
 		<AccountProvider>
 			<SidebarProvider>
 				<AppSidebar />
-				<SidebarInset>
-					<header className="flex h-14 shrink-0 items-center gap-2 border-border/50 border-b px-4">
-						<SidebarTrigger className="-ml-1" />
-						<Separator className="mr-2 h-4" orientation="vertical" />
+				<SidebarInset className="bg-background">
+					<header className="relative flex h-12 shrink-0 items-center gap-2 border-b border-white/5 bg-black/20 px-4">
+						{/* Subtle grid pattern */}
+						<div className="grid-bg pointer-events-none absolute inset-0 opacity-30" />
+						<SidebarTrigger className="relative -ml-1 text-muted-foreground hover:text-foreground" />
+						<Separator className="relative mr-2 h-4 bg-white/10" orientation="vertical" />
 					</header>
-					<main className="flex-1 overflow-auto p-6">{children}</main>
+					<main className="relative flex-1 overflow-auto p-6">
+						{/* Background grid for content area */}
+						<div className="grid-bg pointer-events-none fixed inset-0 opacity-20" />
+						<div className="relative">{children}</div>
+					</main>
 				</SidebarInset>
 			</SidebarProvider>
 		</AccountProvider>

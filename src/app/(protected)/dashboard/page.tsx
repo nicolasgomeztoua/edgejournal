@@ -1,7 +1,6 @@
 "use client";
 
-import { Info, TrendingDown, TrendingUp } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { TrendingDown, TrendingUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAccount } from "@/contexts/account-context";
 import { cn, formatCurrency, getPnLColorClass } from "@/lib/utils";
@@ -14,7 +13,7 @@ function CircularProgress({
 	size = 80,
 	strokeWidth = 8,
 	color = "stroke-primary",
-	bgColor = "stroke-muted",
+	bgColor = "stroke-white/10",
 }: {
 	value: number;
 	max?: number;
@@ -77,13 +76,13 @@ function WinLossBar({
 	const lossPercent = (losses / total) * 100;
 
 	return (
-		<div className="flex h-2 w-full overflow-hidden rounded-full bg-muted">
+		<div className="flex h-2 w-full overflow-hidden rounded bg-white/5">
 			<div
 				className="bg-profit transition-all"
 				style={{ width: `${winPercent}%` }}
 			/>
 			<div
-				className="bg-yellow-500 transition-all"
+				className="bg-breakeven transition-all"
 				style={{ width: `${bePercent}%` }}
 			/>
 			<div
@@ -101,7 +100,6 @@ function StatCard({
 	icon: Icon,
 	gauge,
 	trend,
-	info,
 }: {
 	title: string;
 	value: string | number;
@@ -109,23 +107,20 @@ function StatCard({
 	icon?: React.ComponentType<{ className?: string }>;
 	gauge?: { value: number; max: number; color: string };
 	trend?: "up" | "down" | "neutral";
-	info?: string;
 }) {
 	return (
-		<Card className="relative overflow-hidden">
-			<CardHeader className="flex flex-row items-center justify-between pb-2">
-				<CardTitle className="flex items-center gap-1.5 font-medium text-muted-foreground text-sm">
+		<div className="rounded border border-white/5 bg-white/[0.02] p-4 transition-all hover:border-white/10">
+			<div className="flex items-center justify-between">
+				<span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
 					{title}
-					{info && <Info className="h-3 w-3 text-muted-foreground/50" />}
-				</CardTitle>
-				{Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
-			</CardHeader>
-			<CardContent>
-				<div className="flex items-center justify-between">
+				</span>
+				{Icon && <Icon className="h-3 w-3 text-muted-foreground" />}
+			</div>
+			<div className="mt-2 flex items-center justify-between">
 					<div>
 						<div
 							className={cn(
-								"font-bold text-2xl tabular-nums",
+							"font-mono font-bold text-xl",
 								trend === "up" && "text-profit",
 								trend === "down" && "text-loss",
 							)}
@@ -133,7 +128,9 @@ function StatCard({
 							{value}
 						</div>
 						{subtitle && (
-							<p className="mt-1 text-muted-foreground text-xs">{subtitle}</p>
+						<p className="mt-1 font-mono text-[10px] text-muted-foreground">
+							{subtitle}
+						</p>
 						)}
 					</div>
 					{gauge && (
@@ -141,20 +138,19 @@ function StatCard({
 							<CircularProgress
 								color={gauge.color}
 								max={gauge.max}
-								size={56}
-								strokeWidth={6}
+							size={48}
+							strokeWidth={5}
 								value={gauge.value}
 							/>
 							<div className="absolute inset-0 flex items-center justify-center">
-								<span className="font-semibold text-xs tabular-nums">
+							<span className="font-mono text-[10px] font-semibold">
 									{Math.round(gauge.value)}%
 								</span>
 							</div>
 						</div>
 					)}
 				</div>
-			</CardContent>
-		</Card>
+		</div>
 	);
 }
 
@@ -166,17 +162,16 @@ function StatsGrid() {
 
 	if (isLoading) {
 		return (
-			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+			<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
 				{[...Array(5)].map((_, i) => (
-					<Card key={`skeleton-card-${i.toString()}`}>
-						<CardHeader className="pb-2">
-							<Skeleton className="h-4 w-20" />
-						</CardHeader>
-						<CardContent>
-							<Skeleton className="mb-2 h-8 w-24" />
-							<Skeleton className="h-3 w-16" />
-						</CardContent>
-					</Card>
+					<div
+						key={`skeleton-card-${i.toString()}`}
+						className="rounded border border-white/5 bg-white/[0.02] p-4"
+					>
+						<Skeleton className="mb-3 h-3 w-16" />
+						<Skeleton className="mb-2 h-6 w-20" />
+						<Skeleton className="h-2 w-12" />
+					</div>
 				))}
 			</div>
 		);
@@ -185,7 +180,7 @@ function StatsGrid() {
 	if (!stats) return null;
 
 	return (
-		<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+		<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
 			<StatCard
 				icon={stats.totalPnl >= 0 ? TrendingUp : TrendingDown}
 				subtitle={`${stats.totalTrades} trades`}
@@ -200,12 +195,12 @@ function StatsGrid() {
 					color: stats.winRate >= 50 ? "stroke-profit" : "stroke-loss",
 				}}
 				subtitle={`${stats.wins}W · ${stats.losses}L · ${stats.breakevens}BE`}
-				title="Trade Win %"
+				title="Win Rate"
 				value={`${stats.winRate.toFixed(1)}%`}
 			/>
 			<StatCard
 				gauge={{
-					value: Math.min(stats.profitFactor * 33.33, 100), // Scale: 3.0 = 100%
+					value: Math.min(stats.profitFactor * 33.33, 100),
 					max: 100,
 					color: stats.profitFactor >= 1 ? "stroke-profit" : "stroke-loss",
 				}}
@@ -242,22 +237,35 @@ function PerformanceSummary() {
 	if (!stats || stats.totalTrades === 0) return null;
 
 	return (
-		<Card>
-			<CardHeader>
-				<CardTitle className="text-base">Performance Summary</CardTitle>
-			</CardHeader>
-			<CardContent className="space-y-4">
+		<div className="overflow-hidden rounded border border-white/10 bg-black/50">
+			{/* Terminal header */}
+			<div className="flex items-center justify-between border-b border-white/5 bg-white/[0.02] px-4 py-2">
+				<div className="flex items-center gap-2">
+					<div className="h-2.5 w-2.5 rounded-full bg-loss/60" />
+					<div className="h-2.5 w-2.5 rounded-full bg-breakeven/60" />
+					<div className="h-2.5 w-2.5 rounded-full bg-profit/60" />
+				</div>
+				<span className="font-mono text-[10px] text-muted-foreground">
+					performance-summary
+				</span>
+				<div className="w-14" />
+			</div>
+
+			{/* Content */}
+			<div className="space-y-4 p-4">
 				{/* Win/Loss Distribution */}
 				<div>
-					<div className="mb-2 flex items-center justify-between text-sm">
-						<span className="text-muted-foreground">Win/Loss Distribution</span>
-						<div className="flex items-center gap-3 text-xs">
+					<div className="mb-2 flex items-center justify-between">
+						<span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+							Win/Loss Distribution
+						</span>
+						<div className="flex items-center gap-3 font-mono text-[10px]">
 							<span className="flex items-center gap-1">
 								<div className="h-2 w-2 rounded-full bg-profit" />
 								{stats.wins}W
 							</span>
 							<span className="flex items-center gap-1">
-								<div className="h-2 w-2 rounded-full bg-yellow-500" />
+								<div className="h-2 w-2 rounded-full bg-breakeven" />
 								{stats.breakevens}BE
 							</span>
 							<span className="flex items-center gap-1">
@@ -276,28 +284,32 @@ function PerformanceSummary() {
 				{/* Key Metrics */}
 				<div className="grid grid-cols-2 gap-4 pt-2">
 					<div>
-						<div className="mb-1 text-muted-foreground text-xs">
+						<div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
 							Gross Profit
 						</div>
-						<div className="font-semibold text-lg text-profit">
+						<div className="mt-1 font-mono font-bold text-lg text-profit">
 							{formatCurrency(stats.grossProfit)}
 						</div>
 					</div>
 					<div>
-						<div className="mb-1 text-muted-foreground text-xs">Gross Loss</div>
-						<div className="font-semibold text-lg text-loss">
+						<div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+							Gross Loss
+						</div>
+						<div className="mt-1 font-mono font-bold text-lg text-loss">
 							{formatCurrency(stats.grossLoss)}
 						</div>
 					</div>
 				</div>
 
 				{/* Expectancy */}
-				<div className="border-t pt-2">
+				<div className="border-t border-white/5 pt-3">
 					<div className="flex items-center justify-between">
-						<span className="text-muted-foreground text-sm">Expectancy</span>
+						<span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+							Expectancy
+						</span>
 						<span
 							className={cn(
-								"font-mono font-semibold",
+								"font-mono font-bold",
 								stats.totalTrades > 0
 									? getPnLColorClass(stats.totalPnl / stats.totalTrades)
 									: "text-muted-foreground",
@@ -306,12 +318,14 @@ function PerformanceSummary() {
 							{stats.totalTrades > 0
 								? formatCurrency(stats.totalPnl / stats.totalTrades)
 								: "-"}
-							<span className="ml-1 text-muted-foreground text-xs">/trade</span>
+							<span className="ml-1 font-normal text-muted-foreground text-xs">
+								/trade
+							</span>
 						</span>
 					</div>
 				</div>
-			</CardContent>
-		</Card>
+			</div>
+		</div>
 	);
 }
 
@@ -323,9 +337,14 @@ export default function DashboardPage() {
 			{/* Header */}
 			<div className="flex items-center justify-between">
 				<div>
-					<h1 className="font-bold text-2xl tracking-tight">Dashboard</h1>
+					<span className="mb-2 block font-mono text-xs uppercase tracking-wider text-primary">
+						Dashboard
+					</span>
+					<h1 className="font-bold text-3xl tracking-tight">
+						Trading Overview
+					</h1>
 					{selectedAccount && (
-						<p className="text-muted-foreground text-sm">
+						<p className="mt-1 font-mono text-sm text-muted-foreground">
 							{selectedAccount.name}
 							{selectedAccount.broker && (
 								<span className="text-muted-foreground/70">

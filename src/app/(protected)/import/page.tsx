@@ -392,8 +392,13 @@ export default function ImportPage() {
 					</Link>
 				</Button>
 				<div>
+					<span className="mb-1 block font-mono text-xs uppercase tracking-wider text-primary">
+						Data Import
+					</span>
 					<h1 className="font-bold text-2xl tracking-tight">Import Trades</h1>
-					<p className="text-muted-foreground">Import trades from a CSV file</p>
+					<p className="font-mono text-muted-foreground text-xs">
+						Import trades from a CSV file
+					</p>
 				</div>
 			</div>
 
@@ -407,9 +412,9 @@ export default function ImportPage() {
 						return (
 							<div className="flex items-center gap-2" key={s}>
 								<div
-									className={`flex h-8 w-8 items-center justify-center rounded-full font-medium text-sm ${
+									className={`flex h-8 w-8 items-center justify-center rounded border font-mono text-xs ${
 										step === s
-											? "bg-primary text-primary-foreground"
+											? "border-primary bg-primary text-primary-foreground"
 											: [
 														"select-account",
 														"upload",
@@ -417,8 +422,8 @@ export default function ImportPage() {
 														"preview",
 														"complete",
 													].indexOf(step) > i
-												? "bg-profit text-profit-foreground"
-												: "bg-muted text-muted-foreground"
+												? "border-profit/50 bg-profit/20 text-profit"
+												: "border-white/10 bg-white/[0.02] text-muted-foreground"
 									}`}
 								>
 									{[
@@ -434,8 +439,8 @@ export default function ImportPage() {
 									)}
 								</div>
 								<span
-									className={`hidden text-sm sm:block ${
-										step === s ? "font-medium" : "text-muted-foreground"
+									className={`hidden font-mono text-[10px] uppercase tracking-wider sm:block ${
+										step === s ? "text-foreground" : "text-muted-foreground"
 									}`}
 								>
 									{s === "select-account"
@@ -443,7 +448,7 @@ export default function ImportPage() {
 										: s.charAt(0).toUpperCase() + s.slice(1)}
 								</span>
 								{i < 4 && (
-									<div className="hidden h-px w-8 bg-border sm:block" />
+									<div className="hidden h-px w-8 bg-white/10 sm:block" />
 								)}
 							</div>
 						);
@@ -453,14 +458,25 @@ export default function ImportPage() {
 
 			{/* Step: Select Account */}
 			{step === "select-account" && (
-				<Card>
-					<CardHeader>
-						<CardTitle>Select Account</CardTitle>
-						<CardDescription>
+				<div className="overflow-hidden rounded border border-white/10 bg-black/50">
+					<div className="flex items-center justify-between border-b border-white/5 bg-white/[0.02] px-4 py-2">
+						<div className="flex items-center gap-2">
+							<div className="h-2.5 w-2.5 rounded-full bg-loss/60" />
+							<div className="h-2.5 w-2.5 rounded-full bg-breakeven/60" />
+							<div className="h-2.5 w-2.5 rounded-full bg-profit/60" />
+						</div>
+						<span className="font-mono text-[10px] text-muted-foreground">
+							select-account
+						</span>
+						<div className="w-14" />
+					</div>
+					<div className="border-b border-white/5 px-6 py-4">
+						<h3 className="font-medium">Select Account</h3>
+						<p className="font-mono text-[10px] text-muted-foreground">
 							Choose which trading account to import trades into
-						</CardDescription>
-					</CardHeader>
-					<CardContent className="space-y-6">
+						</p>
+					</div>
+					<div className="space-y-6 p-6">
 						{accounts.length === 0 ? (
 							<Alert>
 								<AlertCircle className="h-4 w-4" />
@@ -524,15 +540,16 @@ export default function ImportPage() {
 									<Button
 										disabled={!selectedImportAccountId}
 										onClick={() => setStep("upload")}
+										className="font-mono text-xs uppercase tracking-wider"
 									>
 										Continue
-										<ArrowRight className="ml-2 h-4 w-4" />
+										<ArrowRight className="ml-2 h-3.5 w-3.5" />
 									</Button>
 								</div>
 							</>
 						)}
-					</CardContent>
-				</Card>
+					</div>
+				</div>
 			)}
 
 			{/* Step: Upload */}
@@ -1034,13 +1051,24 @@ export default function ImportPage() {
 
 			{/* Step: Complete */}
 			{step === "complete" && (
-				<Card>
-					<CardContent className="flex flex-col items-center justify-center py-12">
-						<div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-profit/20">
+				<div className="overflow-hidden rounded border border-white/10 bg-black/50">
+					<div className="flex items-center justify-between border-b border-white/5 bg-white/[0.02] px-4 py-2">
+						<div className="flex items-center gap-2">
+							<div className="h-2.5 w-2.5 rounded-full bg-loss/60" />
+							<div className="h-2.5 w-2.5 rounded-full bg-breakeven/60" />
+							<div className="h-2.5 w-2.5 rounded-full bg-profit/60" />
+						</div>
+						<span className="font-mono text-[10px] text-muted-foreground">
+							import-complete
+						</span>
+						<div className="w-14" />
+					</div>
+					<div className="flex flex-col items-center justify-center py-12">
+						<div className="mb-4 flex h-16 w-16 items-center justify-center rounded border border-profit/30 bg-profit/20">
 							<Check className="h-8 w-8 text-profit" />
 						</div>
 						<h2 className="mb-2 font-semibold text-xl">Import Complete!</h2>
-						<p className="mb-6 text-muted-foreground">
+						<p className="mb-6 font-mono text-muted-foreground text-xs">
 							Successfully imported {importedCount} of {totalRows} trades to{" "}
 							{selectedImportAccount?.name}
 						</p>
@@ -1060,15 +1088,19 @@ export default function ImportPage() {
 									setOrdersFileName("");
 								}}
 								variant="outline"
+								className="font-mono text-xs uppercase tracking-wider"
 							>
 								Import More
 							</Button>
-							<Button onClick={() => router.push("/journal")}>
+							<Button
+								onClick={() => router.push("/journal")}
+								className="font-mono text-xs uppercase tracking-wider"
+							>
 								View Journal
 							</Button>
 						</div>
-					</CardContent>
-				</Card>
+					</div>
+				</div>
 			)}
 		</div>
 	);

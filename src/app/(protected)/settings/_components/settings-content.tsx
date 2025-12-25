@@ -290,51 +290,66 @@ export function SettingsContent() {
 		<div className="mx-auto max-w-3xl space-y-6">
 			{/* Header */}
 			<div>
+				<span className="mb-2 block font-mono text-xs uppercase tracking-wider text-primary">
+					Configuration
+				</span>
 				<h1 className="font-bold text-3xl tracking-tight">Settings</h1>
-				<p className="text-muted-foreground">
+				<p className="mt-1 font-mono text-muted-foreground text-xs">
 					Configure your accounts and AI integrations
 				</p>
 			</div>
 
 			<Tabs onValueChange={setActiveTab} value={activeTab}>
-				<TabsList className="grid w-full grid-cols-3">
-					<TabsTrigger value="general">General</TabsTrigger>
-					<TabsTrigger value="accounts">Trading Accounts</TabsTrigger>
-					<TabsTrigger value="ai">AI Providers</TabsTrigger>
+				<TabsList className="grid w-full grid-cols-3 bg-white/[0.02] border border-white/5">
+					<TabsTrigger
+						value="general"
+						className="font-mono text-xs uppercase tracking-wider data-[state=active]:bg-white/10"
+					>
+						General
+					</TabsTrigger>
+					<TabsTrigger
+						value="accounts"
+						className="font-mono text-xs uppercase tracking-wider data-[state=active]:bg-white/10"
+					>
+						Accounts
+					</TabsTrigger>
+					<TabsTrigger
+						value="ai"
+						className="font-mono text-xs uppercase tracking-wider data-[state=active]:bg-white/10"
+					>
+						AI Providers
+					</TabsTrigger>
 				</TabsList>
 
 				{/* General Tab */}
 				<TabsContent className="space-y-6" value="general">
 					{/* Account Info */}
-					<Card>
-						<CardHeader>
-							<CardTitle className="flex items-center gap-2">
-								<Shield className="h-5 w-5" />
+					<div className="rounded border border-white/10 bg-white/[0.02] p-4">
+						<div className="mb-4 flex items-center gap-2">
+							<Shield className="h-4 w-4 text-muted-foreground" />
+							<span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
 								Profile
-							</CardTitle>
-							<CardDescription>Your account information</CardDescription>
-						</CardHeader>
-						<CardContent className="space-y-4">
-							<div className="flex items-center gap-4">
-								{user?.imageUrl && (
-									// biome-ignore lint/performance/noImgElement: External Clerk avatar URLs
-									<img
-										alt="Profile"
-										className="h-16 w-16 rounded-full"
-										src={user.imageUrl}
-									/>
-								)}
-								<div>
-									<p className="font-medium">
-										{user?.firstName} {user?.lastName}
-									</p>
-									<p className="text-muted-foreground text-sm">
-										{user?.primaryEmailAddress?.emailAddress}
-									</p>
-								</div>
+							</span>
+						</div>
+						<div className="flex items-center gap-4">
+							{user?.imageUrl && (
+								// biome-ignore lint/performance/noImgElement: External Clerk avatar URLs
+								<img
+									alt="Profile"
+									className="h-12 w-12 rounded border border-white/10"
+									src={user.imageUrl}
+								/>
+							)}
+							<div>
+								<p className="font-medium">
+									{user?.firstName} {user?.lastName}
+								</p>
+								<p className="font-mono text-muted-foreground text-xs">
+									{user?.primaryEmailAddress?.emailAddress}
+								</p>
 							</div>
-						</CardContent>
-					</Card>
+						</div>
+					</div>
 
 					{/* Trading Preferences */}
 					<Card>
@@ -462,9 +477,10 @@ export function SettingsContent() {
 										breakevenThreshold: settings.breakevenThreshold,
 									});
 								}}
+								className="font-mono text-xs uppercase tracking-wider"
 							>
 								{updateSettings.isPending && (
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									<Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
 								)}
 								Save Preferences
 							</Button>
@@ -497,8 +513,8 @@ export function SettingsContent() {
 									open={isAccountDialogOpen}
 								>
 									<DialogTrigger asChild>
-										<Button>
-											<Plus className="mr-2 h-4 w-4" />
+										<Button className="font-mono text-xs uppercase tracking-wider">
+											<Plus className="mr-2 h-3.5 w-3.5" />
 											Add Account
 										</Button>
 									</DialogTrigger>
@@ -694,33 +710,35 @@ export function SettingsContent() {
 								<div className="space-y-3">
 									{accounts.map((account) => (
 										<div
-											className="flex items-center justify-between rounded-lg border p-4"
+											className="flex items-center justify-between rounded border border-white/10 bg-white/[0.02] p-4 transition-colors hover:border-white/20"
 											key={account.id}
 										>
 											<div className="flex items-center gap-3">
 												<div
 													className={cn(
-														"h-3 w-3 rounded-full",
+														"h-2.5 w-2.5 rounded-full",
 														ACCOUNT_TYPE_COLORS[account.accountType],
 													)}
 												/>
 												<div>
 													<div className="flex items-center gap-2">
-														<span className="font-medium">{account.name}</span>
+														<span className="font-medium font-mono text-sm">
+															{account.name}
+														</span>
 														{account.isDefault && (
 															<Badge
-																className="gap-1 text-xs"
+																className="gap-1 font-mono text-[10px]"
 																variant="secondary"
 															>
-																<Star className="h-3 w-3" />
+																<Star className="h-2.5 w-2.5" />
 																Default
 															</Badge>
 														)}
-														<Badge className="text-xs" variant="outline">
+														<Badge className="font-mono text-[10px]" variant="outline">
 															{ACCOUNT_TYPE_LABELS[account.accountType]}
 														</Badge>
 													</div>
-													<p className="text-muted-foreground text-sm">
+													<p className="font-mono text-muted-foreground text-xs">
 														{PLATFORM_LABELS[account.platform ?? "other"]}
 														{account.broker && ` • ${account.broker}`} •{" "}
 														{account.initialBalance
@@ -883,11 +901,15 @@ export function SettingsContent() {
 
 			{/* Save Button */}
 			<div className="flex justify-end">
-				<Button disabled={saving} onClick={handleSave}>
+				<Button
+					disabled={saving}
+					onClick={handleSave}
+					className="font-mono text-xs uppercase tracking-wider"
+				>
 					{saving ? (
-						<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+						<Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
 					) : (
-						<Save className="mr-2 h-4 w-4" />
+						<Save className="mr-2 h-3.5 w-3.5" />
 					)}
 					Save Settings
 				</Button>

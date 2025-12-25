@@ -3,13 +3,6 @@
 import { AgCharts } from "ag-charts-react";
 import { BarChart3, PieChart, Target, TrendingUp } from "lucide-react";
 import { useMemo } from "react";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	cn,
@@ -24,17 +17,16 @@ function StatsOverview() {
 
 	if (isLoading) {
 		return (
-			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+			<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
 				{[...Array(4)].map((_, i) => (
-					<Card key={`skeleton-stat-${i.toString()}`}>
-						<CardHeader className="pb-2">
-							<Skeleton className="h-4 w-24" />
-						</CardHeader>
-						<CardContent>
-							<Skeleton className="mb-1 h-8 w-32" />
-							<Skeleton className="h-3 w-20" />
-						</CardContent>
-					</Card>
+					<div
+						key={`skeleton-stat-${i.toString()}`}
+						className="rounded border border-white/5 bg-white/[0.02] p-4"
+					>
+						<Skeleton className="mb-3 h-3 w-16" />
+						<Skeleton className="mb-2 h-6 w-24" />
+						<Skeleton className="h-2 w-14" />
+					</div>
 				))}
 			</div>
 		);
@@ -79,24 +71,25 @@ function StatsOverview() {
 	];
 
 	return (
-		<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+		<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
 			{cards.map((card) => (
-				<Card key={card.title}>
-					<CardHeader className="flex flex-row items-center justify-between pb-2">
-						<CardTitle className="font-medium text-muted-foreground text-sm">
+				<div
+					key={card.title}
+					className="rounded border border-white/5 bg-white/[0.02] p-4 transition-all hover:border-white/10"
+				>
+					<div className="flex items-center justify-between">
+						<span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
 							{card.title}
-						</CardTitle>
-						<card.icon className="h-4 w-4 text-muted-foreground" />
-					</CardHeader>
-					<CardContent>
-						<div
-							className={cn("font-bold font-mono text-2xl", card.colorClass)}
-						>
-							{card.value}
-						</div>
-						<p className="text-muted-foreground text-xs">{card.description}</p>
-					</CardContent>
-				</Card>
+						</span>
+						<card.icon className="h-3 w-3 text-muted-foreground" />
+					</div>
+					<div className={cn("mt-2 font-mono font-bold text-xl", card.colorClass)}>
+						{card.value}
+					</div>
+					<p className="mt-1 font-mono text-[10px] text-muted-foreground">
+						{card.description}
+					</p>
+				</div>
 			))}
 		</div>
 	);
@@ -111,9 +104,9 @@ function WinLossChart() {
 		return {
 			background: { fill: "transparent" },
 			data: [
-				{ category: "Wins", value: stats.wins, color: "#22c55e" },
-				{ category: "Losses", value: stats.losses, color: "#ef4444" },
-				{ category: "Breakeven", value: stats.breakevens, color: "#eab308" },
+				{ category: "Wins", value: stats.wins, color: "#00ff88" },
+				{ category: "Losses", value: stats.losses, color: "#ff3b3b" },
+				{ category: "Breakeven", value: stats.breakevens, color: "#f5a623" },
 			],
 			series: [
 				{
@@ -121,7 +114,7 @@ function WinLossChart() {
 					angleKey: "value",
 					calloutLabelKey: "category",
 					sectorLabelKey: "value",
-					fills: ["#22c55e", "#ef4444", "#eab308"],
+					fills: ["#00ff88", "#ff3b3b", "#f5a623"],
 					innerRadiusRatio: 0.6,
 				},
 			],
@@ -130,6 +123,8 @@ function WinLossChart() {
 				item: {
 					label: {
 						color: "#94a3b8",
+						fontFamily: "JetBrains Mono, monospace",
+						fontSize: 10,
 					},
 				},
 			},
@@ -142,7 +137,7 @@ function WinLossChart() {
 
 	if (!stats || stats.totalTrades === 0) {
 		return (
-			<div className="flex h-[300px] items-center justify-center text-muted-foreground">
+			<div className="flex h-[300px] items-center justify-center font-mono text-xs text-muted-foreground">
 				No trade data available
 			</div>
 		);
@@ -166,7 +161,7 @@ function PnLDistributionChart() {
 			.map((t, i) => ({
 				trade: i + 1,
 				pnl: parseFloat(t.netPnl ?? "0"),
-				color: parseFloat(t.netPnl ?? "0") >= 0 ? "#22c55e" : "#ef4444",
+				color: parseFloat(t.netPnl ?? "0") >= 0 ? "#00ff88" : "#ff3b3b",
 			}));
 
 		return {
@@ -177,10 +172,10 @@ function PnLDistributionChart() {
 					type: "bar" as const,
 					xKey: "trade",
 					yKey: "pnl",
-					fill: "#10b981",
-					cornerRadius: 4,
+					fill: "#00ff88",
+					cornerRadius: 2,
 					formatter: (params: { datum: { pnl: number } }) => ({
-						fill: params.datum.pnl >= 0 ? "#22c55e" : "#ef4444",
+						fill: params.datum.pnl >= 0 ? "#00ff88" : "#ff3b3b",
 					}),
 				},
 			],
@@ -188,18 +183,20 @@ function PnLDistributionChart() {
 				{
 					type: "category" as const,
 					position: "bottom" as const,
-					label: { color: "#94a3b8" },
-					line: { color: "#334155" },
+					label: { color: "#64748b", fontFamily: "JetBrains Mono, monospace", fontSize: 9 },
+					line: { color: "#1e293b" },
 				},
 				{
 					type: "number" as const,
 					position: "left" as const,
 					label: {
-						color: "#94a3b8",
+						color: "#64748b",
+						fontFamily: "JetBrains Mono, monospace",
+						fontSize: 9,
 						formatter: (params: { value: number }) => `$${params.value}`,
 					},
-					line: { color: "#334155" },
-					gridLine: { style: [{ stroke: "#1e293b" }] },
+					line: { color: "#1e293b" },
+					gridLine: { style: [{ stroke: "#ffffff08" }] },
 				},
 			],
 		};
@@ -211,7 +208,7 @@ function PnLDistributionChart() {
 
 	if (!data?.items || data.items.length === 0) {
 		return (
-			<div className="flex h-[300px] items-center justify-center text-muted-foreground">
+			<div className="flex h-[300px] items-center justify-center font-mono text-xs text-muted-foreground">
 				No trade data available
 			</div>
 		);
@@ -251,8 +248,8 @@ function CumulativePnLChart() {
 					type: "area" as const,
 					xKey: "trade",
 					yKey: "pnl",
-					fill: "#10b98133",
-					stroke: "#10b981",
+					fill: "#00ff8820",
+					stroke: "#00ff88",
 					strokeWidth: 2,
 					marker: { enabled: false },
 				},
@@ -261,18 +258,20 @@ function CumulativePnLChart() {
 				{
 					type: "category" as const,
 					position: "bottom" as const,
-					label: { color: "#94a3b8" },
-					line: { color: "#334155" },
+					label: { color: "#64748b", fontFamily: "JetBrains Mono, monospace", fontSize: 9 },
+					line: { color: "#1e293b" },
 				},
 				{
 					type: "number" as const,
 					position: "left" as const,
 					label: {
-						color: "#94a3b8",
+						color: "#64748b",
+						fontFamily: "JetBrains Mono, monospace",
+						fontSize: 9,
 						formatter: (params: { value: number }) => `$${params.value}`,
 					},
-					line: { color: "#334155" },
-					gridLine: { style: [{ stroke: "#1e293b" }] },
+					line: { color: "#1e293b" },
+					gridLine: { style: [{ stroke: "#ffffff08" }] },
 				},
 			],
 		};
@@ -284,7 +283,7 @@ function CumulativePnLChart() {
 
 	if (!data?.items || data.items.length === 0) {
 		return (
-			<div className="flex h-[300px] items-center justify-center text-muted-foreground">
+			<div className="flex h-[300px] items-center justify-center font-mono text-xs text-muted-foreground">
 				No trade data available
 			</div>
 		);
@@ -294,13 +293,55 @@ function CumulativePnLChart() {
 	return <AgCharts options={chartOptions as any} style={{ height: 300 }} />;
 }
 
+// Terminal window wrapper for charts
+function ChartTerminal({
+	title,
+	description,
+	children,
+}: {
+	title: string;
+	description: string;
+	children: React.ReactNode;
+}) {
+	return (
+		<div className="overflow-hidden rounded border border-white/10 bg-black/50">
+			{/* Terminal header */}
+			<div className="flex items-center justify-between border-b border-white/5 bg-white/[0.02] px-4 py-2">
+				<div className="flex items-center gap-2">
+					<div className="h-2.5 w-2.5 rounded-full bg-loss/60" />
+					<div className="h-2.5 w-2.5 rounded-full bg-breakeven/60" />
+					<div className="h-2.5 w-2.5 rounded-full bg-profit/60" />
+				</div>
+				<div className="text-center">
+					<span className="font-mono text-[10px] text-muted-foreground">
+						{title.toLowerCase().replace(/\s+/g, "-")}
+					</span>
+				</div>
+				<div className="w-14" />
+			</div>
+			{/* Chart header */}
+			<div className="border-b border-white/5 px-4 py-3">
+				<h3 className="font-medium text-sm">{title}</h3>
+				<p className="font-mono text-[10px] text-muted-foreground">{description}</p>
+			</div>
+			{/* Chart content */}
+			<div className="p-4">
+				{children}
+			</div>
+		</div>
+	);
+}
+
 export default function AnalyticsPage() {
 	return (
 		<div className="space-y-6">
 			{/* Header */}
 			<div>
+				<span className="mb-2 block font-mono text-xs uppercase tracking-wider text-primary">
+					Performance
+				</span>
 				<h1 className="font-bold text-3xl tracking-tight">Analytics</h1>
-				<p className="text-muted-foreground">
+				<p className="mt-1 font-mono text-sm text-muted-foreground">
 					Visualize your trading performance
 				</p>
 			</div>
@@ -310,37 +351,28 @@ export default function AnalyticsPage() {
 
 			{/* Charts */}
 			<div className="grid gap-6 lg:grid-cols-2">
-				<Card>
-					<CardHeader>
-						<CardTitle>Win/Loss Distribution</CardTitle>
-						<CardDescription>Breakdown of trade outcomes</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<WinLossChart />
-					</CardContent>
-				</Card>
+				<ChartTerminal
+					title="Win/Loss Distribution"
+					description="Breakdown of trade outcomes"
+				>
+					<WinLossChart />
+				</ChartTerminal>
 
-				<Card>
-					<CardHeader>
-						<CardTitle>Cumulative P&L</CardTitle>
-						<CardDescription>Equity curve over time</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<CumulativePnLChart />
-					</CardContent>
-				</Card>
+				<ChartTerminal
+					title="Cumulative P&L"
+					description="Equity curve over time"
+				>
+					<CumulativePnLChart />
+				</ChartTerminal>
 
-				<Card className="lg:col-span-2">
-					<CardHeader>
-						<CardTitle>P&L by Trade</CardTitle>
-						<CardDescription>
-							Individual trade results (last 50)
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
+				<div className="lg:col-span-2">
+					<ChartTerminal
+						title="P&L by Trade"
+						description="Individual trade results (last 50)"
+					>
 						<PnLDistributionChart />
-					</CardContent>
-				</Card>
+					</ChartTerminal>
+				</div>
 			</div>
 		</div>
 	);

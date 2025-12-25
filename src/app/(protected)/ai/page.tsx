@@ -4,7 +4,6 @@ import { Brain, Key, Loader2, Send, Settings, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatCurrency, formatPercent } from "@/lib/utils";
@@ -19,11 +18,11 @@ interface Message {
 
 const EXAMPLE_QUERIES = [
 	"Are my breakevens optimal?",
-	"What's my best trading time of day?",
-	"Which setups have the highest win rate?",
-	"How often do I cut winners early?",
-	"What's my average R:R on winning trades?",
-	"Show me my performance by symbol",
+	"What's my best trading time?",
+	"Which setups win most?",
+	"How often do I cut winners?",
+	"What's my avg R:R?",
+	"Performance by symbol",
 ];
 
 export default function AIInsightsPage() {
@@ -229,67 +228,84 @@ export default function AIInsightsPage() {
 			{/* Header */}
 			<div className="flex items-center justify-between">
 				<div>
+					<span className="mb-2 block font-mono text-xs uppercase tracking-wider text-primary">
+						Analysis
+					</span>
 					<h1 className="font-bold text-3xl tracking-tight">AI Insights</h1>
-					<p className="text-muted-foreground">
+					<p className="mt-1 font-mono text-sm text-muted-foreground">
 						Ask questions about your trading performance
 					</p>
 				</div>
-				<Button asChild variant="outline">
+				<Button asChild variant="outline" className="font-mono text-xs uppercase tracking-wider">
 					<Link href="/settings">
-						<Key className="mr-2 h-4 w-4" />
-						Configure API Keys
+						<Key className="mr-2 h-3.5 w-3.5" />
+						API Keys
 					</Link>
 				</Button>
 			</div>
 
 			{/* API Key Notice */}
 			{hasApiKey === false && (
-				<Card className="border-primary/50 bg-primary/5">
-					<CardContent className="flex items-center justify-between p-4">
-						<div className="flex items-center gap-3">
-							<Sparkles className="h-5 w-5 text-primary" />
-							<div>
-								<p className="font-medium">Using Local Analysis</p>
-								<p className="text-muted-foreground text-sm">
-									Add your AI API key in settings for more advanced insights
-								</p>
-							</div>
+				<div className="flex items-center justify-between rounded border border-primary/30 bg-primary/5 p-4">
+					<div className="flex items-center gap-3">
+						<Sparkles className="h-5 w-5 text-primary" />
+						<div>
+							<p className="font-medium font-mono text-xs uppercase tracking-wider">
+								Using Local Analysis
+							</p>
+							<p className="font-mono text-[10px] text-muted-foreground">
+								Add your AI API key in settings for more advanced insights
+							</p>
 						</div>
-						<Button asChild size="sm" variant="outline">
-							<Link href="/settings">
-								<Settings className="mr-2 h-4 w-4" />
-								Settings
-							</Link>
-						</Button>
-					</CardContent>
-				</Card>
+					</div>
+					<Button asChild size="sm" variant="outline" className="font-mono text-xs uppercase tracking-wider">
+						<Link href="/settings">
+							<Settings className="mr-2 h-3.5 w-3.5" />
+							Settings
+						</Link>
+					</Button>
+				</div>
 			)}
 
-			{/* Chat Area */}
-			<Card className="flex flex-1 flex-col overflow-hidden">
+			{/* Terminal Chat Container */}
+			<div className="flex flex-1 flex-col overflow-hidden rounded border border-white/10 bg-black/50">
+				{/* Terminal header */}
+				<div className="flex items-center justify-between border-b border-white/5 bg-white/[0.02] px-4 py-2">
+					<div className="flex items-center gap-2">
+						<div className="h-2.5 w-2.5 rounded-full bg-loss/60" />
+						<div className="h-2.5 w-2.5 rounded-full bg-breakeven/60" />
+						<div className="h-2.5 w-2.5 rounded-full bg-profit/60" />
+					</div>
+					<span className="font-mono text-[10px] text-muted-foreground">
+						ai-insights-terminal
+					</span>
+					<div className="w-14" />
+				</div>
+
+				{/* Chat Content */}
 				<ScrollArea className="flex-1 p-4" ref={scrollRef}>
 					{messages.length === 0 ? (
 						<div className="flex h-full flex-col items-center justify-center text-center">
-							<div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+							<div className="mb-4 flex h-16 w-16 items-center justify-center rounded border border-white/10 bg-white/[0.02]">
 								<Brain className="h-8 w-8 text-primary" />
 							</div>
 							<h2 className="mb-2 font-semibold text-xl">
-								Ask me anything about your trading
+								Query your trading data
 							</h2>
-							<p className="mb-6 max-w-md text-muted-foreground">
+							<p className="mb-6 max-w-md font-mono text-muted-foreground text-xs">
 								I can analyze your trades and provide insights on win rates,
 								setups, timing, and more.
 							</p>
 							<div className="flex flex-wrap justify-center gap-2">
 								{EXAMPLE_QUERIES.map((query) => (
-									<Button
+									<button
 										key={query}
 										onClick={() => setInput(query)}
-										size="sm"
-										variant="outline"
+										type="button"
+										className="rounded border border-white/10 bg-white/[0.02] px-3 py-1.5 font-mono text-[10px] text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
 									>
 										{query}
-									</Button>
+									</button>
 								))}
 							</div>
 						</div>
@@ -297,26 +313,22 @@ export default function AIInsightsPage() {
 						<div className="space-y-4">
 							{messages.map((message) => (
 								<div
-									className={`flex ${
-										message.role === "user" ? "justify-end" : "justify-start"
-									}`}
+									className="flex gap-3"
 									key={message.id}
 								>
-									<div
-										className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-											message.role === "user"
-												? "rounded-br-sm bg-primary text-primary-foreground"
-												: "rounded-bl-sm bg-secondary"
-										}`}
-									>
+									{/* Command prompt character */}
+									<span className="mt-0.5 font-mono text-sm text-muted-foreground">
+										{message.role === "user" ? "$" : "→"}
+									</span>
+									<div className="flex-1">
 										{message.role === "assistant" ? (
-											<div className="prose prose-sm prose-invert max-w-none">
+											<div className="font-mono text-sm text-muted-foreground">
 												{message.content.split("\n").map((line) => {
 													if (line.startsWith("**") && line.includes(":**")) {
 														const [title] = line.split(":**");
 														return (
 															<p
-																className="mt-3 font-semibold first:mt-0"
+																className="mt-3 font-semibold text-foreground first:mt-0"
 																key={`heading-${line}`}
 															>
 																{title?.replace(/\*\*/g, "") ?? ""}:
@@ -325,7 +337,7 @@ export default function AIInsightsPage() {
 													}
 													if (line.startsWith("- **")) {
 														return (
-															<p className="ml-2 text-sm" key={`bold-${line}`}>
+															<p className="ml-2" key={`bold-${line}`}>
 																{line.replace(/\*\*/g, "")}
 															</p>
 														);
@@ -333,7 +345,7 @@ export default function AIInsightsPage() {
 													if (line.startsWith("- ")) {
 														return (
 															<p
-																className="ml-4 text-muted-foreground text-sm"
+																className="ml-4 text-muted-foreground"
 																key={`bullet-${line}`}
 															>
 																{line}
@@ -341,7 +353,7 @@ export default function AIInsightsPage() {
 														);
 													}
 													return line ? (
-														<p className="text-sm" key={`text-${line}`}>
+														<p key={`text-${line}`}>
 															{line}
 														</p>
 													) : (
@@ -350,16 +362,19 @@ export default function AIInsightsPage() {
 												})}
 											</div>
 										) : (
-											<p>{message.content}</p>
+											<p className="font-mono text-sm text-primary">{message.content}</p>
 										)}
 									</div>
 								</div>
 							))}
 							{isLoading && (
-								<div className="flex justify-start">
-									<div className="flex items-center gap-2 rounded-2xl rounded-bl-sm bg-secondary px-4 py-3">
-										<Loader2 className="h-4 w-4 animate-spin" />
-										<span className="text-sm">Analyzing your trades...</span>
+								<div className="flex gap-3">
+									<span className="mt-0.5 font-mono text-sm text-muted-foreground">→</span>
+									<div className="flex items-center gap-2">
+										<Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+										<span className="font-mono text-sm text-muted-foreground">
+											Analyzing trades<span className="animate-blink">_</span>
+										</span>
 									</div>
 								</div>
 							)}
@@ -368,26 +383,33 @@ export default function AIInsightsPage() {
 				</ScrollArea>
 
 				{/* Input */}
-				<div className="border-t p-4">
+				<div className="border-t border-white/5 bg-white/[0.02] p-4">
 					<form
-						className="flex gap-2"
+						className="flex gap-3"
 						onSubmit={(e) => {
 							e.preventDefault();
 							handleSend();
 						}}
 					>
+						<span className="mt-2 font-mono text-sm text-muted-foreground">$</span>
 						<Input
 							disabled={isLoading}
 							onChange={(e) => setInput(e.target.value)}
-							placeholder="Ask about your trading performance..."
+							placeholder="Enter query..."
 							value={input}
+							className="flex-1 border-white/10 bg-transparent font-mono text-sm"
 						/>
-						<Button disabled={isLoading || !input.trim()} type="submit">
-							<Send className="h-4 w-4" />
+						<Button
+							disabled={isLoading || !input.trim()}
+							type="submit"
+							size="sm"
+							className="font-mono text-xs uppercase tracking-wider"
+						>
+							<Send className="h-3.5 w-3.5" />
 						</Button>
 					</form>
 				</div>
-			</Card>
+			</div>
 		</div>
 	);
 }

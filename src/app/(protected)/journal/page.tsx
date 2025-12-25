@@ -231,28 +231,39 @@ export default function JournalPage() {
 			{/* Header */}
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 				<div>
+					<span className="mb-2 block font-mono text-xs uppercase tracking-wider text-primary">
+						Trading Journal
+					</span>
 					<h1 className="font-bold text-3xl tracking-tight">Trades</h1>
-					<p className="text-muted-foreground">
+					<p className="mt-1 font-mono text-sm text-muted-foreground">
 						{selectedAccount ? (
 							<>
-								Trades for{" "}
-								<span className="font-medium">{selectedAccount.name}</span>
+								Viewing{" "}
+								<span className="text-foreground">{selectedAccount.name}</span>
 							</>
 						) : (
-							"View and manage all your trades"
+							"All accounts"
 						)}
 					</p>
 				</div>
 			</div>
 
 			<Tabs onValueChange={(v) => setTab(v as "trades" | "trash")} value={tab}>
-				<TabsList>
-					<TabsTrigger value="trades">All Trades</TabsTrigger>
-					<TabsTrigger className="gap-2" value="trash">
-						<Trash2 className="h-4 w-4" />
+				<TabsList className="bg-white/[0.02] border border-white/5">
+					<TabsTrigger
+						value="trades"
+						className="font-mono text-xs uppercase tracking-wider data-[state=active]:bg-white/10"
+					>
+						All Trades
+					</TabsTrigger>
+					<TabsTrigger
+						value="trash"
+						className="gap-2 font-mono text-xs uppercase tracking-wider data-[state=active]:bg-white/10"
+					>
+						<Trash2 className="h-3.5 w-3.5" />
 						Trash
 						{deletedTrades && deletedTrades.length > 0 && (
-							<Badge className="ml-1 h-5 px-1.5" variant="secondary">
+							<Badge className="ml-1 h-4 px-1 font-mono text-[10px]" variant="secondary">
 								{deletedTrades.length}
 							</Badge>
 						)}
@@ -266,7 +277,7 @@ export default function JournalPage() {
 						<div className="relative min-w-[200px] flex-1">
 							<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
 							<Input
-								className="pl-9"
+								className="pl-9 font-mono text-xs"
 								onChange={(e) => setSearch(e.target.value)}
 								placeholder="Search symbol, setup, notes..."
 								value={search}
@@ -280,13 +291,13 @@ export default function JournalPage() {
 							}
 							value={statusFilter}
 						>
-							<SelectTrigger className="w-[120px]">
+							<SelectTrigger className="w-[120px] font-mono text-xs">
 								<SelectValue placeholder="Status" />
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value="all">All Status</SelectItem>
-								<SelectItem value="open">Open</SelectItem>
-								<SelectItem value="closed">Closed</SelectItem>
+								<SelectItem value="all" className="font-mono text-xs">All Status</SelectItem>
+								<SelectItem value="open" className="font-mono text-xs">Open</SelectItem>
+								<SelectItem value="closed" className="font-mono text-xs">Closed</SelectItem>
 							</SelectContent>
 						</Select>
 
@@ -297,19 +308,19 @@ export default function JournalPage() {
 							}
 							value={directionFilter}
 						>
-							<SelectTrigger className="w-[120px]">
+							<SelectTrigger className="w-[120px] font-mono text-xs">
 								<SelectValue placeholder="Direction" />
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value="all">All</SelectItem>
-								<SelectItem value="long">Long</SelectItem>
-								<SelectItem value="short">Short</SelectItem>
+								<SelectItem value="all" className="font-mono text-xs">All</SelectItem>
+								<SelectItem value="long" className="font-mono text-xs">Long</SelectItem>
+								<SelectItem value="short" className="font-mono text-xs">Short</SelectItem>
 							</SelectContent>
 						</Select>
 
 						{/* Symbol Filter */}
 						<Input
-							className="w-[100px]"
+							className="w-[100px] font-mono text-xs"
 							onChange={(e) => setSymbolFilter(e.target.value.toUpperCase())}
 							placeholder="Symbol"
 							value={symbolFilter}
@@ -317,7 +328,12 @@ export default function JournalPage() {
 
 						{/* Clear Filters */}
 						{hasActiveFilters && (
-							<Button onClick={clearFilters} size="sm" variant="ghost">
+							<Button
+								onClick={clearFilters}
+								size="sm"
+								variant="ghost"
+								className="font-mono text-xs uppercase tracking-wider"
+							>
 								<X className="mr-1 h-3.5 w-3.5" />
 								Clear
 							</Button>
@@ -327,7 +343,7 @@ export default function JournalPage() {
 					{/* Bulk Actions */}
 					{selectedTrades.size > 0 && (
 						<div className="flex items-center gap-3 rounded border border-white/10 bg-white/[0.02] px-4 py-3">
-							<span className="text-muted-foreground text-sm">
+							<span className="font-mono text-xs text-muted-foreground">
 								{selectedTrades.size} selected
 							</span>
 							<Button
@@ -335,6 +351,7 @@ export default function JournalPage() {
 								onClick={handleBulkDelete}
 								size="sm"
 								variant="destructive"
+								className="font-mono text-xs uppercase tracking-wider"
 							>
 								<Trash2 className="mr-2 h-3.5 w-3.5" />
 								Delete
@@ -343,6 +360,7 @@ export default function JournalPage() {
 								onClick={() => setSelectedTrades(new Set())}
 								size="sm"
 								variant="ghost"
+								className="font-mono text-xs uppercase tracking-wider"
 							>
 								Cancel
 							</Button>
@@ -350,7 +368,7 @@ export default function JournalPage() {
 					)}
 
 					{/* Trades Table */}
-					<div className="rounded border border-white/5">
+					<div className="overflow-hidden rounded border border-white/5 bg-white/[0.01]">
 						{isLoading ? (
 							<div className="space-y-3 p-6">
 								{[...Array(5)].map((_, i) => (
@@ -362,16 +380,21 @@ export default function JournalPage() {
 							</div>
 						) : allTrades.length === 0 ? (
 							<div className="flex flex-col items-center justify-center py-16 text-center">
-								<Plus className="mb-4 h-10 w-10 text-muted-foreground/50" />
+								<div className="mb-4 flex h-16 w-16 items-center justify-center rounded border border-white/10 bg-white/[0.02]">
+									<Plus className="h-6 w-6 text-muted-foreground/50" />
+								</div>
 								<h3 className="mb-1 font-medium">No trades found</h3>
-								<p className="mb-4 text-muted-foreground text-sm">
+								<p className="mb-4 font-mono text-muted-foreground text-xs">
 									{hasActiveFilters
 										? "Try adjusting your filters"
 										: "Start logging your trades to build your journal"}
 								</p>
 								{!hasActiveFilters && (
-									<Button asChild size="sm">
-										<Link href="/trade/new">Add Your First Trade</Link>
+									<Button asChild size="sm" className="font-mono text-xs uppercase tracking-wider">
+										<Link href="/trade/new">
+											<Plus className="mr-2 h-3.5 w-3.5" />
+											Add Your First Trade
+										</Link>
 									</Button>
 								)}
 							</div>
@@ -379,7 +402,7 @@ export default function JournalPage() {
 							<>
 								<Table>
 									<TableHeader>
-										<TableRow>
+										<TableRow className="border-white/5 hover:bg-transparent">
 											<TableHead className="w-[40px]">
 												<Checkbox
 													checked={
@@ -389,22 +412,22 @@ export default function JournalPage() {
 													onCheckedChange={handleSelectAll}
 												/>
 											</TableHead>
-											<TableHead>Symbol</TableHead>
-											<TableHead>Side</TableHead>
-											<TableHead>Entry</TableHead>
-											<TableHead>Exit</TableHead>
-											<TableHead>Size</TableHead>
-											<TableHead>P&L</TableHead>
-											<TableHead>Result</TableHead>
-											<TableHead className="w-[50px]"></TableHead>
+											<TableHead className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Symbol</TableHead>
+											<TableHead className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Side</TableHead>
+											<TableHead className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Entry</TableHead>
+											<TableHead className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Exit</TableHead>
+											<TableHead className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Size</TableHead>
+											<TableHead className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">P&L</TableHead>
+											<TableHead className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Result</TableHead>
+											<TableHead className="w-[50px]" />
 										</TableRow>
 									</TableHeader>
 									<TableBody>
 										{allTrades.map((trade) => (
 											<TableRow
 												className={cn(
-													"cursor-pointer hover:bg-muted/50",
-													selectedTrades.has(trade.id) && "bg-muted/30",
+													"cursor-pointer border-white/5 transition-colors hover:bg-white/[0.02]",
+													selectedTrades.has(trade.id) && "bg-white/[0.04]",
 												)}
 												key={trade.id}
 											>
@@ -416,7 +439,7 @@ export default function JournalPage() {
 														}
 													/>
 												</TableCell>
-												<TableCell className="font-mono font-semibold">
+												<TableCell className="font-mono font-bold">
 													<Link href={`/journal/${trade.id}`}>
 														{trade.symbol}
 													</Link>
@@ -425,7 +448,7 @@ export default function JournalPage() {
 													<Link href={`/journal/${trade.id}`}>
 														<span
 															className={cn(
-																"font-medium text-sm",
+																"font-mono text-xs uppercase",
 																trade.direction === "long"
 																	? "text-profit"
 																	: "text-loss",
@@ -440,7 +463,7 @@ export default function JournalPage() {
 														<div className="font-mono text-sm">
 															{parseFloat(trade.entryPrice).toFixed(2)}
 														</div>
-														<div className="text-muted-foreground text-xs">
+														<div className="font-mono text-[10px] text-muted-foreground">
 															{formatDateTime(trade.entryTime)}
 														</div>
 													</Link>
@@ -452,16 +475,16 @@ export default function JournalPage() {
 																<div className="font-mono text-sm">
 																	{parseFloat(trade.exitPrice).toFixed(2)}
 																</div>
-																<div className="text-muted-foreground text-xs">
+																<div className="font-mono text-[10px] text-muted-foreground">
 																	{formatDateTime(trade.exitTime)}
 																</div>
 															</>
 														) : (
-															<span className="text-muted-foreground">-</span>
+															<span className="font-mono text-muted-foreground text-xs">—</span>
 														)}
 													</Link>
 												</TableCell>
-												<TableCell className="font-mono">
+												<TableCell className="font-mono text-sm">
 													<Link href={`/journal/${trade.id}`}>
 														{parseFloat(trade.quantity).toFixed(2)}
 													</Link>
@@ -470,7 +493,7 @@ export default function JournalPage() {
 													<Link href={`/journal/${trade.id}`}>
 														<span
 															className={cn(
-																"font-mono font-semibold",
+																"font-mono font-bold",
 																trade.netPnl
 																	? getPnLColorClass(trade.netPnl)
 																	: "text-muted-foreground",
@@ -478,28 +501,28 @@ export default function JournalPage() {
 														>
 															{trade.netPnl
 																? formatCurrency(parseFloat(trade.netPnl))
-																: "-"}
+																: "—"}
 														</span>
 													</Link>
 												</TableCell>
 												<TableCell>
 													<Link href={`/journal/${trade.id}`}>
 														{trade.status === "open" ? (
-															<span className="text-muted-foreground text-sm">
+															<span className="font-mono text-xs text-muted-foreground">
 																Open
 															</span>
 														) : trade.exitReason === "take_profit" ||
 															trade.takeProfitHit ? (
-															<span className="text-profit text-sm">TP</span>
+															<span className="font-mono text-xs text-profit">TP</span>
 														) : trade.exitReason === "stop_loss" ||
 															trade.stopLossHit ? (
-															<span className="text-loss text-sm">SL</span>
+															<span className="font-mono text-xs text-loss">SL</span>
 														) : trade.exitReason === "trailing_stop" ? (
-															<span className="text-accent text-sm">Trail</span>
+															<span className="font-mono text-xs text-accent">Trail</span>
 														) : trade.exitReason === "breakeven" ? (
-															<span className="text-breakeven text-sm">BE</span>
+															<span className="font-mono text-xs text-breakeven">BE</span>
 														) : (
-															<span className="text-muted-foreground text-sm">
+															<span className="font-mono text-xs text-muted-foreground">
 																Manual
 															</span>
 														)}
@@ -517,14 +540,14 @@ export default function JournalPage() {
 															</Button>
 														</DropdownMenuTrigger>
 														<DropdownMenuContent align="end">
-															<DropdownMenuItem asChild>
+															<DropdownMenuItem asChild className="font-mono text-xs">
 																<Link href={`/journal/${trade.id}`}>
 																	View Details
 																</Link>
 															</DropdownMenuItem>
 															<DropdownMenuSeparator />
 															<DropdownMenuItem
-																className="text-destructive focus:text-destructive"
+																className="font-mono text-xs text-destructive focus:text-destructive"
 																onClick={() => {
 																	setTradeToDelete(trade.id);
 																	setDeleteDialogOpen(true);
@@ -542,12 +565,13 @@ export default function JournalPage() {
 								</Table>
 
 								{hasNextPage && (
-									<div className="flex justify-center border-white/5 border-t p-4">
+									<div className="flex justify-center border-t border-white/5 p-4">
 										<Button
 											disabled={isFetchingNextPage}
 											onClick={() => fetchNextPage()}
 											size="sm"
 											variant="outline"
+											className="font-mono text-xs uppercase tracking-wider"
 										>
 											{isFetchingNextPage ? "Loading..." : "Load More"}
 										</Button>
@@ -560,7 +584,7 @@ export default function JournalPage() {
 
 				<TabsContent className="space-y-4" value="trash">
 					<div className="flex items-center justify-between">
-						<p className="text-muted-foreground text-sm">
+						<p className="font-mono text-muted-foreground text-xs">
 							Trades in trash can be restored or permanently deleted.
 						</p>
 						{deletedTrades && deletedTrades.length > 0 && (
@@ -569,6 +593,7 @@ export default function JournalPage() {
 								onClick={() => setEmptyTrashDialogOpen(true)}
 								size="sm"
 								variant="destructive"
+								className="font-mono text-xs uppercase tracking-wider"
 							>
 								{emptyTrash.isPending ? (
 									<>
@@ -584,7 +609,7 @@ export default function JournalPage() {
 							</Button>
 						)}
 					</div>
-					<div className="rounded border border-white/5">
+					<div className="overflow-hidden rounded border border-white/5 bg-white/[0.01]">
 						{loadingDeleted ? (
 							<div className="space-y-3 p-6">
 								{[...Array(3)].map((_, i) => (
@@ -596,34 +621,36 @@ export default function JournalPage() {
 							</div>
 						) : !deletedTrades || deletedTrades.length === 0 ? (
 							<div className="flex flex-col items-center justify-center py-12 text-center">
-								<Trash2 className="mb-3 h-10 w-10 text-muted-foreground/30" />
+								<div className="mb-3 flex h-12 w-12 items-center justify-center rounded border border-white/10 bg-white/[0.02]">
+									<Trash2 className="h-5 w-5 text-muted-foreground/30" />
+								</div>
 								<h3 className="mb-1 font-medium">Trash is empty</h3>
-								<p className="text-muted-foreground text-sm">
+								<p className="font-mono text-muted-foreground text-xs">
 									Deleted trades will appear here
 								</p>
 							</div>
 						) : (
 							<Table>
 								<TableHeader>
-									<TableRow>
-										<TableHead>Symbol</TableHead>
-										<TableHead>Direction</TableHead>
-										<TableHead>Entry</TableHead>
-										<TableHead>P&L</TableHead>
-										<TableHead>Deleted</TableHead>
-										<TableHead className="w-[100px]">Actions</TableHead>
+									<TableRow className="border-white/5 hover:bg-transparent">
+										<TableHead className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Symbol</TableHead>
+										<TableHead className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Direction</TableHead>
+										<TableHead className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Entry</TableHead>
+										<TableHead className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">P&L</TableHead>
+										<TableHead className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Deleted</TableHead>
+										<TableHead className="w-[100px] font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Actions</TableHead>
 									</TableRow>
 								</TableHeader>
 								<TableBody>
 									{deletedTrades.map((trade) => (
-										<TableRow key={trade.id}>
-											<TableCell className="font-mono font-semibold">
+										<TableRow key={trade.id} className="border-white/5 hover:bg-white/[0.02]">
+											<TableCell className="font-mono font-bold">
 												{trade.symbol}
 											</TableCell>
 											<TableCell>
 												<span
 													className={cn(
-														"font-medium text-sm",
+														"font-mono text-xs uppercase",
 														trade.direction === "long"
 															? "text-profit"
 															: "text-loss",
@@ -636,14 +663,14 @@ export default function JournalPage() {
 												<div className="font-mono text-sm">
 													{parseFloat(trade.entryPrice).toFixed(2)}
 												</div>
-												<div className="text-muted-foreground text-xs">
+												<div className="font-mono text-[10px] text-muted-foreground">
 													{formatDateTime(trade.entryTime)}
 												</div>
 											</TableCell>
 											<TableCell>
 												<span
 													className={cn(
-														"font-mono font-semibold",
+														"font-mono font-bold",
 														trade.netPnl
 															? getPnLColorClass(trade.netPnl)
 															: "text-muted-foreground",
@@ -651,13 +678,13 @@ export default function JournalPage() {
 												>
 													{trade.netPnl
 														? formatCurrency(parseFloat(trade.netPnl))
-														: "-"}
+														: "—"}
 												</span>
 											</TableCell>
-											<TableCell className="text-muted-foreground text-sm">
+											<TableCell className="font-mono text-muted-foreground text-xs">
 												{trade.deletedAt
 													? formatDateTime(trade.deletedAt)
-													: "-"}
+													: "—"}
 											</TableCell>
 											<TableCell>
 												<div className="flex items-center gap-1">
@@ -704,18 +731,22 @@ export default function JournalPage() {
 
 			{/* Delete Confirmation Dialog */}
 			<AlertDialog onOpenChange={setDeleteDialogOpen} open={deleteDialogOpen}>
-				<AlertDialogContent>
+				<AlertDialogContent className="border-white/10 bg-background">
 					<AlertDialogHeader>
-						<AlertDialogTitle>Delete Trade</AlertDialogTitle>
-						<AlertDialogDescription>
+						<AlertDialogTitle className="font-mono uppercase tracking-wider">
+							Delete Trade
+						</AlertDialogTitle>
+						<AlertDialogDescription className="font-mono text-xs">
 							This will move the trade to trash. You can restore it later if
 							needed.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogCancel className="font-mono text-xs uppercase tracking-wider">
+							Cancel
+						</AlertDialogCancel>
 						<AlertDialogAction
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+							className="bg-destructive font-mono text-xs uppercase tracking-wider text-destructive-foreground hover:bg-destructive/90"
 							onClick={handleDeleteTrade}
 						>
 							Delete
@@ -729,18 +760,22 @@ export default function JournalPage() {
 				onOpenChange={setEmptyTrashDialogOpen}
 				open={emptyTrashDialogOpen}
 			>
-				<AlertDialogContent>
+				<AlertDialogContent className="border-white/10 bg-background">
 					<AlertDialogHeader>
-						<AlertDialogTitle>Empty Trash</AlertDialogTitle>
-						<AlertDialogDescription>
+						<AlertDialogTitle className="font-mono uppercase tracking-wider">
+							Empty Trash
+						</AlertDialogTitle>
+						<AlertDialogDescription className="font-mono text-xs">
 							This will permanently delete {deletedTrades?.length ?? 0}{" "}
 							trade(s). This action cannot be undone.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogCancel className="font-mono text-xs uppercase tracking-wider">
+							Cancel
+						</AlertDialogCancel>
 						<AlertDialogAction
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+							className="bg-destructive font-mono text-xs uppercase tracking-wider text-destructive-foreground hover:bg-destructive/90"
 							onClick={() => {
 								emptyTrash.mutate({
 									accountId: selectedAccountId ?? undefined,
