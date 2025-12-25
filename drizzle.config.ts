@@ -8,5 +8,5 @@ export default {
 	dbCredentials: {
 		url: env.DATABASE_URL,
 	},
-	tablesFilter: ["edgejournal_*"],
+	tablesFilter: ["*"],
 } satisfies Config;

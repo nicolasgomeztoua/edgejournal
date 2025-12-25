@@ -11,11 +11,7 @@ import {
 	timestamp,
 } from "drizzle-orm/pg-core";
 
-/**
- * Multi-project schema prefix
- * @see https://orm.drizzle.team/docs/goodies#multi-project-schema
- */
-export const createTable = pgTableCreator((name) => `edgejournal_${name}`);
+export const createTable = pgTableCreator((name) => name);
 
 // ============================================================================
 // ENUMS

@@ -15,6 +15,13 @@
       "when": 1765979725895,
       "tag": "0001_add_trailing_partial_support",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1766671049029,
+      "tag": "0002_silent_red_hulk",
+      "breakpoints": true
     }
   ]
 }
