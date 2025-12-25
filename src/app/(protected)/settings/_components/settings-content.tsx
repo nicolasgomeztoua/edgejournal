@@ -463,7 +463,9 @@ export function SettingsContent() {
 			challengeEndDate: accountForm.challengeEndDate || undefined,
 			profitSplit: accountForm.profitSplit || undefined,
 			payoutFrequency: accountForm.payoutFrequency || undefined,
-			groupId: accountForm.groupId ? parseInt(accountForm.groupId, 10) : undefined,
+			groupId: accountForm.groupId
+				? parseInt(accountForm.groupId, 10)
+				: undefined,
 		};
 
 		if (editingAccount) {
@@ -1229,14 +1231,14 @@ export function SettingsContent() {
 																</div>
 															</div>
 															<div className="grid gap-4 sm:grid-cols-2">
-<div className="space-y-2">
-																<Label>
-																	Start Date{" "}
-																	<span className="font-normal text-muted-foreground">
-																		(optional)
-																	</span>
-																</Label>
-																<Input
+																<div className="space-y-2">
+																	<Label>
+																		Start Date{" "}
+																		<span className="font-normal text-muted-foreground">
+																			(optional)
+																		</span>
+																	</Label>
+																	<Input
 																		onChange={(e) =>
 																			setAccountForm({
 																				...accountForm,
@@ -1247,14 +1249,14 @@ export function SettingsContent() {
 																		value={accountForm.challengeStartDate}
 																	/>
 																</div>
-<div className="space-y-2">
-																<Label>
-																	End Date{" "}
-																	<span className="font-normal text-muted-foreground">
-																		(optional)
-																	</span>
-																</Label>
-																<Input
+																<div className="space-y-2">
+																	<Label>
+																		End Date{" "}
+																		<span className="font-normal text-muted-foreground">
+																			(optional)
+																		</span>
+																	</Label>
+																	<Input
 																		onChange={(e) =>
 																			setAccountForm({
 																				...accountForm,

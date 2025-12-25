@@ -58,10 +58,10 @@ const features = [
 		className: "md:col-span-1",
 		visual: (
 			<div className="mt-6 flex h-24 items-end justify-between gap-1">
-				{[35, 55, 42, 78, 65, 88, 72, 95, 82, 68].map((h, i) => (
+				{[35, 55, 42, 78, 65, 88, 72, 95, 82, 68].map((h) => (
 					<div
 						className="flex-1 rounded-t bg-gradient-to-t from-primary/60 to-primary/20"
-						key={`bar-${i}`}
+						key={`bar-${h}`}
 						style={{ height: `${h}%` }}
 					/>
 				))}

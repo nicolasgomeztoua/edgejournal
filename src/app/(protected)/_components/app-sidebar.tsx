@@ -102,8 +102,8 @@ export function AppSidebar() {
 	);
 
 	return (
-		<Sidebar className="border-r border-white/5">
-			<SidebarHeader className="border-b border-white/5 bg-black/20">
+		<Sidebar className="border-white/5 border-r">
+			<SidebarHeader className="border-white/5 border-b bg-black/20">
 				{/* Logo */}
 				<Link className="flex items-center gap-3 px-2 py-3" href="/dashboard">
 					<svg
@@ -136,7 +136,7 @@ export function AppSidebar() {
 							{isLoading ? (
 								<div className="flex items-center gap-2">
 									<div className="h-2 w-2 animate-pulse rounded-full bg-muted-foreground/50" />
-									<span className="uppercase tracking-wider text-muted-foreground">
+									<span className="text-muted-foreground uppercase tracking-wider">
 										Loading...
 									</span>
 								</div>
@@ -163,7 +163,7 @@ export function AppSidebar() {
 							) : (
 								<>
 									<Wallet className="h-3 w-3 text-muted-foreground" />
-									<span className="uppercase tracking-wider text-muted-foreground">
+									<span className="text-muted-foreground uppercase tracking-wider">
 										No account
 									</span>
 									<ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
@@ -191,7 +191,7 @@ export function AppSidebar() {
 
 									return (
 										<div key={group.id}>
-											<DropdownMenuLabel className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+											<DropdownMenuLabel className="flex items-center gap-2 font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 												<FolderOpen className="h-3 w-3" />
 												{group.name}
 											</DropdownMenuLabel>
@@ -241,7 +241,7 @@ export function AppSidebar() {
 										<>
 											{groups.length > 0 && <DropdownMenuSeparator />}
 											{groups.length > 0 && (
-												<DropdownMenuLabel className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+												<DropdownMenuLabel className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 													Ungrouped
 												</DropdownMenuLabel>
 											)}
@@ -338,7 +338,7 @@ export function AppSidebar() {
 
 			<SidebarContent className="bg-black/10">
 				<SidebarGroup>
-					<SidebarGroupLabel className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+					<SidebarGroupLabel className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 						Navigation
 					</SidebarGroupLabel>
 					<SidebarGroupContent>
@@ -362,7 +362,7 @@ export function AppSidebar() {
 				</SidebarGroup>
 			</SidebarContent>
 
-			<SidebarFooter className="border-t border-white/5 bg-black/20">
+			<SidebarFooter className="border-white/5 border-t bg-black/20">
 				<SidebarMenu>
 					<SidebarMenuItem>
 						<SidebarMenuButton
@@ -386,7 +386,7 @@ export function AppSidebar() {
 									},
 								}}
 							/>
-							<span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+							<span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 								Account
 							</span>
 						</div>
