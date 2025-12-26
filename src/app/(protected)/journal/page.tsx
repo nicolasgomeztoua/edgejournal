@@ -382,15 +382,11 @@ export default function JournalPage() {
 				);
 			case "rating":
 				return (
-					<div onClick={(e) => e.stopPropagation()}>
-						<StarRating
-							onChange={(rating) =>
-								updateRating.mutate({ id: trade.id, rating })
-							}
-							size="sm"
-							value={trade.rating}
-						/>
-					</div>
+					<StarRating
+						onChange={(rating) => updateRating.mutate({ id: trade.id, rating })}
+						size="sm"
+						value={trade.rating}
+					/>
 				);
 			case "reviewed":
 				return (

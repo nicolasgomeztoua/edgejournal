@@ -49,7 +49,10 @@ export function StarRating({
 					)}
 					disabled={readonly}
 					key={rating}
-					onClick={() => handleClick(rating)}
+					onClick={(e) => {
+						e.stopPropagation();
+						handleClick(rating);
+					}}
 					type="button"
 				>
 					<Star

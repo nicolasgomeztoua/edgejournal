@@ -1,5 +1,3 @@
-"use client";
-
 import {
 	Bookmark,
 	CalendarDays,
@@ -92,10 +90,6 @@ export function FilterPanel({ filters, onChange, onClear }: FilterPanelProps) {
 	const [presetName, setPresetName] = useState("");
 	const [showSaveDialog, setShowSaveDialog] = useState(false);
 
-	const { data: tags } = api.trades.getAll.useQuery(
-		{ limit: 1 },
-		{ enabled: false },
-	);
 	const { data: presets, refetch: refetchPresets } =
 		api.filterPresets.getAll.useQuery();
 	const createPreset = api.filterPresets.create.useMutation({
@@ -301,12 +295,13 @@ export function FilterPanel({ filters, onChange, onClear }: FilterPanelProps) {
 									className="flex items-center justify-between font-mono text-xs"
 									key={preset.id}
 								>
-									<span
-										className="flex-1 cursor-pointer"
+									<button
+										className="flex-1 cursor-pointer border-none bg-transparent p-0 text-left"
 										onClick={() => loadPreset(preset.filters)}
+										type="button"
 									>
 										{preset.name}
-									</span>
+									</button>
 									<Button
 										className="h-6 w-6 text-muted-foreground hover:text-destructive"
 										onClick={(e) => {
