@@ -13,7 +13,22 @@ import { eq } from "drizzle-orm";
 import superjson from "superjson";
 import { ZodError } from "zod";
 import { db } from "@/server/db";
+import type { Database } from "@/server/db/create-db";
+import type { User } from "@/server/db/schema";
 import { users } from "@/server/db/schema";
+
+/**
+ * Context overrides for testing.
+ * Allows injecting a test database and bypassing Clerk authentication.
+ */
+export interface TRPCContextOverrides {
+	/** Test database connection (from Testcontainers) */
+	db?: Database;
+	/** Mock user ID (bypasses Clerk auth) */
+	userId?: string | null;
+	/** Pre-created user object (skips database lookup in authMiddleware) */
+	user?: User;
+}
 
 /**
  * 1. CONTEXT
@@ -27,12 +42,20 @@ import { users } from "@/server/db/schema";
  *
  * @see https://trpc.io/docs/server/context
  */
-export const createTRPCContext = async (opts: { headers: Headers }) => {
-	const { userId } = await auth();
+export const createTRPCContext = async (
+	opts: { headers: Headers },
+	overrides?: TRPCContextOverrides,
+) => {
+	// Use overrides for testing, or fetch from Clerk for production
+	const resolvedDb = overrides?.db ?? db;
+	const resolvedUserId =
+		overrides?.userId !== undefined ? overrides.userId : (await auth()).userId;
 
 	return {
-		db,
-		userId,
+		db: resolvedDb,
+		userId: resolvedUserId,
+		// Pass along the pre-created user for tests (if provided)
+		_testUser: overrides?.user,
 		...opts,
 	};
 };
@@ -88,7 +111,8 @@ export const createTRPCRouter = t.router;
 const timingMiddleware = t.middleware(async ({ next, path }) => {
 	const start = Date.now();
 
-	if (t._config.isDev) {
+	// Skip artificial delay in test environment
+	if (t._config.isDev && process.env.NODE_ENV !== "test") {
 		// artificial delay in dev
 		const waitMs = Math.floor(Math.random() * 400) + 100;
 		await new Promise((resolve) => setTimeout(resolve, waitMs));
@@ -97,7 +121,9 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
 	const result = await next();
 
 	const end = Date.now();
-	console.log(`[TRPC] ${path} took ${end - start}ms to execute`);
+	if (process.env.NODE_ENV !== "test") {
+		console.log(`[TRPC] ${path} took ${end - start}ms to execute`);
+	}
 
 	return result;
 });
@@ -110,6 +136,16 @@ const authMiddleware = t.middleware(async ({ ctx, next }) => {
 		throw new TRPCError({ code: "UNAUTHORIZED" });
 	}
 
+	// If a test user was pre-created and passed in, use it directly
+	if (ctx._testUser) {
+		return next({
+			ctx: {
+				...ctx,
+				user: ctx._testUser,
+			},
+		});
+	}
+
 	// Try to find user in database
 	let user = await ctx.db.query.users.findFirst({
 		where: eq(users.clerkId, ctx.userId),
@@ -117,33 +153,49 @@ const authMiddleware = t.middleware(async ({ ctx, next }) => {
 
 	// If user doesn't exist, create them (auto-sync on first login)
 	if (!user) {
-		const clerkUser = await currentUser();
+		// In test environment, create a simple test user without Clerk
+		if (process.env.NODE_ENV === "test") {
+			const [newUser] = await ctx.db
+				.insert(users)
+				.values({
+					clerkId: ctx.userId,
+					email: `test-${ctx.userId}@test.local`,
+					name: "Test User",
+					role: "user",
+				})
+				.returning();
 
-		if (!clerkUser) {
-			throw new TRPCError({
-				code: "UNAUTHORIZED",
-				message: "Could not fetch user data from Clerk",
-			});
+			user = newUser;
+		} else {
+			// Production: fetch user data from Clerk
+			const clerkUser = await currentUser();
+
+			if (!clerkUser) {
+				throw new TRPCError({
+					code: "UNAUTHORIZED",
+					message: "Could not fetch user data from Clerk",
+				});
+			}
+
+			const email = clerkUser.emailAddresses[0]?.emailAddress ?? "";
+			const name =
+				[clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") ||
+				null;
+
+			const [newUser] = await ctx.db
+				.insert(users)
+				.values({
+					clerkId: ctx.userId,
+					email,
+					name,
+					imageUrl: clerkUser.imageUrl,
+					role: "user",
+				})
+				.returning();
+
+			user = newUser;
+			console.log(`[AUTH] Created new user: ${ctx.userId}`);
 		}
-
-		const email = clerkUser.emailAddresses[0]?.emailAddress ?? "";
-		const name =
-			[clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") ||
-			null;
-
-		const [newUser] = await ctx.db
-			.insert(users)
-			.values({
-				clerkId: ctx.userId,
-				email,
-				name,
-				imageUrl: clerkUser.imageUrl,
-				role: "user",
-			})
-			.returning();
-
-		user = newUser;
-		console.log(`[AUTH] Created new user: ${ctx.userId}`);
 	}
 
 	if (!user) {

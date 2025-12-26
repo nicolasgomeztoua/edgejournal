@@ -1,0 +1,69 @@
+import { getTestDb, schema } from "../db";
+
+export interface CreateTestAccountOptions {
+	name?: string;
+	broker?: string;
+	platform?: "mt4" | "mt5" | "projectx" | "ninjatrader" | "other";
+	accountType?: "prop_challenge" | "prop_funded" | "live" | "demo";
+	initialBalance?: string;
+	currency?: string;
+	isDefault?: boolean;
+	isActive?: boolean;
+	// Prop firm fields
+	maxDrawdown?: string;
+	profitTarget?: string;
+	profitSplit?: string;
+}
+
+let accountCounter = 0;
+
+/**
+ * Creates a test trading account in the database.
+ * Requires a userId (accounts must belong to a user).
+ */
+export async function createTestAccount(
+	userId: number,
+	options: CreateTestAccountOptions = {},
+) {
+	const db = getTestDb();
+	accountCounter++;
+
+	const name = options.name ?? `Test Account ${accountCounter}`;
+	const platform = options.platform ?? "other";
+	const accountType = options.accountType ?? "demo";
+	const initialBalance = options.initialBalance ?? "10000";
+	const currency = options.currency ?? "USD";
+	const isDefault = options.isDefault ?? false;
+	const isActive = options.isActive ?? true;
+
+	const [account] = await db
+		.insert(schema.accounts)
+		.values({
+			userId,
+			name,
+			broker: options.broker,
+			platform,
+			accountType,
+			initialBalance,
+			currency,
+			isDefault,
+			isActive,
+			maxDrawdown: options.maxDrawdown,
+			profitTarget: options.profitTarget,
+			profitSplit: options.profitSplit,
+		})
+		.returning();
+
+	if (!account) {
+		throw new Error("Failed to create test account");
+	}
+
+	return account;
+}
+
+/**
+ * Resets the account counter.
+ */
+export function resetAccountCounter() {
+	accountCounter = 0;
+}
