@@ -1,6 +1,8 @@
 import { accountsRouter } from "@/server/api/routers/accounts";
+import { filterPresetsRouter } from "@/server/api/routers/filterPresets";
 import { marketDataRouter } from "@/server/api/routers/marketData";
 import { settingsRouter } from "@/server/api/routers/settings";
+import { tagsRouter } from "@/server/api/routers/tags";
 import { tradesRouter } from "@/server/api/routers/trades";
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 
@@ -14,6 +16,8 @@ export const appRouter = createTRPCRouter({
 	marketData: marketDataRouter,
 	accounts: accountsRouter,
 	settings: settingsRouter,
+	filterPresets: filterPresetsRouter,
+	tags: tagsRouter,
 });
 
 // export type definition of API

@@ -1,0 +1,339 @@
+import { and, desc, eq, sql } from "drizzle-orm";
+import { z } from "zod";
+
+import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import { tags, trades, tradeTags } from "@/server/db/schema";
+
+export const tagsRouter = createTRPCRouter({
+	// Get all tags for current user
+	getAll: protectedProcedure.query(async ({ ctx }) => {
+		const userTags = await ctx.db.query.tags.findMany({
+			where: eq(tags.userId, ctx.user.id),
+			orderBy: [desc(tags.createdAt)],
+		});
+		return userTags;
+	}),
+
+	// Get tags with usage count
+	getWithStats: protectedProcedure.query(async ({ ctx }) => {
+		const userTags = await ctx.db.query.tags.findMany({
+			where: eq(tags.userId, ctx.user.id),
+			orderBy: [desc(tags.createdAt)],
+			with: {
+				tradeTags: true,
+			},
+		});
+
+		return userTags.map((tag) => ({
+			...tag,
+			usageCount: tag.tradeTags.length,
+		}));
+	}),
+
+	// Get a single tag by ID
+	getById: protectedProcedure
+		.input(z.object({ id: z.number() }))
+		.query(async ({ ctx, input }) => {
+			const tag = await ctx.db.query.tags.findFirst({
+				where: and(eq(tags.id, input.id), eq(tags.userId, ctx.user.id)),
+				with: {
+					tradeTags: {
+						with: {
+							trade: true,
+						},
+					},
+				},
+			});
+
+			if (!tag) {
+				throw new Error("Tag not found");
+			}
+
+			return tag;
+		}),
+
+	// Create a new tag
+	create: protectedProcedure
+		.input(
+			z.object({
+				name: z.string().min(1).max(50),
+				color: z.string().optional(),
+			}),
+		)
+		.mutation(async ({ ctx, input }) => {
+			// Check if tag with same name already exists
+			const existing = await ctx.db.query.tags.findFirst({
+				where: and(eq(tags.userId, ctx.user.id), eq(tags.name, input.name)),
+			});
+
+			if (existing) {
+				throw new Error("Tag with this name already exists");
+			}
+
+			const [tag] = await ctx.db
+				.insert(tags)
+				.values({
+					userId: ctx.user.id,
+					name: input.name,
+					color: input.color ?? "#6366f1",
+				})
+				.returning();
+
+			return tag;
+		}),
+
+	// Update a tag
+	update: protectedProcedure
+		.input(
+			z.object({
+				id: z.number(),
+				name: z.string().min(1).max(50).optional(),
+				color: z.string().optional(),
+			}),
+		)
+		.mutation(async ({ ctx, input }) => {
+			const existing = await ctx.db.query.tags.findFirst({
+				where: and(eq(tags.id, input.id), eq(tags.userId, ctx.user.id)),
+			});
+
+			if (!existing) {
+				throw new Error("Tag not found");
+			}
+
+			// Check if new name conflicts with another tag
+			if (input.name && input.name !== existing.name) {
+				const nameConflict = await ctx.db.query.tags.findFirst({
+					where: and(eq(tags.userId, ctx.user.id), eq(tags.name, input.name)),
+				});
+				if (nameConflict) {
+					throw new Error("Tag with this name already exists");
+				}
+			}
+
+			const [updated] = await ctx.db
+				.update(tags)
+				.set({
+					name: input.name ?? existing.name,
+					color: input.color ?? existing.color,
+				})
+				.where(eq(tags.id, input.id))
+				.returning();
+
+			return updated;
+		}),
+
+	// Delete a tag
+	delete: protectedProcedure
+		.input(z.object({ id: z.number() }))
+		.mutation(async ({ ctx, input }) => {
+			const existing = await ctx.db.query.tags.findFirst({
+				where: and(eq(tags.id, input.id), eq(tags.userId, ctx.user.id)),
+			});
+
+			if (!existing) {
+				throw new Error("Tag not found");
+			}
+
+			// This will also delete from trade_tags due to cascade
+			await ctx.db.delete(tags).where(eq(tags.id, input.id));
+
+			return { success: true };
+		}),
+
+	// Add tag to trade
+	addToTrade: protectedProcedure
+		.input(
+			z.object({
+				tradeId: z.number(),
+				tagId: z.number(),
+			}),
+		)
+		.mutation(async ({ ctx, input }) => {
+			// Verify trade ownership
+			const trade = await ctx.db.query.trades.findFirst({
+				where: and(
+					eq(trades.id, input.tradeId),
+					eq(trades.userId, ctx.user.id),
+				),
+			});
+
+			if (!trade) {
+				throw new Error("Trade not found");
+			}
+
+			// Verify tag ownership
+			const tag = await ctx.db.query.tags.findFirst({
+				where: and(eq(tags.id, input.tagId), eq(tags.userId, ctx.user.id)),
+			});
+
+			if (!tag) {
+				throw new Error("Tag not found");
+			}
+
+			// Check if already exists
+			const existing = await ctx.db.query.tradeTags.findFirst({
+				where: and(
+					eq(tradeTags.tradeId, input.tradeId),
+					eq(tradeTags.tagId, input.tagId),
+				),
+			});
+
+			if (existing) {
+				return { success: true, alreadyExists: true };
+			}
+
+			await ctx.db.insert(tradeTags).values({
+				tradeId: input.tradeId,
+				tagId: input.tagId,
+			});
+
+			return { success: true, alreadyExists: false };
+		}),
+
+	// Remove tag from trade
+	removeFromTrade: protectedProcedure
+		.input(
+			z.object({
+				tradeId: z.number(),
+				tagId: z.number(),
+			}),
+		)
+		.mutation(async ({ ctx, input }) => {
+			// Verify trade ownership
+			const trade = await ctx.db.query.trades.findFirst({
+				where: and(
+					eq(trades.id, input.tradeId),
+					eq(trades.userId, ctx.user.id),
+				),
+			});
+
+			if (!trade) {
+				throw new Error("Trade not found");
+			}
+
+			await ctx.db
+				.delete(tradeTags)
+				.where(
+					and(
+						eq(tradeTags.tradeId, input.tradeId),
+						eq(tradeTags.tagId, input.tagId),
+					),
+				);
+
+			return { success: true };
+		}),
+
+	// Bulk add tag to multiple trades
+	bulkAddToTrades: protectedProcedure
+		.input(
+			z.object({
+				tradeIds: z.array(z.number()).min(1).max(100),
+				tagId: z.number(),
+			}),
+		)
+		.mutation(async ({ ctx, input }) => {
+			// Verify tag ownership
+			const tag = await ctx.db.query.tags.findFirst({
+				where: and(eq(tags.id, input.tagId), eq(tags.userId, ctx.user.id)),
+			});
+
+			if (!tag) {
+				throw new Error("Tag not found");
+			}
+
+			// Verify all trades belong to user
+			const userTrades = await ctx.db.query.trades.findMany({
+				where: and(
+					eq(trades.userId, ctx.user.id),
+					sql`${trades.id} IN (${sql.join(
+						input.tradeIds.map((id) => sql`${id}`),
+						sql`, `,
+					)})`,
+				),
+			});
+
+			if (userTrades.length !== input.tradeIds.length) {
+				throw new Error("Some trades not found or don't belong to you");
+			}
+
+			// Get existing trade-tag relationships
+			const existingRelations = await ctx.db.query.tradeTags.findMany({
+				where: and(
+					eq(tradeTags.tagId, input.tagId),
+					sql`${tradeTags.tradeId} IN (${sql.join(
+						input.tradeIds.map((id) => sql`${id}`),
+						sql`, `,
+					)})`,
+				),
+			});
+
+			const existingTradeIds = new Set(existingRelations.map((r) => r.tradeId));
+			const newTradeIds = input.tradeIds.filter(
+				(id) => !existingTradeIds.has(id),
+			);
+
+			if (newTradeIds.length > 0) {
+				await ctx.db.insert(tradeTags).values(
+					newTradeIds.map((tradeId) => ({
+						tradeId,
+						tagId: input.tagId,
+					})),
+				);
+			}
+
+			return { success: true, added: newTradeIds.length };
+		}),
+
+	// Bulk remove tag from multiple trades
+	bulkRemoveFromTrades: protectedProcedure
+		.input(
+			z.object({
+				tradeIds: z.array(z.number()).min(1).max(100),
+				tagId: z.number(),
+			}),
+		)
+		.mutation(async ({ ctx, input }) => {
+			// Verify tag ownership
+			const tag = await ctx.db.query.tags.findFirst({
+				where: and(eq(tags.id, input.tagId), eq(tags.userId, ctx.user.id)),
+			});
+
+			if (!tag) {
+				throw new Error("Tag not found");
+			}
+
+			await ctx.db.delete(tradeTags).where(
+				and(
+					eq(tradeTags.tagId, input.tagId),
+					sql`${tradeTags.tradeId} IN (${sql.join(
+						input.tradeIds.map((id) => sql`${id}`),
+						sql`, `,
+					)})`,
+				),
+			);
+
+			return { success: true };
+		}),
+
+	// Get trades by tag
+	getTradesByTag: protectedProcedure
+		.input(z.object({ tagId: z.number() }))
+		.query(async ({ ctx, input }) => {
+			const tag = await ctx.db.query.tags.findFirst({
+				where: and(eq(tags.id, input.tagId), eq(tags.userId, ctx.user.id)),
+				with: {
+					tradeTags: {
+						with: {
+							trade: true,
+						},
+					},
+				},
+			});
+
+			if (!tag) {
+				throw new Error("Tag not found");
+			}
+
+			return tag.tradeTags.map((tt) => tt.trade);
+		}),
+});

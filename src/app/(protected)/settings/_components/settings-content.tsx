@@ -24,6 +24,7 @@ import {
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { TagManager } from "@/components/tags/tag-manager";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -551,7 +552,7 @@ export function SettingsContent() {
 			</div>
 
 			<Tabs onValueChange={setActiveTab} value={activeTab}>
-				<TabsList className="grid w-full grid-cols-3 border border-white/5 bg-white/[0.02]">
+				<TabsList className="grid w-full grid-cols-4 border border-white/5 bg-white/[0.02]">
 					<TabsTrigger
 						className="font-mono text-xs uppercase tracking-wider data-[state=active]:bg-white/10"
 						value="general"
@@ -566,9 +567,15 @@ export function SettingsContent() {
 					</TabsTrigger>
 					<TabsTrigger
 						className="font-mono text-xs uppercase tracking-wider data-[state=active]:bg-white/10"
+						value="tags"
+					>
+						Tags
+					</TabsTrigger>
+					<TabsTrigger
+						className="font-mono text-xs uppercase tracking-wider data-[state=active]:bg-white/10"
 						value="ai"
 					>
-						AI Providers
+						AI
 					</TabsTrigger>
 				</TabsList>
 
@@ -1681,6 +1688,21 @@ export function SettingsContent() {
 							</DialogFooter>
 						</DialogContent>
 					</Dialog>
+				</TabsContent>
+
+				{/* Tags Tab */}
+				<TabsContent className="space-y-6" value="tags">
+					<Card>
+						<CardHeader>
+							<CardTitle>Tag Management</CardTitle>
+							<CardDescription>
+								Create and manage tags to organize your trades
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<TagManager />
+						</CardContent>
+					</Card>
 				</TabsContent>
 
 				{/* AI Providers Tab */}

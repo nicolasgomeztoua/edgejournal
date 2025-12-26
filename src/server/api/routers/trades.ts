@@ -99,6 +99,9 @@ const updateTradeSchema = z.object({
 			"breakeven",
 		])
 		.optional(),
+	// Rating and review
+	rating: z.number().min(1).max(5).optional().nullable(),
+	isReviewed: z.boolean().optional(),
 });
 
 // Schema for adding a partial exit / execution
@@ -143,15 +146,37 @@ export const tradesRouter = createTRPCRouter({
 			z
 				.object({
 					limit: z.number().min(1).max(100).default(50),
-					cursor: z.number().optional(),
-					status: z.enum(["open", "closed"]).optional(),
-					symbol: z.string().optional(),
-					tradeDirection: z.enum(["long", "short"]).optional(),
-					startDate: z.string().datetime().optional(),
-					endDate: z.string().datetime().optional(),
-					accountId: z.number().optional(),
-					search: z.string().optional(), // Server-side search
-					includeDeleted: z.boolean().optional(), // Include soft-deleted trades
+					cursor: z.number().nullish(),
+					direction: z.enum(["forward", "backward"]).optional(), // tRPC infinite query pagination direction
+					status: z.enum(["open", "closed"]).nullish(),
+					symbol: z.string().nullish(),
+					tradeDirection: z.enum(["long", "short"]).nullish(),
+					startDate: z.string().datetime().nullish(),
+					endDate: z.string().datetime().nullish(),
+					accountId: z.number().nullish(),
+					search: z.string().nullish(), // Server-side search
+					includeDeleted: z.boolean().nullish(), // Include soft-deleted trades
+					// Advanced filters
+					result: z.enum(["win", "loss", "breakeven"]).nullish(),
+					minPnl: z.number().nullish(),
+					maxPnl: z.number().nullish(),
+					rating: z.number().min(1).max(5).nullish(),
+					minRating: z.number().min(1).max(5).nullish(),
+					maxRating: z.number().min(1).max(5).nullish(),
+					isReviewed: z.boolean().nullish(),
+					setupType: z.string().nullish(),
+					dayOfWeek: z.array(z.number().min(0).max(6)).nullish(), // 0=Sunday, 6=Saturday
+					tagIds: z.array(z.number()).nullish(),
+					exitReason: z
+						.enum([
+							"manual",
+							"stop_loss",
+							"trailing_stop",
+							"take_profit",
+							"time_based",
+							"breakeven",
+						])
+						.nullish(),
 				})
 				.optional(),
 		)
@@ -196,11 +221,48 @@ export const tradesRouter = createTRPCRouter({
 					conditions.push(searchCondition);
 				}
 			}
+
+			// Advanced filters
+			if (input?.minPnl != null) {
+				conditions.push(gte(trades.netPnl, input.minPnl.toString()));
+			}
+			if (input?.maxPnl != null) {
+				conditions.push(lte(trades.netPnl, input.maxPnl.toString()));
+			}
+			if (input?.rating != null) {
+				conditions.push(eq(trades.rating, input.rating));
+			}
+			if (input?.minRating != null) {
+				conditions.push(gte(trades.rating, input.minRating));
+			}
+			if (input?.maxRating != null) {
+				conditions.push(lte(trades.rating, input.maxRating));
+			}
+			if (input?.isReviewed != null) {
+				conditions.push(eq(trades.isReviewed, input.isReviewed));
+			}
+			if (input?.setupType) {
+				conditions.push(eq(trades.setupType, input.setupType));
+			}
+			if (input?.exitReason) {
+				conditions.push(eq(trades.exitReason, input.exitReason));
+			}
+			if (input?.dayOfWeek && input.dayOfWeek.length > 0) {
+				// PostgreSQL EXTRACT(DOW FROM date) returns 0=Sunday, 6=Saturday
+				const dayConditions = input.dayOfWeek.map(
+					(day) => sql`EXTRACT(DOW FROM ${trades.entryTime}) = ${day}`,
+				);
+				const dayFilter = or(...dayConditions);
+				if (dayFilter) {
+					conditions.push(dayFilter);
+				}
+			}
+
 			if (input?.cursor) {
 				conditions.push(sql`${trades.id} < ${input.cursor}`);
 			}
 
-			const items = await ctx.db.query.trades.findMany({
+			let items = await ctx.db.query.trades.findMany({
 				where: and(...conditions),
 				orderBy: [desc(trades.id)],
 				limit: limit + 1,
@@ -213,6 +275,26 @@ export const tradesRouter = createTRPCRouter({
 					account: true,
 				},
 			});
+
+			// Filter by tag IDs (post-query filter since it's a junction table)
+			if (input?.tagIds && input.tagIds.length > 0) {
+				const filterTagIds = input.tagIds;
+				items = items.filter((trade) => {
+					const tradeTagIds = trade.tradeTags.map((tt) => tt.tagId);
+					return filterTagIds.some((id) => tradeTagIds.includes(id));
+				});
+			}
+
+			// Filter by result (win/loss/breakeven) post-query
+			if (input?.result) {
+				const beThreshold = 3.0; // Default, could fetch from user settings
+				items = items.filter((trade) => {
+					const pnl = trade.netPnl ? parseFloat(trade.netPnl) : 0;
+					if (input.result === "win") return pnl > beThreshold;
+					if (input.result === "loss") return pnl < -beThreshold;
+					return Math.abs(pnl) <= beThreshold;
+				});
+			}
 
 			let nextCursor: number | undefined;
 			if (items.length > limit) {
@@ -1018,5 +1100,164 @@ export const tradesRouter = createTRPCRouter({
 				.returning();
 
 			return updated;
+		}),
+
+	// ============================================================================
+	// RATING & REVIEW MANAGEMENT
+	// ============================================================================
+
+	// Update trade rating (1-5 stars)
+	updateRating: protectedProcedure
+		.input(
+			z.object({
+				id: z.number(),
+				rating: z.number().min(1).max(5).nullable(),
+			}),
+		)
+		.mutation(async ({ ctx, input }) => {
+			const existingTrade = await ctx.db.query.trades.findFirst({
+				where: and(eq(trades.id, input.id), eq(trades.userId, ctx.user.id)),
+			});
+
+			if (!existingTrade) {
+				throw new Error("Trade not found");
+			}
+
+			const [updated] = await ctx.db
+				.update(trades)
+				.set({ rating: input.rating })
+				.where(eq(trades.id, input.id))
+				.returning();
+
+			return updated;
+		}),
+
+	// Bulk update ratings
+	bulkUpdateRating: protectedProcedure
+		.input(
+			z.object({
+				ids: z.array(z.number()).min(1).max(100),
+				rating: z.number().min(1).max(5).nullable(),
+			}),
+		)
+		.mutation(async ({ ctx, input }) => {
+			// Verify all trades belong to user
+			const existingTrades = await ctx.db.query.trades.findMany({
+				where: and(
+					eq(trades.userId, ctx.user.id),
+					sql`${trades.id} IN (${sql.join(
+						input.ids.map((id) => sql`${id}`),
+						sql`, `,
+					)})`,
+				),
+			});
+
+			if (existingTrades.length !== input.ids.length) {
+				throw new Error("Some trades not found or don't belong to you");
+			}
+
+			await ctx.db
+				.update(trades)
+				.set({ rating: input.rating })
+				.where(
+					and(
+						eq(trades.userId, ctx.user.id),
+						sql`${trades.id} IN (${sql.join(
+							input.ids.map((id) => sql`${id}`),
+							sql`, `,
+						)})`,
+					),
+				);
+
+			return { success: true, updated: input.ids.length };
+		}),
+
+	// Mark trade as reviewed
+	markReviewed: protectedProcedure
+		.input(
+			z.object({
+				id: z.number(),
+				isReviewed: z.boolean(),
+			}),
+		)
+		.mutation(async ({ ctx, input }) => {
+			const existingTrade = await ctx.db.query.trades.findFirst({
+				where: and(eq(trades.id, input.id), eq(trades.userId, ctx.user.id)),
+			});
+
+			if (!existingTrade) {
+				throw new Error("Trade not found");
+			}
+
+			const [updated] = await ctx.db
+				.update(trades)
+				.set({ isReviewed: input.isReviewed })
+				.where(eq(trades.id, input.id))
+				.returning();
+
+			return updated;
+		}),
+
+	// Bulk mark as reviewed
+	bulkMarkReviewed: protectedProcedure
+		.input(
+			z.object({
+				ids: z.array(z.number()).min(1).max(100),
+				isReviewed: z.boolean(),
+			}),
+		)
+		.mutation(async ({ ctx, input }) => {
+			// Verify all trades belong to user
+			const existingTrades = await ctx.db.query.trades.findMany({
+				where: and(
+					eq(trades.userId, ctx.user.id),
+					sql`${trades.id} IN (${sql.join(
+						input.ids.map((id) => sql`${id}`),
+						sql`, `,
+					)})`,
+				),
+			});
+
+			if (existingTrades.length !== input.ids.length) {
+				throw new Error("Some trades not found or don't belong to you");
+			}
+
+			await ctx.db
+				.update(trades)
+				.set({ isReviewed: input.isReviewed })
+				.where(
+					and(
+						eq(trades.userId, ctx.user.id),
+						sql`${trades.id} IN (${sql.join(
+							input.ids.map((id) => sql`${id}`),
+							sql`, `,
+						)})`,
+					),
+				);
+
+			return { success: true, updated: input.ids.length };
+		}),
+
+	// Get unreviewed trades count
+	getUnreviewedCount: protectedProcedure
+		.input(z.object({ accountId: z.number().optional() }).optional())
+		.query(async ({ ctx, input }) => {
+			const conditions = [
+				eq(trades.userId, ctx.user.id),
+				eq(trades.status, "closed"),
+				eq(trades.isReviewed, false),
+				isNull(trades.deletedAt),
+			];
+
+			if (input?.accountId) {
+				conditions.push(eq(trades.accountId, input.accountId));
+			}
+
+			const result = await ctx.db
+				.select({ count: sql<number>`count(*)` })
+				.from(trades)
+				.where(and(...conditions));
+
+			return result[0]?.count ?? 0;
 		}),
 });

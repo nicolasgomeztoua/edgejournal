@@ -1,17 +1,24 @@
 "use client";
 
 import {
+	CheckCircle2,
+	Circle,
 	Loader2,
 	MoreHorizontal,
 	Plus,
 	RotateCcw,
 	Search,
 	Trash2,
-	X,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { ColumnConfig } from "@/components/trade-log/column-config";
+import {
+	DEFAULT_FILTERS,
+	FilterPanel,
+	type FilterState,
+} from "@/components/trade-log/filter-panel";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -33,14 +40,8 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StarRating } from "@/components/ui/star-rating";
 import {
 	Table,
 	TableBody,
@@ -51,6 +52,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAccount } from "@/contexts/account-context";
+import { useTradeColumns } from "@/hooks/use-trade-columns";
 import {
 	cn,
 	formatCurrency,
@@ -64,15 +66,18 @@ export default function JournalPage() {
 	const [tab, setTab] = useState<"trades" | "trash">("trades");
 
 	// Filters
-	const [statusFilter, setStatusFilter] = useState<"all" | "open" | "closed">(
-		"all",
-	);
-	const [directionFilter, setDirectionFilter] = useState<
-		"all" | "long" | "short"
-	>("all");
-	const [symbolFilter, setSymbolFilter] = useState("");
+	const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
 	const [search, setSearch] = useState("");
 	const [debouncedSearch, setDebouncedSearch] = useState("");
+
+	// Column configuration
+	const {
+		columns,
+		visibleColumns,
+		toggleColumn,
+		resetColumns,
+		isLoading: columnsLoading,
+	} = useTradeColumns();
 
 	// Selection for bulk actions
 	const [selectedTrades, setSelectedTrades] = useState<Set<number>>(new Set());
@@ -87,6 +92,37 @@ export default function JournalPage() {
 		return () => clearTimeout(timer);
 	}, [search]);
 
+	// Build query params from filters
+	const queryParams = useMemo(() => {
+		const params: Record<string, unknown> = {
+			limit: 30,
+			accountId: selectedAccountId ?? undefined,
+			search: debouncedSearch || undefined,
+		};
+
+		if (filters.status !== "all") params.status = filters.status;
+		if (filters.direction !== "all") params.tradeDirection = filters.direction;
+		if (filters.result !== "all") params.result = filters.result;
+		if (filters.symbol) params.symbol = filters.symbol;
+		if (filters.startDate)
+			params.startDate = new Date(filters.startDate).toISOString();
+		if (filters.endDate)
+			params.endDate = new Date(filters.endDate).toISOString();
+		if (filters.minPnl) params.minPnl = parseFloat(filters.minPnl);
+		if (filters.maxPnl) params.maxPnl = parseFloat(filters.maxPnl);
+		if (filters.minRating) params.minRating = parseInt(filters.minRating, 10);
+		if (filters.maxRating) params.maxRating = parseInt(filters.maxRating, 10);
+		if (filters.isReviewed !== "all") {
+			params.isReviewed = filters.isReviewed === "reviewed";
+		}
+		if (filters.setupType) params.setupType = filters.setupType;
+		if (filters.dayOfWeek.length > 0) params.dayOfWeek = filters.dayOfWeek;
+		if (filters.exitReason) params.exitReason = filters.exitReason;
+		if (filters.tagIds.length > 0) params.tagIds = filters.tagIds;
+
+		return params;
+	}, [filters, selectedAccountId, debouncedSearch]);
+
 	// Main trades query
 	const {
 		data,
@@ -96,19 +132,9 @@ export default function JournalPage() {
 		isFetchingNextPage,
 		refetch,
 	} = api.trades.getAll.useInfiniteQuery(
+		queryParams as Parameters<typeof api.trades.getAll.useInfiniteQuery>[0],
 		{
-			limit: 30,
-			status: statusFilter !== "all" ? statusFilter : undefined,
-			tradeDirection:
-				directionFilter !== "all"
-					? (directionFilter as "long" | "short")
-					: undefined,
-			symbol: symbolFilter || undefined,
-			search: debouncedSearch || undefined,
-			accountId: selectedAccountId ?? undefined,
-		},
-		{
-			getNextPageParam: (lastPage) => lastPage.nextCursor,
+			getNextPageParam: (lastPage) => lastPage?.nextCursor,
 			enabled: tab === "trades",
 		},
 	);
@@ -178,6 +204,37 @@ export default function JournalPage() {
 		},
 	});
 
+	// Rating mutation
+	const updateRating = api.trades.updateRating.useMutation({
+		onSuccess: () => {
+			refetch();
+		},
+	});
+
+	// Review mutation
+	const markReviewed = api.trades.markReviewed.useMutation({
+		onSuccess: () => {
+			refetch();
+		},
+	});
+
+	// Bulk actions
+	const bulkMarkReviewed = api.trades.bulkMarkReviewed.useMutation({
+		onSuccess: (data) => {
+			toast.success(`${data.updated} trades marked as reviewed`);
+			refetch();
+			setSelectedTrades(new Set());
+		},
+	});
+
+	const bulkUpdateRating = api.trades.bulkUpdateRating.useMutation({
+		onSuccess: (data) => {
+			toast.success(`${data.updated} trades updated`);
+			refetch();
+			setSelectedTrades(new Set());
+		},
+	});
+
 	const [emptyTrashDialogOpen, setEmptyTrashDialogOpen] = useState(false);
 
 	const allTrades = data?.pages.flatMap((page) => page.items) ?? [];
@@ -214,17 +271,274 @@ export default function JournalPage() {
 	};
 
 	const clearFilters = () => {
-		setStatusFilter("all");
-		setDirectionFilter("all");
-		setSymbolFilter("");
+		setFilters(DEFAULT_FILTERS);
 		setSearch("");
 	};
 
-	const hasActiveFilters =
-		statusFilter !== "all" ||
-		directionFilter !== "all" ||
-		symbolFilter ||
-		search;
+	// Render a table cell based on column id
+	const renderCell = (
+		columnId: string,
+		trade: (typeof allTrades)[0],
+	): React.ReactNode => {
+		switch (columnId) {
+			case "checkbox":
+				return (
+					<Checkbox
+						checked={selectedTrades.has(trade.id)}
+						onCheckedChange={(checked) =>
+							handleSelectTrade(trade.id, !!checked)
+						}
+					/>
+				);
+			case "symbol":
+				return (
+					<Link className="font-bold font-mono" href={`/journal/${trade.id}`}>
+						{trade.symbol}
+					</Link>
+				);
+			case "side":
+				return (
+					<Link href={`/journal/${trade.id}`}>
+						<span
+							className={cn(
+								"font-mono text-xs uppercase",
+								trade.direction === "long" ? "text-profit" : "text-loss",
+							)}
+						>
+							{trade.direction === "long" ? "Long" : "Short"}
+						</span>
+					</Link>
+				);
+			case "entry":
+				return (
+					<Link href={`/journal/${trade.id}`}>
+						<div className="font-mono text-sm">
+							{parseFloat(trade.entryPrice).toFixed(2)}
+						</div>
+						<div className="font-mono text-[10px] text-muted-foreground">
+							{formatDateTime(trade.entryTime)}
+						</div>
+					</Link>
+				);
+			case "exit":
+				return (
+					<Link href={`/journal/${trade.id}`}>
+						{trade.exitPrice ? (
+							<>
+								<div className="font-mono text-sm">
+									{parseFloat(trade.exitPrice).toFixed(2)}
+								</div>
+								<div className="font-mono text-[10px] text-muted-foreground">
+									{formatDateTime(trade.exitTime)}
+								</div>
+							</>
+						) : (
+							<span className="font-mono text-muted-foreground text-xs">—</span>
+						)}
+					</Link>
+				);
+			case "size":
+				return (
+					<Link className="font-mono text-sm" href={`/journal/${trade.id}`}>
+						{parseFloat(trade.quantity).toFixed(2)}
+					</Link>
+				);
+			case "pnl":
+				return (
+					<Link href={`/journal/${trade.id}`}>
+						<span
+							className={cn(
+								"font-bold font-mono",
+								trade.netPnl
+									? getPnLColorClass(trade.netPnl)
+									: "text-muted-foreground",
+							)}
+						>
+							{trade.netPnl ? formatCurrency(parseFloat(trade.netPnl)) : "—"}
+						</span>
+					</Link>
+				);
+			case "result":
+				return (
+					<Link href={`/journal/${trade.id}`}>
+						{trade.status === "open" ? (
+							<span className="font-mono text-muted-foreground text-xs">
+								Open
+							</span>
+						) : trade.exitReason === "take_profit" || trade.takeProfitHit ? (
+							<span className="font-mono text-profit text-xs">TP</span>
+						) : trade.exitReason === "stop_loss" || trade.stopLossHit ? (
+							<span className="font-mono text-loss text-xs">SL</span>
+						) : trade.exitReason === "trailing_stop" ? (
+							<span className="font-mono text-accent text-xs">Trail</span>
+						) : trade.exitReason === "breakeven" ? (
+							<span className="font-mono text-breakeven text-xs">BE</span>
+						) : (
+							<span className="font-mono text-muted-foreground text-xs">
+								Manual
+							</span>
+						)}
+					</Link>
+				);
+			case "rating":
+				return (
+					<div onClick={(e) => e.stopPropagation()}>
+						<StarRating
+							onChange={(rating) =>
+								updateRating.mutate({ id: trade.id, rating })
+							}
+							size="sm"
+							value={trade.rating}
+						/>
+					</div>
+				);
+			case "reviewed":
+				return (
+					<button
+						className="flex items-center justify-center"
+						onClick={(e) => {
+							e.stopPropagation();
+							markReviewed.mutate({
+								id: trade.id,
+								isReviewed: !trade.isReviewed,
+							});
+						}}
+						type="button"
+					>
+						{trade.isReviewed ? (
+							<CheckCircle2 className="h-4 w-4 text-profit" />
+						) : (
+							<Circle className="h-4 w-4 text-muted-foreground/30" />
+						)}
+					</button>
+				);
+			case "setup":
+				return (
+					<span className="font-mono text-muted-foreground text-xs">
+						{trade.setupType || "—"}
+					</span>
+				);
+			case "fees":
+				return (
+					<span className="font-mono text-muted-foreground text-xs">
+						{trade.fees ? formatCurrency(parseFloat(trade.fees)) : "—"}
+					</span>
+				);
+			case "duration": {
+				if (!trade.exitTime)
+					return (
+						<span className="font-mono text-muted-foreground text-xs">—</span>
+					);
+				const duration =
+					new Date(trade.exitTime).getTime() -
+					new Date(trade.entryTime).getTime();
+				const minutes = Math.floor(duration / 60000);
+				const hours = Math.floor(minutes / 60);
+				const days = Math.floor(hours / 24);
+				if (days > 0)
+					return (
+						<span className="font-mono text-xs">
+							{days}d {hours % 24}h
+						</span>
+					);
+				if (hours > 0)
+					return (
+						<span className="font-mono text-xs">
+							{hours}h {minutes % 60}m
+						</span>
+					);
+				return <span className="font-mono text-xs">{minutes}m</span>;
+			}
+			case "rMultiple": {
+				// Calculate R-Multiple if SL is set
+				if (!trade.stopLoss || !trade.netPnl) {
+					return (
+						<span className="font-mono text-muted-foreground text-xs">—</span>
+					);
+				}
+				const riskPerUnit = Math.abs(
+					parseFloat(trade.entryPrice) - parseFloat(trade.stopLoss),
+				);
+				if (riskPerUnit === 0)
+					return (
+						<span className="font-mono text-muted-foreground text-xs">—</span>
+					);
+				const rMultiple =
+					parseFloat(trade.netPnl) / (riskPerUnit * parseFloat(trade.quantity));
+				return (
+					<span
+						className={cn(
+							"font-mono text-xs",
+							rMultiple > 0
+								? "text-profit"
+								: rMultiple < 0
+									? "text-loss"
+									: "text-muted-foreground",
+						)}
+					>
+						{rMultiple.toFixed(2)}R
+					</span>
+				);
+			}
+			case "tags":
+				return (
+					<div className="flex flex-wrap gap-1">
+						{trade.tradeTags?.slice(0, 2).map((tt) => (
+							<Badge
+								className="px-1 py-0 text-[10px]"
+								key={tt.tagId}
+								style={{
+									borderColor: tt.tag.color ?? undefined,
+									color: tt.tag.color ?? undefined,
+								}}
+								variant="outline"
+							>
+								{tt.tag.name}
+							</Badge>
+						))}
+						{trade.tradeTags && trade.tradeTags.length > 2 && (
+							<Badge className="px-1 py-0 text-[10px]" variant="secondary">
+								+{trade.tradeTags.length - 2}
+							</Badge>
+						)}
+					</div>
+				);
+			case "account":
+				return (
+					<span className="font-mono text-muted-foreground text-xs">
+						{trade.account?.name || "—"}
+					</span>
+				);
+			case "actions":
+				return (
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button className="h-8 w-8" size="icon" variant="ghost">
+								<MoreHorizontal className="h-4 w-4" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							<DropdownMenuItem asChild className="font-mono text-xs">
+								<Link href={`/journal/${trade.id}`}>View Details</Link>
+							</DropdownMenuItem>
+							<DropdownMenuSeparator />
+							<DropdownMenuItem
+								className="font-mono text-destructive text-xs focus:text-destructive"
+								onClick={() => {
+									setTradeToDelete(trade.id);
+									setDeleteDialogOpen(true);
+								}}
+							>
+								<Trash2 className="mr-2 h-4 w-4" />
+								Delete
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				);
+			default:
+				return null;
+		}
+	};
 
 	return (
 		<div className="space-y-6">
@@ -245,6 +559,13 @@ export default function JournalPage() {
 							"All accounts"
 						)}
 					</p>
+				</div>
+				<div className="flex items-center gap-2">
+					<ColumnConfig
+						columns={columns}
+						onReset={resetColumns}
+						onToggle={toggleColumn}
+					/>
 				</div>
 			</div>
 
@@ -274,86 +595,23 @@ export default function JournalPage() {
 				</TabsList>
 
 				<TabsContent className="space-y-4" value="trades">
-					{/* Filters */}
-					<div className="flex flex-wrap items-center gap-3">
-						{/* Search */}
-						<div className="relative min-w-[200px] flex-1">
-							<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
-							<Input
-								className="pl-9 font-mono text-xs"
-								onChange={(e) => setSearch(e.target.value)}
-								placeholder="Search symbol, setup, notes..."
-								value={search}
-							/>
-						</div>
-
-						{/* Status Filter */}
-						<Select
-							onValueChange={(value) =>
-								setStatusFilter(value as "all" | "open" | "closed")
-							}
-							value={statusFilter}
-						>
-							<SelectTrigger className="w-[120px] font-mono text-xs">
-								<SelectValue placeholder="Status" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem className="font-mono text-xs" value="all">
-									All Status
-								</SelectItem>
-								<SelectItem className="font-mono text-xs" value="open">
-									Open
-								</SelectItem>
-								<SelectItem className="font-mono text-xs" value="closed">
-									Closed
-								</SelectItem>
-							</SelectContent>
-						</Select>
-
-						{/* Direction Filter */}
-						<Select
-							onValueChange={(value) =>
-								setDirectionFilter(value as "all" | "long" | "short")
-							}
-							value={directionFilter}
-						>
-							<SelectTrigger className="w-[120px] font-mono text-xs">
-								<SelectValue placeholder="Direction" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem className="font-mono text-xs" value="all">
-									All
-								</SelectItem>
-								<SelectItem className="font-mono text-xs" value="long">
-									Long
-								</SelectItem>
-								<SelectItem className="font-mono text-xs" value="short">
-									Short
-								</SelectItem>
-							</SelectContent>
-						</Select>
-
-						{/* Symbol Filter */}
+					{/* Search */}
+					<div className="relative">
+						<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
 						<Input
-							className="w-[100px] font-mono text-xs"
-							onChange={(e) => setSymbolFilter(e.target.value.toUpperCase())}
-							placeholder="Symbol"
-							value={symbolFilter}
+							className="pl-9 font-mono text-xs"
+							onChange={(e) => setSearch(e.target.value)}
+							placeholder="Search symbol, setup, notes..."
+							value={search}
 						/>
-
-						{/* Clear Filters */}
-						{hasActiveFilters && (
-							<Button
-								className="font-mono text-xs uppercase tracking-wider"
-								onClick={clearFilters}
-								size="sm"
-								variant="ghost"
-							>
-								<X className="mr-1 h-3.5 w-3.5" />
-								Clear
-							</Button>
-						)}
 					</div>
+
+					{/* Filter Panel */}
+					<FilterPanel
+						filters={filters}
+						onChange={setFilters}
+						onClear={clearFilters}
+					/>
 
 					{/* Bulk Actions */}
 					{selectedTrades.size > 0 && (
@@ -373,6 +631,57 @@ export default function JournalPage() {
 							</Button>
 							<Button
 								className="font-mono text-xs uppercase tracking-wider"
+								onClick={() =>
+									bulkMarkReviewed.mutate({
+										ids: Array.from(selectedTrades),
+										isReviewed: true,
+									})
+								}
+								size="sm"
+								variant="outline"
+							>
+								<CheckCircle2 className="mr-2 h-3.5 w-3.5" />
+								Mark Reviewed
+							</Button>
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button
+										className="font-mono text-xs uppercase tracking-wider"
+										size="sm"
+										variant="outline"
+									>
+										Set Rating
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent>
+									{[1, 2, 3, 4, 5].map((r) => (
+										<DropdownMenuItem
+											key={r}
+											onClick={() =>
+												bulkUpdateRating.mutate({
+													ids: Array.from(selectedTrades),
+													rating: r,
+												})
+											}
+										>
+											<StarRating readonly size="sm" value={r} />
+										</DropdownMenuItem>
+									))}
+									<DropdownMenuSeparator />
+									<DropdownMenuItem
+										onClick={() =>
+											bulkUpdateRating.mutate({
+												ids: Array.from(selectedTrades),
+												rating: null,
+											})
+										}
+									>
+										Clear Rating
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
+							<Button
+								className="font-mono text-xs uppercase tracking-wider"
 								onClick={() => setSelectedTrades(new Set())}
 								size="sm"
 								variant="ghost"
@@ -384,7 +693,7 @@ export default function JournalPage() {
 
 					{/* Trades Table */}
 					<div className="overflow-hidden rounded border border-white/5 bg-white/[0.01]">
-						{isLoading ? (
+						{isLoading || columnsLoading ? (
 							<div className="space-y-3 p-6">
 								{[...Array(5)].map((_, i) => (
 									<Skeleton
@@ -400,11 +709,19 @@ export default function JournalPage() {
 								</div>
 								<h3 className="mb-1 font-medium">No trades found</h3>
 								<p className="mb-4 font-mono text-muted-foreground text-xs">
-									{hasActiveFilters
+									{Object.values(filters).some(
+										(v) =>
+											(typeof v === "string" && v !== "" && v !== "all") ||
+											(Array.isArray(v) && v.length > 0),
+									)
 										? "Try adjusting your filters"
 										: "Start logging your trades to build your journal"}
 								</p>
-								{!hasActiveFilters && (
+								{!Object.values(filters).some(
+									(v) =>
+										(typeof v === "string" && v !== "" && v !== "all") ||
+										(Array.isArray(v) && v.length > 0),
+								) && (
 									<Button
 										asChild
 										className="font-mono text-xs uppercase tracking-wider"
@@ -422,37 +739,28 @@ export default function JournalPage() {
 								<Table>
 									<TableHeader>
 										<TableRow className="border-white/5 hover:bg-transparent">
-											<TableHead className="w-[40px]">
-												<Checkbox
-													checked={
-														selectedTrades.size === allTrades.length &&
-														allTrades.length > 0
-													}
-													onCheckedChange={handleSelectAll}
-												/>
-											</TableHead>
-											<TableHead className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-												Symbol
-											</TableHead>
-											<TableHead className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-												Side
-											</TableHead>
-											<TableHead className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-												Entry
-											</TableHead>
-											<TableHead className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-												Exit
-											</TableHead>
-											<TableHead className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-												Size
-											</TableHead>
-											<TableHead className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-												P&L
-											</TableHead>
-											<TableHead className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-												Result
-											</TableHead>
-											<TableHead className="w-[50px]" />
+											{visibleColumns.map((col) => (
+												<TableHead
+													className={cn(
+														"font-mono text-[10px] text-muted-foreground uppercase tracking-wider",
+														col.id === "checkbox" && "w-[40px]",
+														col.id === "actions" && "w-[50px]",
+													)}
+													key={col.id}
+												>
+													{col.id === "checkbox" ? (
+														<Checkbox
+															checked={
+																selectedTrades.size === allTrades.length &&
+																allTrades.length > 0
+															}
+															onCheckedChange={handleSelectAll}
+														/>
+													) : (
+														col.label
+													)}
+												</TableHead>
+											))}
 										</TableRow>
 									</TableHeader>
 									<TableBody>
@@ -464,147 +772,23 @@ export default function JournalPage() {
 												)}
 												key={trade.id}
 											>
-												<TableCell onClick={(e) => e.stopPropagation()}>
-													<Checkbox
-														checked={selectedTrades.has(trade.id)}
-														onCheckedChange={(checked) =>
-															handleSelectTrade(trade.id, !!checked)
-														}
-													/>
-												</TableCell>
-												<TableCell className="font-bold font-mono">
-													<Link href={`/journal/${trade.id}`}>
-														{trade.symbol}
-													</Link>
-												</TableCell>
-												<TableCell>
-													<Link href={`/journal/${trade.id}`}>
-														<span
-															className={cn(
-																"font-mono text-xs uppercase",
-																trade.direction === "long"
-																	? "text-profit"
-																	: "text-loss",
-															)}
-														>
-															{trade.direction === "long" ? "Long" : "Short"}
-														</span>
-													</Link>
-												</TableCell>
-												<TableCell>
-													<Link href={`/journal/${trade.id}`}>
-														<div className="font-mono text-sm">
-															{parseFloat(trade.entryPrice).toFixed(2)}
-														</div>
-														<div className="font-mono text-[10px] text-muted-foreground">
-															{formatDateTime(trade.entryTime)}
-														</div>
-													</Link>
-												</TableCell>
-												<TableCell>
-													<Link href={`/journal/${trade.id}`}>
-														{trade.exitPrice ? (
-															<>
-																<div className="font-mono text-sm">
-																	{parseFloat(trade.exitPrice).toFixed(2)}
-																</div>
-																<div className="font-mono text-[10px] text-muted-foreground">
-																	{formatDateTime(trade.exitTime)}
-																</div>
-															</>
-														) : (
-															<span className="font-mono text-muted-foreground text-xs">
-																—
-															</span>
-														)}
-													</Link>
-												</TableCell>
-												<TableCell className="font-mono text-sm">
-													<Link href={`/journal/${trade.id}`}>
-														{parseFloat(trade.quantity).toFixed(2)}
-													</Link>
-												</TableCell>
-												<TableCell>
-													<Link href={`/journal/${trade.id}`}>
-														<span
-															className={cn(
-																"font-bold font-mono",
-																trade.netPnl
-																	? getPnLColorClass(trade.netPnl)
-																	: "text-muted-foreground",
-															)}
-														>
-															{trade.netPnl
-																? formatCurrency(parseFloat(trade.netPnl))
-																: "—"}
-														</span>
-													</Link>
-												</TableCell>
-												<TableCell>
-													<Link href={`/journal/${trade.id}`}>
-														{trade.status === "open" ? (
-															<span className="font-mono text-muted-foreground text-xs">
-																Open
-															</span>
-														) : trade.exitReason === "take_profit" ||
-															trade.takeProfitHit ? (
-															<span className="font-mono text-profit text-xs">
-																TP
-															</span>
-														) : trade.exitReason === "stop_loss" ||
-															trade.stopLossHit ? (
-															<span className="font-mono text-loss text-xs">
-																SL
-															</span>
-														) : trade.exitReason === "trailing_stop" ? (
-															<span className="font-mono text-accent text-xs">
-																Trail
-															</span>
-														) : trade.exitReason === "breakeven" ? (
-															<span className="font-mono text-breakeven text-xs">
-																BE
-															</span>
-														) : (
-															<span className="font-mono text-muted-foreground text-xs">
-																Manual
-															</span>
-														)}
-													</Link>
-												</TableCell>
-												<TableCell onClick={(e) => e.stopPropagation()}>
-													<DropdownMenu>
-														<DropdownMenuTrigger asChild>
-															<Button
-																className="h-8 w-8"
-																size="icon"
-																variant="ghost"
-															>
-																<MoreHorizontal className="h-4 w-4" />
-															</Button>
-														</DropdownMenuTrigger>
-														<DropdownMenuContent align="end">
-															<DropdownMenuItem
-																asChild
-																className="font-mono text-xs"
-															>
-																<Link href={`/journal/${trade.id}`}>
-																	View Details
-																</Link>
-															</DropdownMenuItem>
-															<DropdownMenuSeparator />
-															<DropdownMenuItem
-																className="font-mono text-destructive text-xs focus:text-destructive"
-																onClick={() => {
-																	setTradeToDelete(trade.id);
-																	setDeleteDialogOpen(true);
-																}}
-															>
-																<Trash2 className="mr-2 h-4 w-4" />
-																Delete
-															</DropdownMenuItem>
-														</DropdownMenuContent>
-													</DropdownMenu>
-												</TableCell>
+												{visibleColumns.map((col) => (
+													<TableCell
+														key={col.id}
+														onClick={(e) => {
+															if (
+																col.id === "checkbox" ||
+																col.id === "actions" ||
+																col.id === "rating" ||
+																col.id === "reviewed"
+															) {
+																e.stopPropagation();
+															}
+														}}
+													>
+														{renderCell(col.id, trade)}
+													</TableCell>
+												))}
 											</TableRow>
 										))}
 									</TableBody>

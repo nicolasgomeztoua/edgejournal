@@ -268,6 +268,10 @@ export const trades = createTable(
 		emotionalState: emotionalStateEnum("emotional_state"),
 		notes: text("notes"),
 
+		// Rating and review (Phase 1 enhancements)
+		rating: integer("rating"), // 1-5 stars
+		isReviewed: boolean("is_reviewed").default(false),
+
 		// Import tracking
 		importSource: importSourceEnum("import_source").notNull().default("manual"),
 		externalId: text("external_id"), // For tracking imported trades
@@ -417,6 +421,9 @@ export const userSettings = createTable("user_settings", {
 	// Display preferences
 	currency: text("currency").default("USD"),
 
+	// Trade log column preferences (JSON array of column configs)
+	tradeLogColumns: text("trade_log_columns"), // JSON string of column visibility/order
+
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.notNull()
 		.$defaultFn(() => new Date()),
@@ -424,6 +431,26 @@ export const userSettings = createTable("user_settings", {
 		() => new Date(),
 	),
 });
+
+// ============================================================================
+// FILTER PRESETS TABLE (for saved journal filters)
+// ============================================================================
+
+export const filterPresets = createTable(
+	"filter_preset",
+	{
+		id: integer().primaryKey().generatedByDefaultAsIdentity(),
+		userId: integer("user_id")
+			.notNull()
+			.references(() => users.id, { onDelete: "cascade" }),
+		name: text("name").notNull(),
+		filters: text("filters").notNull(), // JSON string of filter config
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.$defaultFn(() => new Date()),
+	},
+	(t) => [index("filter_preset_user_id_idx").on(t.userId)],
+);
 
 // ============================================================================
 // AI CONVERSATIONS TABLE
@@ -478,6 +505,14 @@ export const usersRelations = relations(users, ({ many, one }) => ({
 	tags: many(tags),
 	settings: one(userSettings),
 	aiConversations: many(aiConversations),
+	filterPresets: many(filterPresets),
+}));
+
+export const filterPresetsRelations = relations(filterPresets, ({ one }) => ({
+	user: one(users, {
+		fields: [filterPresets.userId],
+		references: [users.id],
+	}),
 }));
 
 export const accountGroupsRelations = relations(
@@ -609,3 +644,5 @@ export type TradeScreenshot = typeof tradeScreenshots.$inferSelect;
 export type UserSettings = typeof userSettings.$inferSelect;
 export type AiConversation = typeof aiConversations.$inferSelect;
 export type AiMessage = typeof aiMessages.$inferSelect;
+export type FilterPreset = typeof filterPresets.$inferSelect;
+export type NewFilterPreset = typeof filterPresets.$inferInsert;
