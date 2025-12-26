@@ -52,6 +52,10 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAccount } from "@/contexts/account-context";
+import {
+	useDebouncedMutation,
+	useOptimisticState,
+} from "@/hooks/use-debounced-mutation";
 import { useTradeColumns } from "@/hooks/use-trade-columns";
 import {
 	cn,
@@ -124,36 +128,37 @@ export default function JournalPage() {
 	}, [filters, selectedAccountId, debouncedSearch]);
 
 	// Main trades query
-	const {
-		data,
-		isLoading,
-		fetchNextPage,
-		hasNextPage,
-		isFetchingNextPage,
-		refetch,
-	} = api.trades.getAll.useInfiniteQuery(
-		queryParams as Parameters<typeof api.trades.getAll.useInfiniteQuery>[0],
-		{
-			getNextPageParam: (lastPage) => lastPage?.nextCursor,
-			enabled: tab === "trades",
-		},
-	);
+	const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+		api.trades.getAll.useInfiniteQuery(
+			queryParams as Parameters<typeof api.trades.getAll.useInfiniteQuery>[0],
+			{
+				getNextPageParam: (lastPage) => lastPage?.nextCursor,
+				enabled: tab === "trades",
+			},
+		);
 
 	// Deleted trades query
+	const { data: deletedTrades, isLoading: loadingDeleted } =
+		api.trades.getDeleted.useQuery(
+			{ accountId: selectedAccountId ?? undefined },
+			{ enabled: tab === "trash" },
+		);
+
+	const utils = api.useUtils();
+
+	// Optimistic state for instant UI updates
 	const {
-		data: deletedTrades,
-		isLoading: loadingDeleted,
-		refetch: refetchDeleted,
-	} = api.trades.getDeleted.useQuery(
-		{ accountId: selectedAccountId ?? undefined },
-		{ enabled: tab === "trash" },
-	);
+		applyUpdate: applyOptimisticUpdate,
+		clearUpdates: clearOptimisticUpdates,
+		mergeWithData,
+	} = useOptimisticState<Record<string, unknown>>();
 
 	// Mutations
 	const deleteTrade = api.trades.delete.useMutation({
 		onSuccess: () => {
 			toast.success("Trade moved to trash");
-			refetch();
+			utils.trades.getAll.invalidate();
+			utils.trades.getDeleted.invalidate();
 			setSelectedTrades(new Set());
 		},
 		onError: (error) => {
@@ -164,7 +169,8 @@ export default function JournalPage() {
 	const deleteMany = api.trades.deleteMany.useMutation({
 		onSuccess: (data) => {
 			toast.success(`${data.deleted} trades moved to trash`);
-			refetch();
+			utils.trades.getAll.invalidate();
+			utils.trades.getDeleted.invalidate();
 			setSelectedTrades(new Set());
 		},
 		onError: (error) => {
@@ -175,8 +181,8 @@ export default function JournalPage() {
 	const restoreTrade = api.trades.restore.useMutation({
 		onSuccess: () => {
 			toast.success("Trade restored");
-			refetchDeleted();
-			refetch();
+			utils.trades.getAll.invalidate();
+			utils.trades.getDeleted.invalidate();
 		},
 		onError: (error) => {
 			toast.error(error.message || "Failed to restore trade");
@@ -186,7 +192,7 @@ export default function JournalPage() {
 	const permanentDelete = api.trades.permanentDelete.useMutation({
 		onSuccess: () => {
 			toast.success("Trade permanently deleted");
-			refetchDeleted();
+			utils.trades.getDeleted.invalidate();
 		},
 		onError: (error) => {
 			toast.error(error.message || "Failed to delete trade");
@@ -196,48 +202,85 @@ export default function JournalPage() {
 	const emptyTrash = api.trades.emptyTrash.useMutation({
 		onSuccess: (data) => {
 			toast.success(`${data.deleted} trades permanently deleted`);
-			refetchDeleted();
-			refetch();
+			utils.trades.getAll.invalidate();
+			utils.trades.getDeleted.invalidate();
 		},
 		onError: (error) => {
 			toast.error(error.message || "Failed to empty trash");
 		},
 	});
 
-	// Rating mutation
-	const updateRating = api.trades.updateRating.useMutation({
-		onSuccess: () => {
-			refetch();
+	// Rating mutation (raw, called by debounced handler)
+	const updateRatingMutation = api.trades.updateRating.useMutation({
+		onError: () => {
+			toast.error("Failed to update rating");
 		},
 	});
 
-	// Review mutation
+	// Debounced rating updates with per-trade debouncing
+	const { trigger: updateRating } = useDebouncedMutation({
+		mutationFn: ({ id, rating }: { id: number; rating: number }) => {
+			updateRatingMutation.mutate({ id, rating });
+		},
+		onOptimisticUpdate: ({ id, rating }) => {
+			applyOptimisticUpdate(id, { rating });
+		},
+		delay: 300,
+		getKey: ({ id }) => id, // Per-trade debouncing
+	});
+
+	// Review mutation with optimistic update
 	const markReviewed = api.trades.markReviewed.useMutation({
-		onSuccess: () => {
-			refetch();
+		onMutate: ({ id, isReviewed }) => {
+			applyOptimisticUpdate(id, { isReviewed });
+		},
+		onSettled: async () => {
+			await utils.trades.getAll.invalidate();
+			clearOptimisticUpdates();
 		},
 	});
 
 	// Bulk actions
 	const bulkMarkReviewed = api.trades.bulkMarkReviewed.useMutation({
+		onMutate: ({ ids, isReviewed }) => {
+			for (const id of ids) {
+				applyOptimisticUpdate(id, { isReviewed });
+			}
+		},
 		onSuccess: (data) => {
 			toast.success(`${data.updated} trades marked as reviewed`);
-			refetch();
 			setSelectedTrades(new Set());
+		},
+		onSettled: async () => {
+			await utils.trades.getAll.invalidate();
+			clearOptimisticUpdates();
 		},
 	});
 
 	const bulkUpdateRating = api.trades.bulkUpdateRating.useMutation({
+		onMutate: ({ ids, rating }) => {
+			for (const id of ids) {
+				applyOptimisticUpdate(id, { rating });
+			}
+		},
 		onSuccess: (data) => {
 			toast.success(`${data.updated} trades updated`);
-			refetch();
 			setSelectedTrades(new Set());
+		},
+		onSettled: async () => {
+			await utils.trades.getAll.invalidate();
+			clearOptimisticUpdates();
 		},
 	});
 
 	const [emptyTrashDialogOpen, setEmptyTrashDialogOpen] = useState(false);
 
-	const allTrades = data?.pages.flatMap((page) => page.items) ?? [];
+	// Merge server data with optimistic updates for instant UI
+	// Merge server data with optimistic updates
+	const allTrades = useMemo(() => {
+		const trades = data?.pages.flatMap((page) => page.items) ?? [];
+		return mergeWithData(trades);
+	}, [data, mergeWithData]);
 
 	const handleSelectAll = (checked: boolean) => {
 		if (checked) {
@@ -383,9 +426,11 @@ export default function JournalPage() {
 			case "rating":
 				return (
 					<StarRating
-						onChange={(rating) => updateRating.mutate({ id: trade.id, rating })}
+						onChange={(rating) =>
+							updateRating({ id: trade.id, rating: rating ?? 0 })
+						}
 						size="sm"
-						value={trade.rating}
+						value={trade.rating ?? 0}
 					/>
 				);
 			case "reviewed":

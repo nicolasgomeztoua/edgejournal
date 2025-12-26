@@ -1106,12 +1106,12 @@ export const tradesRouter = createTRPCRouter({
 	// RATING & REVIEW MANAGEMENT
 	// ============================================================================
 
-	// Update trade rating (1-5 stars)
+	// Update trade rating (0-5 stars, 0 = no rating)
 	updateRating: protectedProcedure
 		.input(
 			z.object({
 				id: z.number(),
-				rating: z.number().min(1).max(5).nullable(),
+				rating: z.number().min(0).max(5),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {

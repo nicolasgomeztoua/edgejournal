@@ -247,12 +247,15 @@ export default function ImportPage() {
 	);
 
 	const isValidMapping = () => {
-		return REQUIRED_FIELDS.every((field) => mapping[field.key]);
+		return REQUIRED_FIELDS.every(
+			(field) => mapping[field.key] && mapping[field.key] !== "__skip__",
+		);
 	};
 
 	const getMappedValue = (row: ParsedRow, fieldKey: string): string => {
 		const csvHeader = mapping[fieldKey];
-		return csvHeader ? row[csvHeader] || "" : "";
+		if (!csvHeader || csvHeader === "__skip__") return "";
+		return row[csvHeader] || "";
 	};
 
 	const parseDirection = (value: string): "long" | "short" => {
@@ -661,7 +664,7 @@ export default function ImportPage() {
 											<SelectValue placeholder="Select column" />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value="">-- Skip --</SelectItem>
+											<SelectItem value="__skip__">-- Skip --</SelectItem>
 											{headers.map((header) => (
 												<SelectItem key={header} value={header}>
 													{header}
