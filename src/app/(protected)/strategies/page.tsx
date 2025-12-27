@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { PlaybookCard } from "@/components/playbook";
+import { StrategyCard } from "@/components/strategy";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -18,64 +18,64 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/trpc/react";
 
-export default function PlaybooksPage() {
+export default function StrategiesPage() {
 	const router = useRouter();
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-	const [playbookToDelete, setPlaybookToDelete] = useState<number | null>(null);
+	const [strategyToDelete, setStrategyToDelete] = useState<number | null>(null);
 
 	const utils = api.useUtils();
 
-	const { data: playbooks, isLoading } = api.playbooks.getAll.useQuery({
+	const { data: strategies, isLoading } = api.strategies.getAll.useQuery({
 		includeInactive: true,
 	});
 
-	const deleteMutation = api.playbooks.delete.useMutation({
+	const deleteMutation = api.strategies.delete.useMutation({
 		onSuccess: () => {
-			toast.success("Playbook deleted");
-			utils.playbooks.getAll.invalidate();
+			toast.success("Strategy deleted");
+			utils.strategies.getAll.invalidate();
 			setDeleteDialogOpen(false);
-			setPlaybookToDelete(null);
+			setStrategyToDelete(null);
 		},
 		onError: (error) => {
-			toast.error(error.message || "Failed to delete playbook");
+			toast.error(error.message || "Failed to delete strategy");
 		},
 	});
 
-	const duplicateMutation = api.playbooks.duplicate.useMutation({
-		onSuccess: (newPlaybook) => {
-			toast.success("Playbook duplicated");
-			utils.playbooks.getAll.invalidate();
-			router.push(`/playbooks/${newPlaybook.id}`);
+	const duplicateMutation = api.strategies.duplicate.useMutation({
+		onSuccess: (newStrategy) => {
+			toast.success("Strategy duplicated");
+			utils.strategies.getAll.invalidate();
+			router.push(`/strategies/${newStrategy.id}`);
 		},
 		onError: (error) => {
-			toast.error(error.message || "Failed to duplicate playbook");
+			toast.error(error.message || "Failed to duplicate strategy");
 		},
 	});
 
 	const handleDelete = (id: number) => {
-		setPlaybookToDelete(id);
+		setStrategyToDelete(id);
 		setDeleteDialogOpen(true);
 	};
 
 	const confirmDelete = () => {
-		if (playbookToDelete) {
-			deleteMutation.mutate({ id: playbookToDelete });
+		if (strategyToDelete) {
+			deleteMutation.mutate({ id: strategyToDelete });
 		}
 	};
 
-	// Get stats for each playbook
-	const playbookStats = api.useQueries((t) =>
-		(playbooks ?? []).map((p) => t.playbooks.getStats({ id: p.id })),
+	// Get stats for each strategy
+	const strategyStats = api.useQueries((t) =>
+		(strategies ?? []).map((s) => t.strategies.getStats({ id: s.id })),
 	);
 
 	const statsMap = new Map<
 		number,
 		{ winRate: number; totalPnl: number; avgPnl: number }
 	>();
-	playbooks?.forEach((p, i) => {
-		const stats = playbookStats[i]?.data;
+	strategies?.forEach((s, i) => {
+		const stats = strategyStats[i]?.data;
 		if (stats) {
-			statsMap.set(p.id, {
+			statsMap.set(s.id, {
 				winRate: stats.winRate,
 				totalPnl: stats.totalPnl,
 				avgPnl: stats.avgPnl,
@@ -88,16 +88,16 @@ export default function PlaybooksPage() {
 			{/* Header */}
 			<div className="flex items-center justify-between">
 				<div>
-					<h1 className="font-bold text-2xl tracking-tight">Playbooks</h1>
+					<h1 className="font-bold text-2xl tracking-tight">Strategies</h1>
 					<p className="mt-1 font-mono text-muted-foreground text-sm">
 						Document your trading strategies with entry rules, risk management,
 						and checklists.
 					</p>
 				</div>
 				<Button asChild className="font-mono text-xs uppercase tracking-wider">
-					<Link href="/playbooks/new">
+					<Link href="/strategies/new">
 						<Plus className="mr-2 h-4 w-4" />
-						New Playbook
+						New Strategy
 					</Link>
 				</Button>
 			</div>
@@ -112,37 +112,37 @@ export default function PlaybooksPage() {
 			)}
 
 			{/* Empty state */}
-			{!isLoading && (!playbooks || playbooks.length === 0) && (
+			{!isLoading && (!strategies || strategies.length === 0) && (
 				<div className="flex flex-col items-center justify-center rounded border border-white/5 bg-white/[0.02] py-16">
 					<BookMarked className="mb-4 h-12 w-12 text-muted-foreground/50" />
-					<h2 className="font-semibold text-lg">No playbooks yet</h2>
+					<h2 className="font-semibold text-lg">No strategies yet</h2>
 					<p className="mt-1 max-w-sm text-center font-mono text-muted-foreground text-sm">
-						Create your first playbook to document your trading strategy and
+						Create your first strategy to document your trading approach and
 						track rule compliance.
 					</p>
 					<Button
 						asChild
 						className="mt-6 font-mono text-xs uppercase tracking-wider"
 					>
-						<Link href="/playbooks/new">
+						<Link href="/strategies/new">
 							<Plus className="mr-2 h-4 w-4" />
-							Create Playbook
+							Create Strategy
 						</Link>
 					</Button>
 				</div>
 			)}
 
-			{/* Playbooks grid */}
-			{!isLoading && playbooks && playbooks.length > 0 && (
+			{/* Strategies grid */}
+			{!isLoading && strategies && strategies.length > 0 && (
 				<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-					{playbooks.map((playbook) => (
-						<PlaybookCard
-							key={playbook.id}
-							onDelete={() => handleDelete(playbook.id)}
-							onDuplicate={() => duplicateMutation.mutate({ id: playbook.id })}
-							onEdit={() => router.push(`/playbooks/${playbook.id}`)}
-							playbook={playbook}
-							stats={statsMap.get(playbook.id) ?? null}
+					{strategies.map((strategy) => (
+						<StrategyCard
+							key={strategy.id}
+							onDelete={() => handleDelete(strategy.id)}
+							onDuplicate={() => duplicateMutation.mutate({ id: strategy.id })}
+							onEdit={() => router.push(`/strategies/${strategy.id}`)}
+							stats={statsMap.get(strategy.id) ?? null}
+							strategy={strategy}
 						/>
 					))}
 				</div>
@@ -153,10 +153,10 @@ export default function PlaybooksPage() {
 				<DialogContent className="border-border bg-background">
 					<DialogHeader>
 						<DialogTitle className="font-mono uppercase tracking-wider">
-							Delete Playbook
+							Delete Strategy
 						</DialogTitle>
 						<DialogDescription className="font-mono text-xs">
-							Are you sure you want to delete this playbook? This will remove it
+							Are you sure you want to delete this strategy? This will remove it
 							from all associated trades.
 						</DialogDescription>
 					</DialogHeader>
@@ -177,3 +177,4 @@ export default function PlaybooksPage() {
 		</div>
 	);
 }
+

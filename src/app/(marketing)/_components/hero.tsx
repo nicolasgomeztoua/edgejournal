@@ -1,19 +1,10 @@
 "use client";
 
-import { SignedIn, SignedOut, SignUpButton, useUser } from "@clerk/nextjs";
-import {
-	ArrowRight,
-	BarChart3,
-	Loader2,
-	Play,
-	Target,
-	TrendingDown,
-	TrendingUp,
-} from "lucide-react";
+import { SignedIn, SignedOut, SignUpButton } from "@clerk/nextjs";
+import { ArrowRight, BarChart3, Play, Target, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { api } from "@/trpc/react";
 
 // Simulated live ticker data
 const tickerItems = [
@@ -112,237 +103,7 @@ function AnimatedCounter({
 	);
 }
 
-// Dashboard with real user data
-function UserDashboard() {
-	const { data: stats, isLoading: statsLoading } = api.trades.getStats.useQuery(
-		{},
-		{ retry: false },
-	);
-	const { data: tradesData, isLoading: tradesLoading } =
-		api.trades.getAll.useQuery(
-			{ limit: 5, status: "closed" },
-			{ retry: false },
-		);
-
-	const [animatedEquity, setAnimatedEquity] = useState<number[]>([]);
-
-	// Build equity curve from recent trades
-	const recentTrades = tradesData?.items ?? [];
-	const equityCurve =
-		recentTrades.length > 0
-			? recentTrades
-					.slice()
-					.reverse()
-					.reduce<number[]>(
-						(acc, trade) => {
-							const lastValue = acc[acc.length - 1] ?? 0;
-							const pnl = parseFloat(trade.netPnl ?? "0");
-							acc.push(lastValue + pnl);
-							return acc;
-						},
-						[0],
-					)
-			: demoEquityCurve;
-
-	const equityCurveKey = equityCurve.join(",");
-
-	useEffect(() => {
-		// Animate the equity curve in
-		const curve = equityCurveKey.split(",").map(Number);
-		curve.forEach((_, index) => {
-			setTimeout(() => {
-				setAnimatedEquity(curve.slice(0, index + 1));
-			}, index * 80);
-		});
-	}, [equityCurveKey]);
-
-	const maxEquity = Math.max(...equityCurve.map(Math.abs), 1);
-	const minEquity = Math.min(...equityCurve, 0);
-	const range = maxEquity - minEquity || 1;
-
-	const isLoading = statsLoading || tradesLoading;
-	const hasData = stats && stats.totalTrades > 0;
-
-	// Format currency
-	const formatPnl = (value: number) => {
-		const prefix = value >= 0 ? "+$" : "-$";
-		return `${prefix}${Math.abs(value).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-	};
-
-	if (isLoading) {
-		return (
-			<div className="flex h-full min-h-[200px] items-center justify-center">
-				<Loader2 className="h-8 w-8 animate-spin text-primary" />
-			</div>
-		);
-	}
-
-	if (!hasData) {
-		// Show empty state with CTA
-		return (
-			<div className="flex h-full min-h-[200px] flex-col items-center justify-center gap-4 p-6 text-center sm:p-8">
-				<div className="rounded-full border border-white/10 bg-white/[0.02] p-4">
-					<BarChart3 className="h-8 w-8 text-muted-foreground" />
-				</div>
-				<div>
-					<div className="font-medium font-mono text-sm">No trades yet</div>
-					<div className="mt-1 font-mono text-muted-foreground text-xs">
-						Import your trades to see your real stats here
-					</div>
-				</div>
-				<Button
-					asChild
-					className="mt-2 font-mono text-xs uppercase tracking-wider"
-					size="sm"
-				>
-					<Link href="/import">Import Trades</Link>
-				</Button>
-			</div>
-		);
-	}
-
-	return (
-		<div className="flex h-full flex-col gap-3 p-3 sm:p-4">
-			{/* Stats row - responsive grid */}
-			<div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-				<div className="rounded border border-white/5 bg-white/[0.02] p-2 sm:p-3">
-					<div className="flex items-center justify-between">
-						<span className="font-mono text-[9px] text-muted-foreground uppercase tracking-wider sm:text-[10px]">
-							Net P&L
-						</span>
-						{stats.totalPnl >= 0 ? (
-							<TrendingUp className="h-3 w-3 text-profit" />
-						) : (
-							<TrendingDown className="h-3 w-3 text-loss" />
-						)}
-					</div>
-					<div
-						className={`mt-1 font-bold font-mono text-sm sm:text-lg ${stats.totalPnl >= 0 ? "text-profit" : "text-loss"}`}
-					>
-						{formatPnl(stats.totalPnl)}
-					</div>
-					<div className="hidden font-mono text-[10px] text-muted-foreground sm:block">
-						{stats.totalTrades} trades
-					</div>
-				</div>
-				<div className="rounded border border-white/5 bg-white/[0.02] p-2 sm:p-3">
-					<div className="flex items-center justify-between">
-						<span className="font-mono text-[9px] text-muted-foreground uppercase tracking-wider sm:text-[10px]">
-							Win Rate
-						</span>
-						<Target className="h-3 w-3 text-primary" />
-					</div>
-					<div className="mt-1 font-bold font-mono text-sm sm:text-lg">
-						{stats.winRate.toFixed(1)}%
-					</div>
-					<div className="hidden font-mono text-[10px] text-muted-foreground sm:block">
-						{stats.wins}W · {stats.losses}L
-					</div>
-				</div>
-				<div className="rounded border border-white/5 bg-white/[0.02] p-2 sm:p-3">
-					<div className="flex items-center justify-between">
-						<span className="font-mono text-[9px] text-muted-foreground uppercase tracking-wider sm:text-[10px]">
-							Avg Win
-						</span>
-						<TrendingUp className="h-3 w-3 text-profit" />
-					</div>
-					<div className="mt-1 font-bold font-mono text-profit text-sm sm:text-lg">
-						{formatPnl(stats.avgWin)}
-					</div>
-					<div className="hidden font-mono text-[10px] text-muted-foreground sm:block">
-						{stats.wins} wins
-					</div>
-				</div>
-				<div className="rounded border border-white/5 bg-white/[0.02] p-2 sm:p-3">
-					<div className="flex items-center justify-between">
-						<span className="font-mono text-[9px] text-muted-foreground uppercase tracking-wider sm:text-[10px]">
-							Avg Loss
-						</span>
-						<TrendingDown className="h-3 w-3 text-loss" />
-					</div>
-					<div className="mt-1 font-bold font-mono text-loss text-sm sm:text-lg">
-						-${stats.avgLoss.toFixed(2)}
-					</div>
-					<div className="hidden font-mono text-[10px] text-muted-foreground sm:block">
-						{stats.losses} losses
-					</div>
-				</div>
-			</div>
-
-			{/* Chart and trades - responsive layout */}
-			<div className="grid flex-1 grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
-				{/* Equity curve */}
-				<div className="rounded border border-white/5 bg-white/[0.02] p-2 sm:col-span-2 sm:p-3">
-					<div className="mb-2 flex items-center justify-between sm:mb-3">
-						<span className="font-mono text-[9px] text-muted-foreground uppercase tracking-wider sm:text-[10px]">
-							Equity Curve
-						</span>
-						<span
-							className={`font-mono text-[9px] sm:text-[10px] ${stats.totalPnl >= 0 ? "text-profit" : "text-loss"}`}
-						>
-							{formatPnl(stats.totalPnl)}
-						</span>
-					</div>
-					<div className="flex h-20 items-end gap-[2px] sm:h-32">
-						{animatedEquity.map((value, i) => {
-							const height = ((value - minEquity) / range) * 100;
-							const isPositive = value >= 0;
-							return (
-								<div
-									className={`flex-1 rounded-t transition-all duration-300 ${
-										isPositive
-											? "bg-gradient-to-t from-primary/60 to-primary/30"
-											: "bg-gradient-to-t from-loss/60 to-loss/30"
-									}`}
-									key={`equity-${value.toFixed(2)}-${i}`}
-									style={{ height: `${Math.max(height, 2)}%` }}
-								/>
-							);
-						})}
-					</div>
-				</div>
-
-				{/* Recent trades - hidden on smallest screens */}
-				<div className="hidden rounded border border-white/5 bg-white/[0.02] p-2 sm:block sm:p-3">
-					<div className="mb-3 font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-						Recent Trades
-					</div>
-					<div className="space-y-2">
-						{recentTrades.slice(0, 5).map((trade) => {
-							const pnl = parseFloat(trade.netPnl ?? "0");
-							const isPositive = pnl >= 0;
-							return (
-								<div
-									className="flex items-center justify-between rounded bg-white/[0.02] px-2 py-1"
-									key={trade.id}
-								>
-									<div className="flex items-center gap-2">
-										<span className="font-mono text-[10px] text-muted-foreground">
-											{trade.symbol}
-										</span>
-										<span
-											className={`font-mono text-[10px] ${trade.direction === "long" ? "text-profit" : "text-loss"}`}
-										>
-											{trade.direction.toUpperCase()}
-										</span>
-									</div>
-									<span
-										className={`font-medium font-mono text-[10px] ${isPositive ? "text-profit" : "text-loss"}`}
-									>
-										{isPositive ? "+" : ""}
-										{pnl.toFixed(2)}
-									</span>
-								</div>
-							);
-						})}
-					</div>
-				</div>
-			</div>
-		</div>
-	);
-}
-
-// Demo dashboard for logged out users
+// Demo dashboard
 function DemoDashboard() {
 	const [animatedEquity, setAnimatedEquity] = useState<number[]>([]);
 
@@ -481,11 +242,9 @@ function DemoDashboard() {
 	);
 }
 
-// Wrapper component to decide which dashboard to show
+// Dashboard preview - always show demo
 function DashboardPreview() {
-	const { isSignedIn } = useUser();
-
-	return isSignedIn ? <UserDashboard /> : <DemoDashboard />;
+	return <DemoDashboard />;
 }
 
 export function Hero() {

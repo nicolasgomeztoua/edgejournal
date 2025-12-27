@@ -13,6 +13,7 @@ import {
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import {
+	accounts,
 	tradeExecutions,
 	trades,
 	tradeTags,
@@ -54,7 +55,7 @@ const createTradeSchema = z.object({
 	tagIds: z.array(z.number()).optional(),
 	accountId: z.number(), // Required: Link to trading account
 	externalId: z.string().optional(), // For tracking imported trades
-	playbookId: z.number().optional(), // Link to playbook
+	strategyId: z.number().optional(), // Link to strategy
 });
 
 const updateTradeSchema = z.object({
@@ -104,8 +105,8 @@ const updateTradeSchema = z.object({
 	// Rating and review
 	rating: z.number().min(1).max(5).optional().nullable(),
 	isReviewed: z.boolean().optional(),
-	// Playbook
-	playbookId: z.number().nullish(),
+	// Strategy
+	strategyId: z.number().nullish(),
 });
 
 // Schema for adding a partial exit / execution
@@ -183,7 +184,7 @@ export const tradesRouter = createTRPCRouter({
 							"breakeven",
 						])
 						.nullish(),
-					playbookId: z.number().nullish(),
+					strategyId: z.number().nullish(),
 				})
 				.optional(),
 		)
@@ -197,9 +198,18 @@ export const tradesRouter = createTRPCRouter({
 				conditions.push(isNull(trades.deletedAt));
 			}
 
-			// Filter by account if specified
+			// Filter by account if specified, otherwise only include trades from active accounts
 			if (input?.accountId) {
 				conditions.push(eq(trades.accountId, input.accountId));
+			} else {
+				// Only include trades from active accounts when querying across all accounts
+				const activeAccountIds = ctx.db
+					.select({ id: accounts.id })
+					.from(accounts)
+					.where(
+						and(eq(accounts.userId, ctx.user.id), eq(accounts.isActive, true)),
+					);
+				conditions.push(sql`${trades.accountId} IN (${activeAccountIds})`);
 			}
 			if (input?.status) {
 				conditions.push(eq(trades.status, input.status));
@@ -254,8 +264,8 @@ export const tradesRouter = createTRPCRouter({
 			if (input?.exitReason) {
 				conditions.push(eq(trades.exitReason, input.exitReason));
 			}
-			if (input?.playbookId) {
-				conditions.push(eq(trades.playbookId, input.playbookId));
+			if (input?.strategyId) {
+				conditions.push(eq(trades.strategyId, input.strategyId));
 			}
 			if (input?.dayOfWeek && input.dayOfWeek.length > 0) {
 				// PostgreSQL EXTRACT(DOW FROM date) returns 0=Sunday, 6=Saturday
@@ -283,7 +293,7 @@ export const tradesRouter = createTRPCRouter({
 						},
 					},
 					account: true,
-					playbook: true,
+					strategy: true,
 				},
 			});
 
@@ -334,7 +344,7 @@ export const tradesRouter = createTRPCRouter({
 					},
 					screenshots: true,
 					account: true,
-					playbook: true,
+					strategy: true,
 					ruleChecks: true,
 				},
 			});
@@ -771,9 +781,18 @@ export const tradesRouter = createTRPCRouter({
 				isNull(trades.deletedAt), // Exclude deleted trades from stats
 			];
 
-			// Filter by account if specified
+			// Filter by account if specified, otherwise only include trades from active accounts
 			if (input?.accountId) {
 				conditions.push(eq(trades.accountId, input.accountId));
+			} else {
+				// Only include trades from active accounts when querying across all accounts
+				const activeAccountIds = ctx.db
+					.select({ id: accounts.id })
+					.from(accounts)
+					.where(
+						and(eq(accounts.userId, ctx.user.id), eq(accounts.isActive, true)),
+					);
+				conditions.push(sql`${trades.accountId} IN (${activeAccountIds})`);
 			}
 			if (input?.startDate) {
 				conditions.push(gte(trades.entryTime, new Date(input.startDate)));

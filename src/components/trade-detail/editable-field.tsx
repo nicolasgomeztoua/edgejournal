@@ -95,11 +95,25 @@ export function EditableField({
 		}
 	}
 
+	function handlePaste(e: React.ClipboardEvent<HTMLInputElement>) {
+		if (type !== "number") return;
+
+		const pastedText = e.clipboardData.getData("text");
+		// Strip currency symbols, commas, and whitespace from pasted values
+		const cleanedValue = pastedText.replace(/[$€£¥₹,\s]/g, "").trim();
+
+		// Check if the cleaned value is a valid number
+		if (/^-?\d*\.?\d*$/.test(cleanedValue) && cleanedValue !== "") {
+			e.preventDefault();
+			setLocalValue(cleanedValue);
+		}
+	}
+
 	return (
-		<div className={cn("space-y-1", className)}>
+		<div className={cn("space-y-1.5", className)}>
 			{label && (
 				<label
-					className="mb-1.5 block font-mono text-[10px] text-muted-foreground uppercase tracking-widest"
+					className="block font-mono text-[10px] text-muted-foreground/80 uppercase tracking-widest"
 					htmlFor={id}
 				>
 					{label}
@@ -107,19 +121,19 @@ export function EditableField({
 			)}
 			<div className="relative">
 				{prefix && (
-					<span className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-3 font-mono text-muted-foreground text-sm">
+					<span className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-3 font-mono text-muted-foreground/60 text-sm">
 						{prefix}
 					</span>
 				)}
 				<input
 					className={cn(
-						"h-10 w-full rounded border px-3 font-mono text-sm transition-all",
-						"border-black/10 bg-black/[0.02] placeholder:text-muted-foreground/50 dark:border-white/25 dark:bg-white/[0.04]",
-						"hover:border-primary/30 hover:bg-black/[0.04] dark:hover:bg-white/[0.06]",
-						"focus:border-primary/60 focus:bg-black/[0.04] focus:outline-none focus:ring-2 focus:ring-primary/25 dark:focus:bg-white/[0.06]",
+						"h-10 w-full rounded-sm border px-3 font-mono text-sm transition-all",
+						"border-white/10 bg-white/[0.03] placeholder:text-muted-foreground/40",
+						"hover:border-white/20 hover:bg-white/[0.05]",
+						"focus:border-primary/50 focus:bg-white/[0.05] focus:outline-none focus:ring-1 focus:ring-primary/30",
 						"disabled:cursor-not-allowed disabled:opacity-50",
 						align === "right" && "text-right",
-						prefix && "pl-7",
+						prefix && "pl-8",
 						suffix && "pr-10",
 						inputClassName,
 					)}
@@ -130,13 +144,14 @@ export function EditableField({
 					onChange={handleChange}
 					onFocus={() => setIsFocused(true)}
 					onKeyDown={handleKeyDown}
+					onPaste={handlePaste}
 					placeholder={placeholder}
 					ref={inputRef}
 					type="text"
 					value={localValue}
 				/>
 				{suffix && (
-					<span className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-3 font-mono text-muted-foreground text-sm">
+					<span className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-3 font-mono text-muted-foreground/60 text-sm">
 						{suffix}
 					</span>
 				)}
@@ -188,10 +203,10 @@ export function EditableTextarea({
 	}
 
 	return (
-		<div className={cn("space-y-1", className)}>
+		<div className={cn("space-y-1.5", className)}>
 			{label && (
 				<label
-					className="mb-1.5 block font-mono text-[10px] text-muted-foreground uppercase tracking-widest"
+					className="block font-mono text-[10px] text-muted-foreground/80 uppercase tracking-widest"
 					htmlFor={id}
 				>
 					{label}
@@ -199,10 +214,10 @@ export function EditableTextarea({
 			)}
 			<textarea
 				className={cn(
-					"w-full resize-none rounded border px-3 py-3 font-mono text-sm transition-all",
-					"border-black/10 bg-black/[0.02] placeholder:text-muted-foreground/50 dark:border-white/25 dark:bg-white/[0.04]",
-					"hover:border-primary/30 hover:bg-black/[0.04] dark:hover:bg-white/[0.06]",
-					"focus:border-primary/60 focus:bg-black/[0.04] focus:outline-none focus:ring-2 focus:ring-primary/25 dark:focus:bg-white/[0.06]",
+					"w-full resize-none rounded-sm border px-3 py-3 font-mono text-sm transition-all",
+					"border-white/10 bg-white/[0.03] placeholder:text-muted-foreground/40",
+					"hover:border-white/20 hover:bg-white/[0.05]",
+					"focus:border-primary/50 focus:bg-white/[0.05] focus:outline-none focus:ring-1 focus:ring-primary/30",
 				)}
 				id={id}
 				onBlur={handleBlur}
@@ -244,10 +259,10 @@ export function EditableSelect({
 	const selectedOption = options.find((o) => o.value === value);
 
 	return (
-		<div className={cn("space-y-1", className)}>
+		<div className={cn("space-y-1.5", className)}>
 			{label && (
 				<label
-					className="mb-1.5 block font-mono text-[10px] text-muted-foreground uppercase tracking-widest"
+					className="block font-mono text-[10px] text-muted-foreground/80 uppercase tracking-widest"
 					htmlFor={id}
 				>
 					{label}
@@ -255,11 +270,11 @@ export function EditableSelect({
 			)}
 			<select
 				className={cn(
-					"h-10 w-full cursor-pointer appearance-none rounded border px-3 pr-8 font-mono text-sm transition-all",
-					"border-black/10 bg-black/[0.02] dark:border-white/25 dark:bg-white/[0.04]",
-					"hover:border-primary/30 hover:bg-black/[0.04] dark:hover:bg-white/[0.06]",
-					"focus:border-primary/60 focus:bg-black/[0.04] focus:outline-none focus:ring-2 focus:ring-primary/25 dark:focus:bg-white/[0.06]",
-					!value && "text-muted-foreground/50",
+					"h-10 w-full cursor-pointer appearance-none rounded-sm border px-3 pr-8 font-mono text-sm transition-all",
+					"border-white/10 bg-white/[0.03]",
+					"hover:border-white/20 hover:bg-white/[0.05]",
+					"focus:border-primary/50 focus:bg-white/[0.05] focus:outline-none focus:ring-1 focus:ring-primary/30",
+					!value && "text-muted-foreground/40",
 					selectedOption?.color,
 				)}
 				id={id}

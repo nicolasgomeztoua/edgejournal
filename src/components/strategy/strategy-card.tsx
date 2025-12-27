@@ -13,8 +13,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
-interface PlaybookCardProps {
-	playbook: {
+interface StrategyCardProps {
+	strategy: {
 		id: number;
 		name: string;
 		description: string | null;
@@ -35,20 +35,20 @@ interface PlaybookCardProps {
 	onDelete?: () => void;
 }
 
-export function PlaybookCard({
-	playbook,
+export function StrategyCard({
+	strategy,
 	stats,
 	onEdit,
 	onDuplicate,
 	onDelete,
-}: PlaybookCardProps) {
-	const color = playbook.color ?? "#d4ff00";
+}: StrategyCardProps) {
+	const color = strategy.color ?? "#d4ff00";
 
 	return (
 		<div
 			className={cn(
 				"group relative rounded border border-white/5 bg-white/[0.02] p-5 transition-all hover:border-white/10",
-				!playbook.isActive && "opacity-60",
+				!strategy.isActive && "opacity-60",
 			)}
 		>
 			{/* Color indicator */}
@@ -62,18 +62,18 @@ export function PlaybookCard({
 				<div className="flex-1">
 					<Link
 						className="font-mono font-semibold text-lg transition-colors hover:text-primary"
-						href={`/playbooks/${playbook.id}`}
+						href={`/strategies/${strategy.id}`}
 					>
-						{playbook.name}
+						{strategy.name}
 					</Link>
-					{!playbook.isActive && (
+					{!strategy.isActive && (
 						<Badge className="ml-2 font-mono text-[10px]" variant="secondary">
 							Inactive
 						</Badge>
 					)}
-					{playbook.description && (
+					{strategy.description && (
 						<p className="mt-1 line-clamp-2 font-mono text-muted-foreground text-sm">
-							{playbook.description}
+							{strategy.description}
 						</p>
 					)}
 				</div>
@@ -116,7 +116,7 @@ export function PlaybookCard({
 						Trades
 					</div>
 					<div className="mt-1 font-bold font-mono text-lg">
-						{playbook._count.trades}
+						{strategy._count.trades}
 					</div>
 				</div>
 
@@ -125,11 +125,11 @@ export function PlaybookCard({
 						Rules
 					</div>
 					<div className="mt-1 font-bold font-mono text-lg">
-						{playbook._count.rules}
+						{strategy._count.rules}
 					</div>
 				</div>
 
-				{stats && playbook._count.trades > 0 ? (
+				{stats && strategy._count.trades > 0 ? (
 					<div>
 						<div className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 							Win Rate
@@ -157,7 +157,7 @@ export function PlaybookCard({
 			</div>
 
 			{/* P&L if available */}
-			{stats && playbook._count.trades > 0 && (
+			{stats && strategy._count.trades > 0 && (
 				<div className="mt-4 border-border border-t pt-4">
 					<div className="flex items-center justify-between">
 						<span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
@@ -181,3 +181,4 @@ export function PlaybookCard({
 		</div>
 	);
 }
+

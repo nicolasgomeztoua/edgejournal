@@ -250,3 +250,4 @@ export function TrailingConfig({ value, onChange }: TrailingConfigProps) {
 		</div>
 	);
 }
+

@@ -344,3 +344,4 @@ export function RiskConfig({ value, onChange }: RiskConfigProps) {
 		</div>
 	);
 }
+

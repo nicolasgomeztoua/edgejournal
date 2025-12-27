@@ -8,7 +8,7 @@ This folder contains detailed sub-plans for each phase of the TradeZella feature
 plans/
 ├── README.md                   # This file
 ├── phase-1-trade-log.md        # Enhanced Trade Log and Filtering (DETAILED)
-├── phase-2-playbooks.md        # Playbook System
+├── phase-2-strategies.md       # Strategy System
 ├── phase-3-dashboard.md        # Dashboard Customization
 ├── phase-4-analytics.md        # Advanced Analytics
 ├── phase-5-trade-detail.md     # Trade Detail Enhancements
@@ -84,7 +84,7 @@ path/to/file.tsx
 Based on dependencies and business value:
 
 1. **Phase 1** - Foundation for all other phases
-2. **Phase 2** - Playbooks (core differentiator)
+2. **Phase 2** - Strategies (core differentiator)
 3. **Phase 3** - Dashboard (user experience)
 4. **Phase 4** - Analytics (core value)
 5. **Phase 5** - Trade Detail (polish)

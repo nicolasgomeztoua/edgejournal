@@ -56,8 +56,8 @@ const mainNavItems = [
 		icon: BookOpen,
 	},
 	{
-		title: "Playbooks",
-		href: "/playbooks",
+		title: "Strategies",
+		href: "/strategies",
 		icon: BookMarked,
 	},
 	{

@@ -49,7 +49,7 @@ export function RuleChecklist({
 		new Map(),
 	);
 
-	const checkRule = api.playbooks.checkRule.useMutation({
+	const checkRule = api.strategies.checkRule.useMutation({
 		onMutate: ({ ruleId, checked }) => {
 			setPendingChecks((prev) => new Map(prev).set(ruleId, checked));
 		},
@@ -101,7 +101,7 @@ export function RuleChecklist({
 		return (
 			<div className="py-8 text-center">
 				<p className="font-mono text-muted-foreground text-sm">
-					No rules defined for this playbook
+					No rules defined for this strategy
 				</p>
 			</div>
 		);
@@ -194,3 +194,4 @@ export function RuleChecklist({
 		</div>
 	);
 }
+

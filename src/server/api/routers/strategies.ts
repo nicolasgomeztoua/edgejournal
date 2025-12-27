@@ -2,8 +2,8 @@ import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import {
-	playbookRules,
-	playbooks,
+	strategyRules,
+	strategies,
 	tradeRuleChecks,
 	trades,
 	userSettings,
@@ -76,7 +76,7 @@ const trailingRulesSchema = z.object({
 		.optional(),
 });
 
-const playbookRuleSchema = z.object({
+const strategyRuleSchema = z.object({
 	id: z.number().optional(), // Optional for new rules
 	text: z.string().min(1),
 	category: z.enum(["entry", "exit", "risk", "management"]),
@@ -87,7 +87,7 @@ const playbookRuleSchema = z.object({
 // INPUT SCHEMAS
 // =============================================================================
 
-const createPlaybookSchema = z.object({
+const createStrategySchema = z.object({
 	name: z.string().min(1).max(100),
 	description: z.string().optional(),
 	color: z.string().optional(),
@@ -97,10 +97,10 @@ const createPlaybookSchema = z.object({
 	scalingRules: scalingRulesSchema.optional(),
 	trailingRules: trailingRulesSchema.optional(),
 	isActive: z.boolean().optional(),
-	rules: z.array(playbookRuleSchema).optional(),
+	rules: z.array(strategyRuleSchema).optional(),
 });
 
-const updatePlaybookSchema = z.object({
+const updateStrategySchema = z.object({
 	id: z.number(),
 	name: z.string().min(1).max(100).optional(),
 	description: z.string().nullish(),
@@ -111,15 +111,15 @@ const updatePlaybookSchema = z.object({
 	scalingRules: scalingRulesSchema.nullish(),
 	trailingRules: trailingRulesSchema.nullish(),
 	isActive: z.boolean().optional(),
-	rules: z.array(playbookRuleSchema).optional(),
+	rules: z.array(strategyRuleSchema).optional(),
 });
 
 // =============================================================================
 // ROUTER
 // =============================================================================
 
-export const playbooksRouter = createTRPCRouter({
-	// Get all playbooks for current user
+export const strategiesRouter = createTRPCRouter({
+	// Get all strategies for current user
 	getAll: protectedProcedure
 		.input(
 			z
@@ -129,32 +129,32 @@ export const playbooksRouter = createTRPCRouter({
 				.optional(),
 		)
 		.query(async ({ ctx, input }) => {
-			const conditions = [eq(playbooks.userId, ctx.user.id)];
+			const conditions = [eq(strategies.userId, ctx.user.id)];
 
 			if (!input?.includeInactive) {
-				conditions.push(eq(playbooks.isActive, true));
+				conditions.push(eq(strategies.isActive, true));
 			}
 
-			const results = await ctx.db.query.playbooks.findMany({
+			const results = await ctx.db.query.strategies.findMany({
 				where: and(...conditions),
-				orderBy: [desc(playbooks.createdAt)],
+				orderBy: [desc(strategies.createdAt)],
 				with: {
 					rules: {
-						orderBy: [playbookRules.order],
+						orderBy: [strategyRules.order],
 					},
 				},
 			});
 
-			// Get trade counts and stats for each playbook
-			const playbooksWithStats = await Promise.all(
-				results.map(async (playbook) => {
-					// Get trade count for this playbook
+			// Get trade counts and stats for each strategy
+			const strategiesWithStats = await Promise.all(
+				results.map(async (strategy) => {
+					// Get trade count for this strategy
 					const tradeCountResult = await ctx.db
 						.select({ count: sql<number>`count(*)` })
 						.from(trades)
 						.where(
 							and(
-								eq(trades.playbookId, playbook.id),
+								eq(trades.strategyId, strategy.id),
 								eq(trades.userId, ctx.user.id),
 								isNull(trades.deletedAt),
 							),
@@ -163,70 +163,70 @@ export const playbooksRouter = createTRPCRouter({
 					const tradeCount = tradeCountResult[0]?.count ?? 0;
 
 					return {
-						...playbook,
-						riskParameters: playbook.riskParameters
-							? JSON.parse(playbook.riskParameters)
+						...strategy,
+						riskParameters: strategy.riskParameters
+							? JSON.parse(strategy.riskParameters)
 							: null,
-						scalingRules: playbook.scalingRules
-							? JSON.parse(playbook.scalingRules)
+						scalingRules: strategy.scalingRules
+							? JSON.parse(strategy.scalingRules)
 							: null,
-						trailingRules: playbook.trailingRules
-							? JSON.parse(playbook.trailingRules)
+						trailingRules: strategy.trailingRules
+							? JSON.parse(strategy.trailingRules)
 							: null,
 						_count: {
-							rules: playbook.rules.length,
+							rules: strategy.rules.length,
 							trades: tradeCount,
 						},
 					};
 				}),
 			);
 
-			return playbooksWithStats;
+			return strategiesWithStats;
 		}),
 
-	// Get a single playbook by ID
+	// Get a single strategy by ID
 	getById: protectedProcedure
 		.input(z.object({ id: z.number() }))
 		.query(async ({ ctx, input }) => {
-			const playbook = await ctx.db.query.playbooks.findFirst({
+			const strategy = await ctx.db.query.strategies.findFirst({
 				where: and(
-					eq(playbooks.id, input.id),
-					eq(playbooks.userId, ctx.user.id),
+					eq(strategies.id, input.id),
+					eq(strategies.userId, ctx.user.id),
 				),
 				with: {
 					rules: {
-						orderBy: [playbookRules.order],
+						orderBy: [strategyRules.order],
 					},
 				},
 			});
 
-			if (!playbook) {
-				throw new Error("Playbook not found");
+			if (!strategy) {
+				throw new Error("Strategy not found");
 			}
 
 			return {
-				...playbook,
-				riskParameters: playbook.riskParameters
-					? JSON.parse(playbook.riskParameters)
+				...strategy,
+				riskParameters: strategy.riskParameters
+					? JSON.parse(strategy.riskParameters)
 					: null,
-				scalingRules: playbook.scalingRules
-					? JSON.parse(playbook.scalingRules)
+				scalingRules: strategy.scalingRules
+					? JSON.parse(strategy.scalingRules)
 					: null,
-				trailingRules: playbook.trailingRules
-					? JSON.parse(playbook.trailingRules)
+				trailingRules: strategy.trailingRules
+					? JSON.parse(strategy.trailingRules)
 					: null,
 			};
 		}),
 
-	// Create a new playbook
+	// Create a new strategy
 	create: protectedProcedure
-		.input(createPlaybookSchema)
+		.input(createStrategySchema)
 		.mutation(async ({ ctx, input }) => {
 			const { rules, riskParameters, scalingRules, trailingRules, ...data } =
 				input;
 
-			const [newPlaybook] = await ctx.db
-				.insert(playbooks)
+			const [newStrategy] = await ctx.db
+				.insert(strategies)
 				.values({
 					...data,
 					userId: ctx.user.id,
@@ -238,15 +238,15 @@ export const playbooksRouter = createTRPCRouter({
 				})
 				.returning();
 
-			if (!newPlaybook) {
-				throw new Error("Failed to create playbook");
+			if (!newStrategy) {
+				throw new Error("Failed to create strategy");
 			}
 
 			// Create rules if provided
 			if (rules && rules.length > 0) {
-				await ctx.db.insert(playbookRules).values(
+				await ctx.db.insert(strategyRules).values(
 					rules.map((rule) => ({
-						playbookId: newPlaybook.id,
+						strategyId: newStrategy.id,
 						text: rule.text,
 						category: rule.category,
 						order: rule.order,
@@ -254,12 +254,12 @@ export const playbooksRouter = createTRPCRouter({
 				);
 			}
 
-			return newPlaybook;
+			return newStrategy;
 		}),
 
-	// Update a playbook
+	// Update a strategy
 	update: protectedProcedure
-		.input(updatePlaybookSchema)
+		.input(updateStrategySchema)
 		.mutation(async ({ ctx, input }) => {
 			const {
 				id,
@@ -271,12 +271,12 @@ export const playbooksRouter = createTRPCRouter({
 			} = input;
 
 			// Verify ownership
-			const existingPlaybook = await ctx.db.query.playbooks.findFirst({
-				where: and(eq(playbooks.id, id), eq(playbooks.userId, ctx.user.id)),
+			const existingStrategy = await ctx.db.query.strategies.findFirst({
+				where: and(eq(strategies.id, id), eq(strategies.userId, ctx.user.id)),
 			});
 
-			if (!existingPlaybook) {
-				throw new Error("Playbook not found");
+			if (!existingStrategy) {
+				throw new Error("Strategy not found");
 			}
 
 			// Prepare update data
@@ -299,23 +299,23 @@ export const playbooksRouter = createTRPCRouter({
 			}
 
 			const [updated] = await ctx.db
-				.update(playbooks)
+				.update(strategies)
 				.set(updateData)
-				.where(eq(playbooks.id, id))
+				.where(eq(strategies.id, id))
 				.returning();
 
 			// Update rules if provided
 			if (rules !== undefined) {
 				// Delete existing rules
 				await ctx.db
-					.delete(playbookRules)
-					.where(eq(playbookRules.playbookId, id));
+					.delete(strategyRules)
+					.where(eq(strategyRules.strategyId, id));
 
 				// Insert new rules
 				if (rules.length > 0) {
-					await ctx.db.insert(playbookRules).values(
+					await ctx.db.insert(strategyRules).values(
 						rules.map((rule) => ({
-							playbookId: id,
+							strategyId: id,
 							text: rule.text,
 							category: rule.category,
 							order: rule.order,
@@ -327,43 +327,43 @@ export const playbooksRouter = createTRPCRouter({
 			return updated;
 		}),
 
-	// Delete a playbook (soft delete by setting inactive)
+	// Delete a strategy (soft delete by setting inactive)
 	delete: protectedProcedure
 		.input(z.object({ id: z.number() }))
 		.mutation(async ({ ctx, input }) => {
-			const existingPlaybook = await ctx.db.query.playbooks.findFirst({
+			const existingStrategy = await ctx.db.query.strategies.findFirst({
 				where: and(
-					eq(playbooks.id, input.id),
-					eq(playbooks.userId, ctx.user.id),
+					eq(strategies.id, input.id),
+					eq(strategies.userId, ctx.user.id),
 				),
 			});
 
-			if (!existingPlaybook) {
-				throw new Error("Playbook not found");
+			if (!existingStrategy) {
+				throw new Error("Strategy not found");
 			}
 
-			// Hard delete the playbook and cascade to rules
-			await ctx.db.delete(playbooks).where(eq(playbooks.id, input.id));
+			// Hard delete the strategy and cascade to rules
+			await ctx.db.delete(strategies).where(eq(strategies.id, input.id));
 
-			// Also remove playbook association from trades
+			// Also remove strategy association from trades
 			await ctx.db
 				.update(trades)
-				.set({ playbookId: null })
+				.set({ strategyId: null })
 				.where(
-					and(eq(trades.playbookId, input.id), eq(trades.userId, ctx.user.id)),
+					and(eq(trades.strategyId, input.id), eq(trades.userId, ctx.user.id)),
 				);
 
 			return { success: true };
 		}),
 
-	// Duplicate a playbook
+	// Duplicate a strategy
 	duplicate: protectedProcedure
 		.input(z.object({ id: z.number() }))
 		.mutation(async ({ ctx, input }) => {
-			const original = await ctx.db.query.playbooks.findFirst({
+			const original = await ctx.db.query.strategies.findFirst({
 				where: and(
-					eq(playbooks.id, input.id),
-					eq(playbooks.userId, ctx.user.id),
+					eq(strategies.id, input.id),
+					eq(strategies.userId, ctx.user.id),
 				),
 				with: {
 					rules: true,
@@ -371,12 +371,12 @@ export const playbooksRouter = createTRPCRouter({
 			});
 
 			if (!original) {
-				throw new Error("Playbook not found");
+				throw new Error("Strategy not found");
 			}
 
-			// Create new playbook
-			const [newPlaybook] = await ctx.db
-				.insert(playbooks)
+			// Create new strategy
+			const [newStrategy] = await ctx.db
+				.insert(strategies)
 				.values({
 					userId: ctx.user.id,
 					name: `${original.name} (Copy)`,
@@ -391,15 +391,15 @@ export const playbooksRouter = createTRPCRouter({
 				})
 				.returning();
 
-			if (!newPlaybook) {
-				throw new Error("Failed to duplicate playbook");
+			if (!newStrategy) {
+				throw new Error("Failed to duplicate strategy");
 			}
 
 			// Duplicate rules
 			if (original.rules.length > 0) {
-				await ctx.db.insert(playbookRules).values(
+				await ctx.db.insert(strategyRules).values(
 					original.rules.map((rule) => ({
-						playbookId: newPlaybook.id,
+						strategyId: newStrategy.id,
 						text: rule.text,
 						category: rule.category,
 						order: rule.order,
@@ -407,23 +407,23 @@ export const playbooksRouter = createTRPCRouter({
 				);
 			}
 
-			return newPlaybook;
+			return newStrategy;
 		}),
 
-	// Get playbook statistics
+	// Get strategy statistics
 	getStats: protectedProcedure
 		.input(z.object({ id: z.number() }))
 		.query(async ({ ctx, input }) => {
 			// Verify ownership
-			const playbook = await ctx.db.query.playbooks.findFirst({
+			const strategy = await ctx.db.query.strategies.findFirst({
 				where: and(
-					eq(playbooks.id, input.id),
-					eq(playbooks.userId, ctx.user.id),
+					eq(strategies.id, input.id),
+					eq(strategies.userId, ctx.user.id),
 				),
 			});
 
-			if (!playbook) {
-				throw new Error("Playbook not found");
+			if (!strategy) {
+				throw new Error("Strategy not found");
 			}
 
 			// Get user's breakeven threshold
@@ -435,17 +435,17 @@ export const playbooksRouter = createTRPCRouter({
 				userSettingsResult?.breakevenThreshold ?? "3.00",
 			);
 
-			// Get all closed trades for this playbook
-			const playbookTrades = await ctx.db.query.trades.findMany({
+			// Get all closed trades for this strategy
+			const strategyTrades = await ctx.db.query.trades.findMany({
 				where: and(
-					eq(trades.playbookId, input.id),
+					eq(trades.strategyId, input.id),
 					eq(trades.userId, ctx.user.id),
 					eq(trades.status, "closed"),
 					isNull(trades.deletedAt),
 				),
 			});
 
-			const totalTrades = playbookTrades.length;
+			const totalTrades = strategyTrades.length;
 
 			if (totalTrades === 0) {
 				return {
@@ -463,29 +463,29 @@ export const playbooksRouter = createTRPCRouter({
 			}
 
 			// Calculate stats
-			const wins = playbookTrades.filter((t) => {
+			const wins = strategyTrades.filter((t) => {
 				const pnl = t.netPnl ? parseFloat(t.netPnl) : 0;
 				return pnl > beThreshold;
 			}).length;
 
-			const losses = playbookTrades.filter((t) => {
+			const losses = strategyTrades.filter((t) => {
 				const pnl = t.netPnl ? parseFloat(t.netPnl) : 0;
 				return pnl < -beThreshold;
 			}).length;
 
 			const breakevens = totalTrades - wins - losses;
 
-			const totalPnl = playbookTrades.reduce(
+			const totalPnl = strategyTrades.reduce(
 				(sum, t) => sum + (t.netPnl ? parseFloat(t.netPnl) : 0),
 				0,
 			);
 
-			const grossProfit = playbookTrades.reduce((sum, t) => {
+			const grossProfit = strategyTrades.reduce((sum, t) => {
 				const pnl = t.netPnl ? parseFloat(t.netPnl) : 0;
 				return pnl > beThreshold ? sum + pnl : sum;
 			}, 0);
 
-			const grossLoss = playbookTrades.reduce((sum, t) => {
+			const grossLoss = strategyTrades.reduce((sum, t) => {
 				const pnl = t.netPnl ? parseFloat(t.netPnl) : 0;
 				return pnl < -beThreshold ? sum + Math.abs(pnl) : sum;
 			}, 0);
@@ -511,29 +511,29 @@ export const playbooksRouter = createTRPCRouter({
 			};
 		}),
 
-	// Get rule compliance for a playbook
+	// Get rule compliance for a strategy
 	getRuleCompliance: protectedProcedure
 		.input(z.object({ id: z.number() }))
 		.query(async ({ ctx, input }) => {
 			// Verify ownership
-			const playbook = await ctx.db.query.playbooks.findFirst({
+			const strategy = await ctx.db.query.strategies.findFirst({
 				where: and(
-					eq(playbooks.id, input.id),
-					eq(playbooks.userId, ctx.user.id),
+					eq(strategies.id, input.id),
+					eq(strategies.userId, ctx.user.id),
 				),
 				with: {
 					rules: true,
 				},
 			});
 
-			if (!playbook) {
-				throw new Error("Playbook not found");
+			if (!strategy) {
+				throw new Error("Strategy not found");
 			}
 
-			// Get all trades with this playbook
-			const playbookTrades = await ctx.db.query.trades.findMany({
+			// Get all trades with this strategy
+			const strategyTrades = await ctx.db.query.trades.findMany({
 				where: and(
-					eq(trades.playbookId, input.id),
+					eq(trades.strategyId, input.id),
 					eq(trades.userId, ctx.user.id),
 					isNull(trades.deletedAt),
 				),
@@ -543,8 +543,8 @@ export const playbooksRouter = createTRPCRouter({
 			});
 
 			// Calculate compliance per trade
-			const tradeCompliance = playbookTrades.map((trade) => {
-				const totalRules = playbook.rules.length;
+			const tradeCompliance = strategyTrades.map((trade) => {
+				const totalRules = strategy.rules.length;
 				if (totalRules === 0) {
 					return { tradeId: trade.id, compliance: 100 };
 				}
@@ -563,15 +563,15 @@ export const playbooksRouter = createTRPCRouter({
 					: 0;
 
 			// Calculate compliance per rule
-			const ruleCompliance = playbook.rules.map((rule) => {
-				const checkedCount = playbookTrades.reduce((count, trade) => {
+			const ruleCompliance = strategy.rules.map((rule) => {
+				const checkedCount = strategyTrades.reduce((count, trade) => {
 					const check = trade.ruleChecks.find((rc) => rc.ruleId === rule.id);
 					return check?.checked ? count + 1 : count;
 				}, 0);
 
 				const compliance =
-					playbookTrades.length > 0
-						? (checkedCount / playbookTrades.length) * 100
+					strategyTrades.length > 0
+						? (checkedCount / strategyTrades.length) * 100
 						: 0;
 
 				return {
@@ -579,13 +579,13 @@ export const playbooksRouter = createTRPCRouter({
 					ruleText: rule.text,
 					category: rule.category,
 					checkedCount,
-					totalTrades: playbookTrades.length,
+					totalTrades: strategyTrades.length,
 					compliance,
 				};
 			});
 
 			return {
-				totalTrades: playbookTrades.length,
+				totalTrades: strategyTrades.length,
 				avgCompliance,
 				tradeCompliance,
 				ruleCompliance,
@@ -691,10 +691,10 @@ export const playbooksRouter = createTRPCRouter({
 					eq(trades.userId, ctx.user.id),
 				),
 				with: {
-					playbook: {
+					strategy: {
 						with: {
 							rules: {
-								orderBy: [playbookRules.order],
+								orderBy: [strategyRules.order],
 							},
 						},
 					},
@@ -706,11 +706,11 @@ export const playbooksRouter = createTRPCRouter({
 				throw new Error("Trade not found");
 			}
 
-			if (!trade.playbook) {
-				return { playbook: null, rules: [], checks: [], compliance: 0 };
+			if (!trade.strategy) {
+				return { strategy: null, rules: [], checks: [], compliance: 0 };
 			}
 
-			const rules = trade.playbook.rules;
+			const rules = trade.strategy.rules;
 			const checks = trade.ruleChecks;
 
 			// Calculate compliance
@@ -719,10 +719,10 @@ export const playbooksRouter = createTRPCRouter({
 			const compliance = totalRules > 0 ? (checkedRules / totalRules) * 100 : 0;
 
 			return {
-				playbook: {
-					id: trade.playbook.id,
-					name: trade.playbook.name,
-					color: trade.playbook.color,
+				strategy: {
+					id: trade.strategy.id,
+					name: trade.strategy.name,
+					color: trade.strategy.color,
 				},
 				rules,
 				checks,
@@ -730,3 +730,4 @@ export const playbooksRouter = createTRPCRouter({
 			};
 		}),
 });
+

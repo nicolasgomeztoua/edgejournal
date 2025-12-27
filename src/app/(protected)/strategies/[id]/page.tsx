@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import type { PlaybookFormData } from "@/components/playbook";
-import { PlaybookForm } from "@/components/playbook";
+import type { StrategyFormData } from "@/components/strategy";
+import { StrategyForm } from "@/components/strategy";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -20,61 +20,61 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { api } from "@/trpc/react";
 
-export default function PlaybookDetailPage() {
+export default function StrategyDetailPage() {
 	const params = useParams();
 	const router = useRouter();
-	const playbookId = parseInt(params.id as string, 10);
+	const strategyId = parseInt(params.id as string, 10);
 
 	const [isDeleting, setIsDeleting] = useState(false);
 
 	const utils = api.useUtils();
 
-	const { data: playbook, isLoading } = api.playbooks.getById.useQuery(
-		{ id: playbookId },
-		{ enabled: !Number.isNaN(playbookId) },
+	const { data: strategy, isLoading } = api.strategies.getById.useQuery(
+		{ id: strategyId },
+		{ enabled: !Number.isNaN(strategyId) },
 	);
 
-	const { data: stats } = api.playbooks.getStats.useQuery(
-		{ id: playbookId },
-		{ enabled: !Number.isNaN(playbookId) && !!playbook },
+	const { data: stats } = api.strategies.getStats.useQuery(
+		{ id: strategyId },
+		{ enabled: !Number.isNaN(strategyId) && !!strategy },
 	);
 
-	const updateMutation = api.playbooks.update.useMutation({
+	const updateMutation = api.strategies.update.useMutation({
 		onSuccess: () => {
-			toast.success("Playbook updated");
-			utils.playbooks.getById.invalidate({ id: playbookId });
-			utils.playbooks.getAll.invalidate();
+			toast.success("Strategy updated");
+			utils.strategies.getById.invalidate({ id: strategyId });
+			utils.strategies.getAll.invalidate();
 		},
 		onError: (error) => {
-			toast.error(error.message || "Failed to update playbook");
+			toast.error(error.message || "Failed to update strategy");
 		},
 	});
 
-	const deleteMutation = api.playbooks.delete.useMutation({
+	const deleteMutation = api.strategies.delete.useMutation({
 		onSuccess: () => {
-			toast.success("Playbook deleted");
-			utils.playbooks.getAll.invalidate();
-			router.push("/playbooks");
+			toast.success("Strategy deleted");
+			utils.strategies.getAll.invalidate();
+			router.push("/strategies");
 		},
 		onError: (error) => {
-			toast.error(error.message || "Failed to delete playbook");
+			toast.error(error.message || "Failed to delete strategy");
 		},
 	});
 
-	const duplicateMutation = api.playbooks.duplicate.useMutation({
-		onSuccess: (newPlaybook) => {
-			toast.success("Playbook duplicated");
-			utils.playbooks.getAll.invalidate();
-			router.push(`/playbooks/${newPlaybook.id}`);
+	const duplicateMutation = api.strategies.duplicate.useMutation({
+		onSuccess: (newStrategy) => {
+			toast.success("Strategy duplicated");
+			utils.strategies.getAll.invalidate();
+			router.push(`/strategies/${newStrategy.id}`);
 		},
 		onError: (error) => {
-			toast.error(error.message || "Failed to duplicate playbook");
+			toast.error(error.message || "Failed to duplicate strategy");
 		},
 	});
 
-	const handleSubmit = (data: PlaybookFormData) => {
+	const handleSubmit = (data: StrategyFormData) => {
 		updateMutation.mutate({
-			id: playbookId,
+			id: strategyId,
 			name: data.name,
 			description: data.description || null,
 			color: data.color,
@@ -100,23 +100,23 @@ export default function PlaybookDetailPage() {
 	}
 
 	// Not found
-	if (!playbook) {
+	if (!strategy) {
 		return (
 			<div className="flex flex-col items-center justify-center py-24">
 				<AlertTriangle className="mb-4 h-12 w-12 text-muted-foreground" />
-				<h2 className="font-semibold text-xl">Playbook not found</h2>
+				<h2 className="font-semibold text-xl">Strategy not found</h2>
 				<p className="mb-4 text-muted-foreground">
-					This playbook doesn&apos;t exist or you don&apos;t have access.
+					This strategy doesn&apos;t exist or you don&apos;t have access.
 				</p>
 				<Button asChild>
-					<Link href="/playbooks">Back to Playbooks</Link>
+					<Link href="/strategies">Back to Strategies</Link>
 				</Button>
 			</div>
 		);
 	}
 
 	// Transform rules for the form
-	const formRules = playbook.rules.map((rule) => ({
+	const formRules = strategy.rules.map((rule) => ({
 		id: rule.id,
 		text: rule.text,
 		category: rule.category,
@@ -129,17 +129,17 @@ export default function PlaybookDetailPage() {
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-3">
 					<Button asChild className="h-8 w-8" size="icon" variant="ghost">
-						<Link href="/playbooks">
+						<Link href="/strategies">
 							<ArrowLeft className="h-4 w-4" />
 						</Link>
 					</Button>
 					<div className="flex items-center gap-3">
 						<div
 							className="h-4 w-4 rounded"
-							style={{ backgroundColor: playbook.color ?? "#d4ff00" }}
+							style={{ backgroundColor: strategy.color ?? "#d4ff00" }}
 						/>
 						<h1 className="font-bold text-2xl tracking-tight">
-							{playbook.name}
+							{strategy.name}
 						</h1>
 					</div>
 				</div>
@@ -147,7 +147,7 @@ export default function PlaybookDetailPage() {
 				<div className="flex items-center gap-2">
 					<Button
 						className="font-mono text-xs"
-						onClick={() => duplicateMutation.mutate({ id: playbookId })}
+						onClick={() => duplicateMutation.mutate({ id: strategyId })}
 						size="sm"
 						variant="outline"
 					>
@@ -216,17 +216,17 @@ export default function PlaybookDetailPage() {
 
 			{/* Form */}
 			<div className="rounded border border-white/5 bg-white/[0.02] p-6">
-				<PlaybookForm
+				<StrategyForm
 					initialData={{
-						name: playbook.name,
-						description: playbook.description ?? "",
-						color: playbook.color ?? "#d4ff00",
-						entryCriteria: playbook.entryCriteria ?? "",
-						exitRules: playbook.exitRules ?? "",
-						riskParameters: playbook.riskParameters,
-						scalingRules: playbook.scalingRules,
-						trailingRules: playbook.trailingRules,
-						isActive: playbook.isActive ?? true,
+						name: strategy.name,
+						description: strategy.description ?? "",
+						color: strategy.color ?? "#d4ff00",
+						entryCriteria: strategy.entryCriteria ?? "",
+						exitRules: strategy.exitRules ?? "",
+						riskParameters: strategy.riskParameters,
+						scalingRules: strategy.scalingRules,
+						trailingRules: strategy.trailingRules,
+						isActive: strategy.isActive ?? true,
 						rules: formRules,
 					}}
 					isSubmitting={updateMutation.isPending}
@@ -241,7 +241,7 @@ export default function PlaybookDetailPage() {
 					Danger Zone
 				</h3>
 				<p className="mt-2 font-mono text-muted-foreground text-sm">
-					Deleting this playbook will remove it from all associated trades.
+					Deleting this strategy will remove it from all associated trades.
 				</p>
 				<Button
 					className="mt-4 font-mono text-xs uppercase tracking-wider"
@@ -249,7 +249,7 @@ export default function PlaybookDetailPage() {
 					variant="destructive"
 				>
 					<Trash2 className="mr-2 h-4 w-4" />
-					Delete Playbook
+					Delete Strategy
 				</Button>
 			</div>
 
@@ -258,10 +258,10 @@ export default function PlaybookDetailPage() {
 				<DialogContent className="border-border bg-background">
 					<DialogHeader>
 						<DialogTitle className="font-mono uppercase tracking-wider">
-							Delete Playbook
+							Delete Strategy
 						</DialogTitle>
 						<DialogDescription className="font-mono text-xs">
-							Are you sure you want to delete &quot;{playbook.name}&quot;? This
+							Are you sure you want to delete &quot;{strategy.name}&quot;? This
 							action cannot be undone.
 						</DialogDescription>
 					</DialogHeader>
@@ -271,7 +271,7 @@ export default function PlaybookDetailPage() {
 						</Button>
 						<Button
 							disabled={deleteMutation.isPending}
-							onClick={() => deleteMutation.mutate({ id: playbookId })}
+							onClick={() => deleteMutation.mutate({ id: strategyId })}
 							variant="destructive"
 						>
 							{deleteMutation.isPending && (
@@ -285,3 +285,4 @@ export default function PlaybookDetailPage() {
 		</div>
 	);
 }
+

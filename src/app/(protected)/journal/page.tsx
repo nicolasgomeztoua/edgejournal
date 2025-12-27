@@ -123,8 +123,8 @@ export default function JournalPage() {
 		if (filters.dayOfWeek.length > 0) params.dayOfWeek = filters.dayOfWeek;
 		if (filters.exitReason) params.exitReason = filters.exitReason;
 		if (filters.tagIds.length > 0) params.tagIds = filters.tagIds;
-		if (filters.playbookId)
-			params.playbookId = parseInt(filters.playbookId, 10);
+		if (filters.strategyId)
+			params.strategyId = parseInt(filters.strategyId, 10);
 
 		return params;
 	}, [filters, selectedAccountId, debouncedSearch]);
@@ -552,18 +552,18 @@ export default function JournalPage() {
 						{trade.account?.name || "—"}
 					</span>
 				);
-			case "playbook":
+			case "strategy":
 				return (
 					<span className="font-mono text-xs">
-						{trade.playbook ? (
+						{trade.strategy ? (
 							<div className="flex items-center gap-1.5">
 								<div
 									className="h-1.5 w-1.5 rounded-full"
 									style={{
-										backgroundColor: trade.playbook.color ?? "#d4ff00",
+										backgroundColor: trade.strategy.color ?? "#d4ff00",
 									}}
 								/>
-								{trade.playbook.name}
+								{trade.strategy.name}
 							</div>
 						) : (
 							<span className="text-muted-foreground/50">—</span>

@@ -13,8 +13,6 @@ import {
 	Settings,
 	Share2,
 	Trash2,
-	TrendingDown,
-	TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -340,22 +338,6 @@ export default function TradeDetailPage() {
 
 					{/* Symbol & Date */}
 					<div className="flex items-center gap-3">
-						{/* Direction icon */}
-						<div
-							className={cn(
-								"flex h-8 w-8 items-center justify-center rounded",
-								trade.direction === "long"
-									? "bg-profit/10 text-profit"
-									: "bg-loss/10 text-loss",
-							)}
-						>
-							{trade.direction === "long" ? (
-								<TrendingUp className="h-4 w-4" />
-							) : (
-								<TrendingDown className="h-4 w-4" />
-							)}
-						</div>
-
 						<div>
 							<div className="flex items-center gap-2">
 								<span className="font-bold font-mono text-lg tracking-tight">
@@ -518,14 +500,14 @@ export default function TradeDetailPage() {
 							fees: trade.fees,
 							netPnl: trade.netPnl,
 							rating: trade.rating,
-							playbookId: trade.playbookId,
+							strategyId: trade.strategyId,
 							// Risk management
 							wasTrailed: trade.wasTrailed,
 							trailedStopLoss: trade.trailedStopLoss,
 							// Context
-							setupType: trade.setupType,
 							emotionalState: trade.emotionalState,
 							exitReason: trade.exitReason,
+							tradeTags: trade.tradeTags,
 							executions: trade.executions?.map((e) => ({
 								id: e.id,
 								executionType: e.executionType as

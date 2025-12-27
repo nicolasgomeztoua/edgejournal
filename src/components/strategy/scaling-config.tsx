@@ -237,3 +237,4 @@ export function ScalingConfig({ value, onChange }: ScalingConfigProps) {
 		</div>
 	);
 }
+

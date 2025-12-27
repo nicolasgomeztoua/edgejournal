@@ -12,7 +12,7 @@
 
 - [Current State](#current-state)
 - [Phase 1: Enhanced Trade Log and Filtering](#phase-1-enhanced-trade-log-and-filtering)
-- [Phase 2: Playbook System](#phase-2-playbook-system)
+- [Phase 2: Strategy System](#phase-2-strategy-system)
 - [Phase 3: Dashboard Customization](#phase-3-dashboard-customization)
 - [Phase 4: Advanced Analytics](#phase-4-advanced-analytics)
 - [Phase 5: Trade Detail Enhancements](#phase-5-trade-detail-enhancements)
@@ -106,52 +106,52 @@ Make the trade log more powerful and customizable like TradeZella's.
 
 ---
 
-## Phase 2: Playbook System
+## Phase 2: Strategy System
 
 > **Priority:** HIGH | **Dependencies:** Phase 1 | **Estimate:** 2 weeks
 >
-> **Sub-plan:** [./plans/phase-2-playbooks.md](./plans/phase-2-playbooks.md)
+> **Sub-plan:** [./plans/phase-2-strategies.md](./plans/phase-2-strategies.md)
 
 ### Goal
-Document and track trading strategies with clear rules, like TradeZella's Playbook feature.
+Document and track trading strategies with clear rules.
 
 ### Tasks
 
-#### 2.1 Playbook Data Model
-- [x] Create `playbooks` table
+#### 2.1 Strategy Data Model
+- [x] Create `strategies` table
   - id, userId, name, description, color
   - entry_criteria (text/JSON)
   - exit_rules (text/JSON)
   - position_sizing, risk_parameters
-- [x] Create `playbook_rules` table (checklist items)
-- [x] Add `playbookId` to trades table
+- [x] Create `strategy_rules` table (checklist items)
+- [x] Add `strategyId` to trades table
 
-#### 2.2 Playbook CRUD Pages
-- [x] Playbooks listing page (`/playbooks`)
-- [x] Create playbook form
-- [x] Edit playbook form
-- [x] Delete playbook with confirmation
-- [x] Playbook card component
+#### 2.2 Strategy CRUD Pages
+- [x] Strategies listing page (`/strategies`)
+- [x] Create strategy form
+- [x] Edit strategy form
+- [x] Delete strategy with confirmation
+- [x] Strategy card component
 
 **New files:**
-- `src/app/(protected)/playbooks/page.tsx`
-- `src/app/(protected)/playbooks/new/page.tsx`
-- `src/app/(protected)/playbooks/[id]/page.tsx`
-- `src/server/api/routers/playbooks.ts`
+- `src/app/(protected)/strategies/page.tsx`
+- `src/app/(protected)/strategies/new/page.tsx`
+- `src/app/(protected)/strategies/[id]/page.tsx`
+- `src/server/api/routers/strategies.ts`
 
-#### 2.3 Trade-Playbook Integration
-- [x] Playbook tab on trade detail page
-- [x] Assign trade to playbook dropdown
+#### 2.3 Trade-Strategy Integration
+- [x] Strategy tab on trade detail page
+- [x] Assign trade to strategy dropdown
 - [x] Rule adherence checkboxes
 - [x] Compliance percentage display
-- [ ] Quick playbook assignment in trade log
+- [ ] Quick strategy assignment in trade log
 
-#### 2.4 Playbook Analytics
-- [ ] Performance metrics per playbook
-- [ ] Win rate by playbook
-- [ ] Profit factor by playbook
-- [ ] Average R per playbook
-- [ ] Compare playbooks view/chart
+#### 2.4 Strategy Analytics
+- [ ] Performance metrics per strategy
+- [ ] Win rate by strategy
+- [ ] Profit factor by strategy
+- [ ] Average R per strategy
+- [ ] Compare strategies view/chart
 
 ---
 
@@ -519,11 +519,11 @@ Learning resources and community features.
 ### New Tables
 
 ```sql
--- Playbooks
-playbooks (id, userId, name, description, color, entryCriteria, exitRules, positionSizing, riskParameters, createdAt, updatedAt)
+-- Strategies
+strategies (id, userId, name, description, color, entryCriteria, exitRules, positionSizing, riskParameters, createdAt, updatedAt)
 
--- Playbook Rules (checklist items)
-playbook_rules (id, playbookId, text, order, createdAt)
+-- Strategy Rules (checklist items)
+strategy_rules (id, strategyId, text, order, createdAt)
 
 -- Notebook
 notebook_entries (id, userId, title, content, templateId, tags, tradeIds, createdAt, updatedAt)
@@ -549,7 +549,7 @@ backtest_trades (id, sessionId, entryTime, exitTime, entryPrice, exitPrice, dire
 -- trades table
 ALTER TABLE trades ADD COLUMN rating INTEGER;           -- 1-5 stars
 ALTER TABLE trades ADD COLUMN is_reviewed BOOLEAN;      -- review status
-ALTER TABLE trades ADD COLUMN playbook_id INTEGER;      -- FK to playbooks
+ALTER TABLE trades ADD COLUMN strategy_id INTEGER;      -- FK to strategies
 ALTER TABLE trades ADD COLUMN is_intraday BOOLEAN;      -- auto-calculated
 
 -- user_settings table
@@ -564,7 +564,7 @@ ALTER TABLE user_settings ADD COLUMN dashboard_layout_id INTEGER;
 | Phase | Name | Duration | Status |
 |-------|------|----------|--------|
 | 1 | Enhanced Trade Log | 2-3 weeks | ✅ Complete |
-| 2 | Playbook System | 2 weeks | 🔄 In Progress (Analytics pending) |
+| 2 | Strategy System | 2 weeks | 🔄 In Progress (Analytics pending) |
 | 3 | Dashboard Customization | 2-3 weeks | ⏳ Pending |
 | 4 | Advanced Analytics | 3-4 weeks | ⏳ Pending |
 | 5 | Trade Detail Enhancements | 2 weeks | 🔄 In Progress (Layout done, Screenshot/Chart pending) |

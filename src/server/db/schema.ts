@@ -76,7 +76,7 @@ export const tradingPlatformEnum = pgEnum("trading_platform", [
 	"ninjatrader", // NinjaTrader (future)
 	"other", // Manual/Other
 ]);
-export const playbookRuleCategoryEnum = pgEnum("playbook_rule_category", [
+export const strategyRuleCategoryEnum = pgEnum("strategy_rule_category", [
 	"entry",
 	"exit",
 	"risk",
@@ -222,7 +222,7 @@ export const trades = createTable(
 		accountId: integer("account_id").references(() => accounts.id, {
 			onDelete: "set null",
 		}),
-		playbookId: integer("playbook_id"), // FK added after playbooks table is defined
+		strategyId: integer("strategy_id"), // FK added after strategies table is defined
 
 		// Instrument info
 		symbol: text("symbol").notNull(), // e.g., "ES", "NQ", "EUR/USD"
@@ -297,7 +297,7 @@ export const trades = createTable(
 	(t) => [
 		index("trade_user_id_idx").on(t.userId),
 		index("trade_account_id_idx").on(t.accountId),
-		index("trade_playbook_id_idx").on(t.playbookId),
+		index("trade_strategy_id_idx").on(t.strategyId),
 		index("trade_symbol_idx").on(t.symbol),
 		index("trade_entry_time_idx").on(t.entryTime),
 		index("trade_status_idx").on(t.status),
@@ -504,11 +504,11 @@ export const aiMessages = createTable(
 );
 
 // ============================================================================
-// PLAYBOOKS TABLE
+// STRATEGIES TABLE
 // ============================================================================
 
-export const playbooks = createTable(
-	"playbook",
+export const strategies = createTable(
+	"strategy",
 	{
 		id: integer().primaryKey().generatedByDefaultAsIdentity(),
 		userId: integer("user_id")
@@ -550,25 +550,25 @@ export const playbooks = createTable(
 		),
 	},
 	(t) => [
-		index("playbook_user_id_idx").on(t.userId),
-		index("playbook_is_active_idx").on(t.isActive),
+		index("strategy_user_id_idx").on(t.userId),
+		index("strategy_is_active_idx").on(t.isActive),
 	],
 );
 
 // ============================================================================
-// PLAYBOOK RULES TABLE (checklist items)
+// STRATEGY RULES TABLE (checklist items)
 // ============================================================================
 
-export const playbookRules = createTable(
-	"playbook_rule",
+export const strategyRules = createTable(
+	"strategy_rule",
 	{
 		id: integer().primaryKey().generatedByDefaultAsIdentity(),
-		playbookId: integer("playbook_id")
+		strategyId: integer("strategy_id")
 			.notNull()
-			.references(() => playbooks.id, { onDelete: "cascade" }),
+			.references(() => strategies.id, { onDelete: "cascade" }),
 
 		text: text("text").notNull(), // The rule text
-		category: playbookRuleCategoryEnum("category").notNull().default("entry"),
+		category: strategyRuleCategoryEnum("category").notNull().default("entry"),
 		order: integer("order").notNull().default(0), // For sorting
 
 		createdAt: timestamp("created_at", { withTimezone: true })
@@ -576,8 +576,8 @@ export const playbookRules = createTable(
 			.$defaultFn(() => new Date()),
 	},
 	(t) => [
-		index("playbook_rule_playbook_id_idx").on(t.playbookId),
-		index("playbook_rule_category_idx").on(t.category),
+		index("strategy_rule_strategy_id_idx").on(t.strategyId),
+		index("strategy_rule_category_idx").on(t.category),
 	],
 );
 
@@ -593,7 +593,7 @@ export const tradeRuleChecks = createTable(
 			.references(() => trades.id, { onDelete: "cascade" }),
 		ruleId: integer("rule_id")
 			.notNull()
-			.references(() => playbookRules.id, { onDelete: "cascade" }),
+			.references(() => strategyRules.id, { onDelete: "cascade" }),
 
 		checked: boolean("checked").notNull().default(false),
 		checkedAt: timestamp("checked_at", { withTimezone: true }),
@@ -617,7 +617,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
 	settings: one(userSettings),
 	aiConversations: many(aiConversations),
 	filterPresets: many(filterPresets),
-	playbooks: many(playbooks),
+	strategies: many(strategies),
 }));
 
 export const filterPresetsRelations = relations(filterPresets, ({ one }) => ({
@@ -667,9 +667,9 @@ export const tradesRelations = relations(trades, ({ one, many }) => ({
 		fields: [trades.accountId],
 		references: [accounts.id],
 	}),
-	playbook: one(playbooks, {
-		fields: [trades.playbookId],
-		references: [playbooks.id],
+	strategy: one(strategies, {
+		fields: [trades.strategyId],
+		references: [strategies.id],
 	}),
 	executions: many(tradeExecutions),
 	tradeTags: many(tradeTags),
@@ -741,21 +741,21 @@ export const aiMessagesRelations = relations(aiMessages, ({ one }) => ({
 	}),
 }));
 
-export const playbooksRelations = relations(playbooks, ({ one, many }) => ({
+export const strategiesRelations = relations(strategies, ({ one, many }) => ({
 	user: one(users, {
-		fields: [playbooks.userId],
+		fields: [strategies.userId],
 		references: [users.id],
 	}),
-	rules: many(playbookRules),
+	rules: many(strategyRules),
 	trades: many(trades),
 }));
 
-export const playbookRulesRelations = relations(
-	playbookRules,
+export const strategyRulesRelations = relations(
+	strategyRules,
 	({ one, many }) => ({
-		playbook: one(playbooks, {
-			fields: [playbookRules.playbookId],
-			references: [playbooks.id],
+		strategy: one(strategies, {
+			fields: [strategyRules.strategyId],
+			references: [strategies.id],
 		}),
 		tradeChecks: many(tradeRuleChecks),
 	}),
@@ -768,9 +768,9 @@ export const tradeRuleChecksRelations = relations(
 			fields: [tradeRuleChecks.tradeId],
 			references: [trades.id],
 		}),
-		rule: one(playbookRules, {
+		rule: one(strategyRules, {
 			fields: [tradeRuleChecks.ruleId],
-			references: [playbookRules.id],
+			references: [strategyRules.id],
 		}),
 	}),
 );
@@ -797,9 +797,9 @@ export type AiConversation = typeof aiConversations.$inferSelect;
 export type AiMessage = typeof aiMessages.$inferSelect;
 export type FilterPreset = typeof filterPresets.$inferSelect;
 export type NewFilterPreset = typeof filterPresets.$inferInsert;
-export type Playbook = typeof playbooks.$inferSelect;
-export type NewPlaybook = typeof playbooks.$inferInsert;
-export type PlaybookRule = typeof playbookRules.$inferSelect;
-export type NewPlaybookRule = typeof playbookRules.$inferInsert;
+export type Strategy = typeof strategies.$inferSelect;
+export type NewStrategy = typeof strategies.$inferInsert;
+export type StrategyRule = typeof strategyRules.$inferSelect;
+export type NewStrategyRule = typeof strategyRules.$inferInsert;
 export type TradeRuleCheck = typeof tradeRuleChecks.$inferSelect;
 export type NewTradeRuleCheck = typeof tradeRuleChecks.$inferInsert;

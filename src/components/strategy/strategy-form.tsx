@@ -32,14 +32,14 @@ const PRESET_COLORS = [
 	"#6366f1", // Indigo
 ];
 
-export interface PlaybookRule {
+export interface StrategyRule {
 	id?: number;
 	text: string;
 	category: "entry" | "exit" | "risk" | "management";
 	order: number;
 }
 
-export interface PlaybookFormData {
+export interface StrategyFormData {
 	name: string;
 	description: string;
 	color: string;
@@ -49,12 +49,12 @@ export interface PlaybookFormData {
 	scalingRules: ScalingRules | null;
 	trailingRules: TrailingRules | null;
 	isActive: boolean;
-	rules: PlaybookRule[];
+	rules: StrategyRule[];
 }
 
-interface PlaybookFormProps {
-	initialData?: Partial<PlaybookFormData>;
-	onSubmit: (data: PlaybookFormData) => void;
+interface StrategyFormProps {
+	initialData?: Partial<StrategyFormData>;
+	onSubmit: (data: StrategyFormData) => void;
 	isSubmitting?: boolean;
 	submitLabel?: string;
 }
@@ -66,13 +66,13 @@ const CATEGORY_OPTIONS = [
 	{ value: "management", label: "Management" },
 ];
 
-export function PlaybookForm({
+export function StrategyForm({
 	initialData,
 	onSubmit,
 	isSubmitting,
-	submitLabel = "Save Playbook",
-}: PlaybookFormProps) {
-	const [formData, setFormData] = useState<PlaybookFormData>({
+	submitLabel = "Save Strategy",
+}: StrategyFormProps) {
+	const [formData, setFormData] = useState<StrategyFormData>({
 		name: initialData?.name ?? "",
 		description: initialData?.description ?? "",
 		color: initialData?.color ?? "#d4ff00",
@@ -87,9 +87,9 @@ export function PlaybookForm({
 
 	const [activeSection, setActiveSection] = useState<string>("basic");
 
-	const updateField = <K extends keyof PlaybookFormData>(
+	const updateField = <K extends keyof StrategyFormData>(
 		field: K,
-		value: PlaybookFormData[K],
+		value: StrategyFormData[K],
 	) => {
 		setFormData((prev) => ({ ...prev, [field]: value }));
 	};
@@ -108,7 +108,7 @@ export function PlaybookForm({
 		}));
 	};
 
-	const updateRule = (idx: number, updates: Partial<PlaybookRule>) => {
+	const updateRule = (idx: number, updates: Partial<StrategyRule>) => {
 		setFormData((prev) => ({
 			...prev,
 			rules: prev.rules.map((r, i) => (i === idx ? { ...r, ...updates } : r)),
@@ -163,7 +163,7 @@ export function PlaybookForm({
 				<div className="space-y-6">
 					<div className="space-y-1">
 						<span className="font-mono text-[11px] text-muted-foreground uppercase tracking-wider">
-							Playbook Name *
+							Strategy Name *
 						</span>
 						<Input
 							className="font-mono"
@@ -181,7 +181,7 @@ export function PlaybookForm({
 						<Textarea
 							className="font-mono"
 							onChange={(e) => updateField("description", e.target.value)}
-							placeholder="Brief description of this playbook..."
+							placeholder="Brief description of this strategy..."
 							rows={3}
 							value={formData.description}
 						/>
@@ -271,7 +271,7 @@ export function PlaybookForm({
 					<div className="flex items-center justify-between">
 						<p className="font-mono text-muted-foreground text-sm">
 							Define rules that you&apos;ll check off when taking trades with
-							this playbook.
+							this strategy.
 						</p>
 						<Button
 							className="font-mono text-xs"
@@ -312,7 +312,7 @@ export function PlaybookForm({
 										<Select
 											onValueChange={(v) =>
 												updateRule(idx, {
-													category: v as PlaybookRule["category"],
+													category: v as StrategyRule["category"],
 												})
 											}
 											value={rule.category}
@@ -364,3 +364,4 @@ export function PlaybookForm({
 		</form>
 	);
 }
+

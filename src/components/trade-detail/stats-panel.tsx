@@ -1,9 +1,15 @@
 "use client";
 
-import { BookMarked, Camera, ExternalLink } from "lucide-react";
+import {
+	BookMarked,
+	Camera,
+	ExternalLink,
+	TrendingDown,
+	TrendingUp,
+} from "lucide-react";
 import Link from "next/link";
-import { ComplianceBadge, RuleChecklist } from "@/components/playbook";
-import { Badge } from "@/components/ui/badge";
+import { ComplianceBadge, RuleChecklist } from "@/components/strategy";
+import { TradeTags } from "@/components/tags/tag-selector";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -42,15 +48,22 @@ interface Trade {
 	fees: string | null;
 	netPnl: string | null;
 	rating: number | null;
-	playbookId: number | null;
+	strategyId: number | null;
 	executions?: Execution[];
 	// Risk management
 	wasTrailed?: boolean | null;
 	trailedStopLoss?: string | null;
 	// Context
-	setupType?: string | null;
 	emotionalState?: string | null;
 	exitReason?: string | null;
+	tradeTags?: Array<{
+		tagId: number;
+		tag: {
+			id: number;
+			name: string;
+			color: string | null;
+		};
+	}>;
 }
 
 interface StatsPanelProps {
@@ -66,7 +79,37 @@ interface StatsPanelProps {
 }
 
 // =============================================================================
-// STAT ROW COMPONENT
+// SECTION WRAPPER - Consistent card-like sections
+// =============================================================================
+
+function Section({
+	title,
+	children,
+	className,
+}: {
+	title?: string;
+	children: React.ReactNode;
+	className?: string;
+}) {
+	return (
+		<div
+			className={cn(
+				"rounded-sm border border-white/[0.06] bg-white/[0.02] p-4",
+				className,
+			)}
+		>
+			{title && (
+				<h3 className="mb-3 font-mono text-[10px] text-muted-foreground/80 uppercase tracking-widest">
+					{title}
+				</h3>
+			)}
+			{children}
+		</div>
+	);
+}
+
+// =============================================================================
+// STAT ROW - Compact key-value display
 // =============================================================================
 
 function StatRow({
@@ -82,14 +125,14 @@ function StatRow({
 }) {
 	const displayValue = value ?? "—";
 	return (
-		<div className="flex items-center justify-between py-2">
-			<span className="font-mono text-[11px] text-muted-foreground uppercase tracking-wider">
+		<div className="flex items-center justify-between py-1.5">
+			<span className="font-mono text-[11px] text-muted-foreground/70">
 				{label}
 			</span>
-			<span className={cn("font-mono text-sm", valueClassName)}>
+			<span className={cn("font-mono text-sm tabular-nums", valueClassName)}>
 				{displayValue}
 				{suffix && value != null && (
-					<span className="text-muted-foreground">{suffix}</span>
+					<span className="text-muted-foreground/70">{suffix}</span>
 				)}
 			</span>
 		</div>
@@ -97,69 +140,69 @@ function StatRow({
 }
 
 // =============================================================================
-// PLAYBOOK SECTION
+// STRATEGY SECTION
 // =============================================================================
 
-function PlaybookSection({
+function StrategySection({
 	tradeId,
-	playbookId,
-	onPlaybookChange,
+	strategyId,
+	onStrategyChange,
 }: {
 	tradeId: number;
-	playbookId: number | null;
-	onPlaybookChange: (playbookId: number | null) => void;
+	strategyId: number | null;
+	onStrategyChange: (strategyId: number | null) => void;
 }) {
 	const utils = api.useUtils();
-	const { data: playbooks } = api.playbooks.getAll.useQuery();
-	const { data: ruleChecksData } = api.playbooks.getTradeRuleChecks.useQuery(
+	const { data: strategies } = api.strategies.getAll.useQuery();
+	const { data: ruleChecksData } = api.strategies.getTradeRuleChecks.useQuery(
 		{ tradeId },
-		{ enabled: !!playbookId },
+		{ enabled: !!strategyId },
 	);
 
 	const updateTradeMutation = api.trades.update.useMutation({
 		onSuccess: () => {
 			utils.trades.getById.invalidate({ id: tradeId });
-			utils.playbooks.getTradeRuleChecks.invalidate({ tradeId });
+			utils.strategies.getTradeRuleChecks.invalidate({ tradeId });
 		},
 	});
 
-	const handlePlaybookChange = (value: string) => {
-		const newPlaybookId = value === "none" ? null : parseInt(value, 10);
-		onPlaybookChange(newPlaybookId);
-		updateTradeMutation.mutate({ id: tradeId, playbookId: newPlaybookId });
+	const handleStrategyChange = (value: string) => {
+		const newStrategyId = value === "none" ? null : parseInt(value, 10);
+		onStrategyChange(newStrategyId);
+		updateTradeMutation.mutate({ id: tradeId, strategyId: newStrategyId });
 	};
 
 	return (
 		<div className="space-y-4">
 			<div className="flex items-center gap-3">
 				<Select
-					onValueChange={handlePlaybookChange}
-					value={playbookId?.toString() ?? "none"}
+					onValueChange={handleStrategyChange}
+					value={strategyId?.toString() ?? "none"}
 				>
 					<SelectTrigger className="flex-1 font-mono text-xs">
-						<SelectValue placeholder="Select playbook..." />
+						<SelectValue placeholder="Select strategy..." />
 					</SelectTrigger>
 					<SelectContent>
-						<SelectItem value="none">No playbook</SelectItem>
-						{playbooks?.map((pb) => (
-							<SelectItem key={pb.id} value={pb.id.toString()}>
+						<SelectItem value="none">No strategy</SelectItem>
+						{strategies?.map((s) => (
+							<SelectItem key={s.id} value={s.id.toString()}>
 								<div className="flex items-center gap-2">
 									<div
 										className="h-2 w-2 rounded-full"
-										style={{ backgroundColor: pb.color ?? "#d4ff00" }}
+										style={{ backgroundColor: s.color ?? "#d4ff00" }}
 									/>
-									{pb.name}
+									{s.name}
 								</div>
 							</SelectItem>
 						))}
 					</SelectContent>
 				</Select>
 
-				{playbookId && ruleChecksData?.playbook && (
+				{strategyId && ruleChecksData?.strategy && (
 					<>
 						<ComplianceBadge compliance={ruleChecksData.compliance} size="sm" />
 						<Button asChild className="h-7 w-7" size="icon" variant="ghost">
-							<Link href={`/playbooks/${playbookId}`}>
+							<Link href={`/strategies/${strategyId}`}>
 								<ExternalLink className="h-3 w-3" />
 							</Link>
 						</Button>
@@ -167,22 +210,22 @@ function PlaybookSection({
 				)}
 			</div>
 
-			{playbookId && ruleChecksData && ruleChecksData.rules.length > 0 && (
+			{strategyId && ruleChecksData && ruleChecksData.rules.length > 0 && (
 				<RuleChecklist
 					checks={ruleChecksData.checks}
 					onUpdate={() =>
-						utils.playbooks.getTradeRuleChecks.invalidate({ tradeId })
+						utils.strategies.getTradeRuleChecks.invalidate({ tradeId })
 					}
 					rules={ruleChecksData.rules}
 					tradeId={tradeId}
 				/>
 			)}
 
-			{!playbookId && (
+			{!strategyId && (
 				<div className="flex items-center gap-3 rounded border border-white/5 bg-white/[0.01] p-3">
 					<BookMarked className="h-4 w-4 text-muted-foreground/50" />
 					<p className="font-mono text-[11px] text-muted-foreground">
-						No playbook assigned
+						No strategy assigned
 					</p>
 				</div>
 			)}
@@ -202,6 +245,7 @@ export function StatsPanel({
 	pendingRating,
 	className,
 }: StatsPanelProps) {
+	const utils = api.useUtils();
 	const netPnl = trade.netPnl ? parseFloat(trade.netPnl) : null;
 	const isProfit = netPnl !== null && netPnl > 0;
 	const isLoss = netPnl !== null && netPnl < 0;
@@ -241,212 +285,68 @@ export function StatsPanel({
 				{/* STATS TAB */}
 				<TabsContent className="m-0 flex-1 overflow-hidden" value="stats">
 					<ScrollArea className="h-full">
-						<div className="space-y-6 p-4">
-							{/* Net P&L - Hero Display */}
-							<div className="border-border border-b pb-4">
-								<div className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-									Net P&L
+						<div className="space-y-4 p-4">
+							{/* ============================================
+							    HERO: Net P&L + Direction
+							    ============================================ */}
+							<div className="flex items-start justify-between gap-4 pb-2">
+								<div>
+									<div className="font-mono text-[10px] text-muted-foreground/60 uppercase tracking-wider">
+										Net P&L
+									</div>
+									<div
+										className={cn(
+											"mt-0.5 font-bold font-mono text-3xl tabular-nums tracking-tight",
+											isProfit && "text-profit",
+											isLoss && "text-loss",
+											!isProfit && !isLoss && "text-muted-foreground",
+										)}
+									>
+										{netPnl !== null ? formatCurrency(netPnl) : "—"}
+									</div>
 								</div>
 								<div
 									className={cn(
-										"mt-1 font-bold font-mono text-3xl",
-										isProfit && "text-profit",
-										isLoss && "text-loss",
-										!isProfit && !isLoss && "text-muted-foreground",
+										"flex items-center gap-1.5 rounded-sm px-2.5 py-1.5",
+										trade.direction === "long"
+											? "bg-profit/10 text-profit"
+											: "bg-loss/10 text-loss",
 									)}
 								>
-									{netPnl !== null ? formatCurrency(netPnl) : "—"}
-								</div>
-							</div>
-
-							{/* TP / SL - Quick Access */}
-							<div className="grid grid-cols-2 gap-3">
-								<EditableField
-									label="Take Profit"
-									onChange={(v) => onUpdateField("takeProfit", v)}
-									type="number"
-									value={trade.takeProfit}
-								/>
-								<EditableField
-									label="Stop Loss"
-									onChange={(v) => onUpdateField("stopLoss", v)}
-									type="number"
-									value={trade.stopLoss}
-								/>
-							</div>
-
-							{/* Basic Info */}
-							<div className="divide-y divide-border/50">
-								<StatRow
-									label="Side"
-									value={trade.direction.toUpperCase()}
-									valueClassName={
-										trade.direction === "long" ? "text-profit" : "text-loss"
-									}
-								/>
-								<StatRow
-									label={
-										trade.instrumentType === "futures"
-											? "Contracts traded"
-											: "Lots traded"
-									}
-									value={parseFloat(trade.quantity).toString()}
-								/>
-								<StatRow
-									label="Points"
-									value={stats.points?.toFixed(2)}
-									valueClassName={
-										stats.points !== null
-											? stats.points >= 0
-												? "text-profit"
-												: "text-loss"
-											: undefined
-									}
-								/>
-								{trade.instrumentType === "futures" && (
-									<>
-										<StatRow
-											label="Ticks"
-											value={stats.ticks?.toFixed(1)}
-											valueClassName={
-												stats.ticks !== null
-													? stats.ticks >= 0
-														? "text-profit"
-														: "text-loss"
-													: undefined
-											}
-										/>
-										<StatRow
-											label="Ticks Per Contract"
-											value={stats.ticksPerContract?.toFixed(1)}
-										/>
-									</>
-								)}
-								{trade.instrumentType === "forex" && (
-									<StatRow
-										label="Pips"
-										value={stats.pips?.toFixed(1)}
-										valueClassName={
-											stats.pips !== null
-												? stats.pips >= 0
-													? "text-profit"
-													: "text-loss"
-												: undefined
-										}
-									/>
-								)}
-								<StatRow
-									label="Commissions & Fees"
-									value={
-										trade.fees ? `$${parseFloat(trade.fees).toFixed(2)}` : null
-									}
-								/>
-								<StatRow
-									label="Net ROI"
-									suffix="%"
-									value={stats.roi?.toFixed(2)}
-									valueClassName={
-										stats.roi !== null
-											? stats.roi >= 0
-												? "text-profit"
-												: "text-loss"
-											: undefined
-									}
-								/>
-								<StatRow
-									label="Gross P&L"
-									value={
-										stats.grossPnl !== null
-											? formatCurrency(stats.grossPnl)
-											: null
-									}
-									valueClassName={
-										stats.grossPnl !== null
-											? stats.grossPnl >= 0
-												? "text-profit"
-												: "text-loss"
-											: undefined
-									}
-								/>
-							</div>
-
-							{/* Playbook Selector */}
-							<div className="space-y-2">
-								<div className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-									Playbook
-								</div>
-								<Select
-									onValueChange={(value) =>
-										onUpdateField(
-											"playbookId",
-											value === "none" ? null : parseInt(value, 10),
-										)
-									}
-									value={trade.playbookId?.toString() ?? "none"}
-								>
-									<SelectTrigger className="font-mono text-xs">
-										<SelectValue placeholder="Select Playbook" />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="none">Select Playbook</SelectItem>
-									</SelectContent>
-								</Select>
-							</div>
-
-							{/* MAE/MFE Placeholder */}
-							<div className="flex items-center gap-2">
-								<span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-									Price MAE / MFE
-								</span>
-								<div className="flex gap-2">
-									<Badge
-										className="border-loss/50 font-mono text-[10px] text-loss"
-										variant="outline"
-									>
-										$ —
-									</Badge>
-									<span className="text-muted-foreground">/</span>
-									<Badge
-										className="border-profit/50 font-mono text-[10px] text-profit"
-										variant="outline"
-									>
-										$ —
-									</Badge>
-								</div>
-							</div>
-
-							{/* Running P&L Mini Chart Placeholder */}
-							<div className="space-y-2">
-								<div className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-									Running P&L
-								</div>
-								<div className="flex h-12 items-center justify-center rounded border border-white/5 bg-white/[0.01]">
-									<span className="font-mono text-[10px] text-muted-foreground/50">
-										Chart coming soon
+									{trade.direction === "long" ? (
+										<TrendingUp className="h-3.5 w-3.5" />
+									) : (
+										<TrendingDown className="h-3.5 w-3.5" />
+									)}
+									<span className="font-medium font-mono text-xs uppercase">
+										{trade.direction}
 									</span>
 								</div>
 							</div>
 
-							{/* Trade Rating */}
-							<div className="space-y-2">
-								<div className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-									Trade Rating
-								</div>
-								<StarRating
-									onChange={(rating) => onUpdateRating(rating ?? 0)}
-									size="md"
-									value={pendingRating ?? trade.rating ?? 0}
-								/>
-							</div>
-
-							{/* Risk Management Section */}
-							<div className="space-y-4">
-								<div className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-									Risk Management
+							{/* ============================================
+							    SECTION 1: Risk Levels (Editable)
+							    ============================================ */}
+							<Section title="Risk Levels">
+								<div className="grid grid-cols-2 gap-3">
+									<EditableField
+										label="Take Profit"
+										onChange={(v) => onUpdateField("takeProfit", v)}
+										prefix="$"
+										type="number"
+										value={trade.takeProfit}
+									/>
+									<EditableField
+										label="Stop Loss"
+										onChange={(v) => onUpdateField("stopLoss", v)}
+										prefix="$"
+										type="number"
+										value={trade.stopLoss}
+									/>
 								</div>
 
 								{/* Trailing Stop */}
-								<div className="space-y-3">
+								<div className="mt-3 space-y-2">
 									<div className="flex items-center gap-2">
 										<Checkbox
 											checked={trade.wasTrailed ?? false}
@@ -456,7 +356,7 @@ export function StatsPanel({
 											}
 										/>
 										<label
-											className="cursor-pointer font-mono text-xs"
+											className="cursor-pointer font-mono text-[11px] text-muted-foreground"
 											htmlFor="was-trailed"
 										>
 											Stop was trailed
@@ -465,146 +365,265 @@ export function StatsPanel({
 
 									{trade.wasTrailed && (
 										<EditableField
-											label="Trailed Stop Loss"
 											onChange={(v) => onUpdateField("trailedStopLoss", v)}
+											placeholder="Final stop level"
+											prefix="$"
 											type="number"
 											value={trade.trailedStopLoss}
 										/>
 									)}
 								</div>
+							</Section>
 
-								{/* Exit Reason */}
-								<div className="space-y-1">
-									<div className="font-mono text-[10px] text-muted-foreground uppercase">
-										Exit Reason
-									</div>
-									<Select
-										onValueChange={(v) =>
-											onUpdateField("exitReason", v === "none" ? null : v)
+							{/* ============================================
+							    SECTION 2: Performance Metrics (Read-only)
+							    ============================================ */}
+							<Section title="Performance">
+								<div className="divide-y divide-white/[0.04]">
+									<StatRow
+										label="Planned R:R"
+										suffix="R"
+										value={stats.plannedRR?.toFixed(2)}
+									/>
+									<StatRow
+										label="Realized R"
+										suffix="R"
+										value={stats.rMultiple?.toFixed(2)}
+										valueClassName={
+											stats.rMultiple !== null
+												? stats.rMultiple >= 0
+													? "text-profit"
+													: "text-loss"
+												: undefined
 										}
-										value={trade.exitReason ?? "none"}
-									>
-										<SelectTrigger className="font-mono text-xs">
-											<SelectValue placeholder="Select reason..." />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="none">Not specified</SelectItem>
-											<SelectItem value="manual">Manual</SelectItem>
-											<SelectItem value="stop_loss">Stop Loss</SelectItem>
-											<SelectItem value="trailing_stop">
-												Trailing Stop
-											</SelectItem>
-											<SelectItem value="take_profit">Take Profit</SelectItem>
-											<SelectItem value="time_based">Time Based</SelectItem>
-											<SelectItem value="breakeven">Breakeven</SelectItem>
-										</SelectContent>
-									</Select>
-								</div>
-							</div>
-
-							{/* Context Section */}
-							<div className="space-y-4">
-								<div className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-									Trade Context
-								</div>
-
-								{/* Setup Type */}
-								<EditableField
-									label="Setup Type"
-									onChange={(v) => onUpdateField("setupType", v)}
-									placeholder="e.g., Breakout, Pullback..."
-									type="text"
-									value={trade.setupType}
-								/>
-
-								{/* Emotional State */}
-								<div className="space-y-1">
-									<div className="font-mono text-[10px] text-muted-foreground uppercase">
-										Emotional State
-									</div>
-									<Select
-										onValueChange={(v) =>
-											onUpdateField("emotionalState", v === "none" ? null : v)
+									/>
+									<StatRow
+										label="Gross P&L"
+										value={
+											stats.grossPnl !== null
+												? formatCurrency(stats.grossPnl)
+												: null
 										}
-										value={trade.emotionalState ?? "none"}
-									>
-										<SelectTrigger className="font-mono text-xs">
-											<SelectValue placeholder="Select state..." />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="none">Not specified</SelectItem>
-											<SelectItem value="confident">😎 Confident</SelectItem>
-											<SelectItem value="neutral">😐 Neutral</SelectItem>
-											<SelectItem value="anxious">😰 Anxious</SelectItem>
-											<SelectItem value="fearful">😨 Fearful</SelectItem>
-											<SelectItem value="greedy">🤑 Greedy</SelectItem>
-											<SelectItem value="frustrated">😤 Frustrated</SelectItem>
-											<SelectItem value="excited">🤩 Excited</SelectItem>
-										</SelectContent>
-									</Select>
+										valueClassName={
+											stats.grossPnl !== null
+												? stats.grossPnl >= 0
+													? "text-profit"
+													: "text-loss"
+												: undefined
+										}
+									/>
+									<StatRow
+										label="ROI"
+										suffix="%"
+										value={stats.roi?.toFixed(2)}
+										valueClassName={
+											stats.roi !== null
+												? stats.roi >= 0
+													? "text-profit"
+													: "text-loss"
+												: undefined
+										}
+									/>
 								</div>
-							</div>
+							</Section>
 
-							{/* R-Multiple Stats */}
-							<div className="divide-y divide-border/50">
-								<StatRow label="Initial Target" value="—" />
-								<StatRow label="Trade Risk" value="—" />
-								<StatRow
-									label="Planned R-Multiple"
-									suffix="R"
-									value={stats.plannedRR?.toFixed(2)}
-								/>
-								<StatRow
-									label="Realized R-Multiple"
-									suffix="R"
-									value={stats.rMultiple?.toFixed(2)}
-									valueClassName={
-										stats.rMultiple !== null
-											? stats.rMultiple >= 0
-												? "text-profit"
-												: "text-loss"
-											: undefined
-									}
-								/>
-							</div>
+							{/* ============================================
+							    SECTION 3: Trade Details (Read-only)
+							    ============================================ */}
+							<Section title="Trade Details">
+								<div className="divide-y divide-white/[0.04]">
+									<StatRow
+										label={
+											trade.instrumentType === "futures" ? "Contracts" : "Lots"
+										}
+										value={parseFloat(trade.quantity).toString()}
+									/>
+									<StatRow
+										label="Points"
+										value={stats.points?.toFixed(2)}
+										valueClassName={
+											stats.points !== null
+												? stats.points >= 0
+													? "text-profit"
+													: "text-loss"
+												: undefined
+										}
+									/>
+									{trade.instrumentType === "futures" && (
+										<>
+											<StatRow
+												label="Ticks"
+												value={stats.ticks?.toFixed(1)}
+												valueClassName={
+													stats.ticks !== null
+														? stats.ticks >= 0
+															? "text-profit"
+															: "text-loss"
+														: undefined
+												}
+											/>
+											<StatRow
+												label="Ticks/Contract"
+												value={stats.ticksPerContract?.toFixed(1)}
+											/>
+										</>
+									)}
+									{trade.instrumentType === "forex" && (
+										<StatRow
+											label="Pips"
+											value={stats.pips?.toFixed(1)}
+											valueClassName={
+												stats.pips !== null
+													? stats.pips >= 0
+														? "text-profit"
+														: "text-loss"
+													: undefined
+											}
+										/>
+									)}
+									<StatRow
+										label="Fees"
+										value={
+											trade.fees
+												? `$${parseFloat(trade.fees).toFixed(2)}`
+												: null
+										}
+									/>
+								</div>
+							</Section>
 
-							{/* Entry/Exit Prices */}
-							<div className="divide-y divide-border/50">
-								<StatRow
-									label="Average Entry"
-									value={`$${parseFloat(trade.entryPrice).toLocaleString()}`}
-								/>
-								<StatRow
-									label="Average Exit"
-									value={
-										trade.exitPrice
-											? `$${parseFloat(trade.exitPrice).toLocaleString()}`
-											: null
-									}
-								/>
-							</div>
+							{/* ============================================
+							    SECTION 4: Entry & Exit
+							    ============================================ */}
+							<Section title="Entry & Exit">
+								<div className="divide-y divide-white/[0.04]">
+									<StatRow
+										label="Entry Price"
+										value={`$${parseFloat(trade.entryPrice).toLocaleString()}`}
+									/>
+									<StatRow
+										label="Exit Price"
+										value={
+											trade.exitPrice
+												? `$${parseFloat(trade.exitPrice).toLocaleString()}`
+												: null
+										}
+									/>
+									<StatRow
+										label="Entry Time"
+										value={new Date(trade.entryTime).toLocaleTimeString([], {
+											hour: "2-digit",
+											minute: "2-digit",
+										})}
+									/>
+									<StatRow
+										label="Exit Time"
+										value={
+											trade.exitTime
+												? new Date(trade.exitTime).toLocaleTimeString([], {
+														hour: "2-digit",
+														minute: "2-digit",
+													})
+												: null
+										}
+									/>
+								</div>
+							</Section>
 
-							{/* Entry/Exit Times */}
-							<div className="divide-y divide-border/50">
-								<StatRow
-									label="Entry Time"
-									value={new Date(trade.entryTime).toLocaleTimeString([], {
-										hour: "2-digit",
-										minute: "2-digit",
-									})}
-								/>
-								<StatRow
-									label="Exit Time"
-									value={
-										trade.exitTime
-											? new Date(trade.exitTime).toLocaleTimeString([], {
-													hour: "2-digit",
-													minute: "2-digit",
-												})
-											: null
-									}
-								/>
-							</div>
+							{/* ============================================
+							    SECTION 5: Trade Context (Editable)
+							    ============================================ */}
+							<Section title="Context">
+								<div className="grid grid-cols-2 gap-3">
+									{/* Row 1: Rating | Mood */}
+									<div className="space-y-1.5">
+										<span className="block font-mono text-[10px] text-muted-foreground/80 uppercase tracking-widest">
+											Rating
+										</span>
+										<div className="flex h-10 items-center">
+											<StarRating
+												onChange={(rating) => onUpdateRating(rating ?? 0)}
+												size="sm"
+												value={pendingRating ?? trade.rating ?? 0}
+											/>
+										</div>
+									</div>
+
+									<div className="space-y-1.5">
+										<span className="block font-mono text-[10px] text-muted-foreground/80 uppercase tracking-widest">
+											Mood
+										</span>
+										<Select
+											onValueChange={(v) =>
+												onUpdateField("emotionalState", v === "none" ? null : v)
+											}
+											value={trade.emotionalState ?? "none"}
+										>
+											<SelectTrigger
+												aria-label="Mood"
+												className="h-10 font-mono text-xs"
+											>
+												<SelectValue placeholder="—" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="none">—</SelectItem>
+												<SelectItem value="confident">😎 Confident</SelectItem>
+												<SelectItem value="neutral">😐 Neutral</SelectItem>
+												<SelectItem value="anxious">😰 Anxious</SelectItem>
+												<SelectItem value="fearful">😨 Fearful</SelectItem>
+												<SelectItem value="greedy">🤑 Greedy</SelectItem>
+												<SelectItem value="frustrated">
+													😤 Frustrated
+												</SelectItem>
+												<SelectItem value="excited">🤩 Excited</SelectItem>
+											</SelectContent>
+										</Select>
+									</div>
+
+									{/* Row 2: Exit Reason | Tags */}
+									<div className="space-y-1.5">
+										<span className="block font-mono text-[10px] text-muted-foreground/80 uppercase tracking-widest">
+											Exit Reason
+										</span>
+										<Select
+											onValueChange={(v) =>
+												onUpdateField("exitReason", v === "none" ? null : v)
+											}
+											value={trade.exitReason ?? "none"}
+										>
+											<SelectTrigger
+												aria-label="Exit Reason"
+												className="h-10 font-mono text-xs"
+											>
+												<SelectValue placeholder="—" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="none">—</SelectItem>
+												<SelectItem value="manual">Manual</SelectItem>
+												<SelectItem value="stop_loss">Stop Loss</SelectItem>
+												<SelectItem value="trailing_stop">Trailing</SelectItem>
+												<SelectItem value="take_profit">Take Profit</SelectItem>
+												<SelectItem value="time_based">Time-Based</SelectItem>
+												<SelectItem value="breakeven">Breakeven</SelectItem>
+											</SelectContent>
+										</Select>
+									</div>
+
+									<div className="space-y-1.5">
+										<span className="block font-mono text-[10px] text-muted-foreground/80 uppercase tracking-widest">
+											Tags
+										</span>
+										<TradeTags
+											maxDisplay={3}
+											onUpdate={() =>
+												utils.trades.getById.invalidate({ id: trade.id })
+											}
+											tags={trade.tradeTags ?? []}
+											tradeId={trade.id}
+										/>
+									</div>
+								</div>
+							</Section>
 						</div>
 					</ScrollArea>
 				</TabsContent>
@@ -614,9 +633,9 @@ export function StatsPanel({
 					className="m-0 flex-1 overflow-hidden p-4"
 					value="strategy"
 				>
-					<PlaybookSection
-						onPlaybookChange={(id) => onUpdateField("playbookId", id)}
-						playbookId={trade.playbookId}
+					<StrategySection
+						onStrategyChange={(id) => onUpdateField("strategyId", id)}
+						strategyId={trade.strategyId}
 						tradeId={trade.id}
 					/>
 				</TabsContent>
