@@ -364,4 +364,3 @@ export function StrategyForm({
 		</form>
 	);
 }
-

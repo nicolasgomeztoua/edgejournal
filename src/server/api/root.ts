@@ -1,8 +1,8 @@
 import { accountsRouter } from "@/server/api/routers/accounts";
 import { filterPresetsRouter } from "@/server/api/routers/filterPresets";
 import { marketDataRouter } from "@/server/api/routers/marketData";
-import { strategiesRouter } from "@/server/api/routers/strategies";
 import { settingsRouter } from "@/server/api/routers/settings";
+import { strategiesRouter } from "@/server/api/routers/strategies";
 import { tagsRouter } from "@/server/api/routers/tags";
 import { tradesRouter } from "@/server/api/routers/trades";
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";

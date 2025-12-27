@@ -1,5 +1,3 @@
-"use client";
-
 import { CandlestickChart, TrendingDown, TrendingUp } from "lucide-react";
 import { TradeTags } from "@/components/tags/tag-selector";
 import { ScrollArea } from "@/components/ui/scroll-area";

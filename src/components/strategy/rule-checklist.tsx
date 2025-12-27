@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle2, Circle } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useOptimisticState } from "@/hooks/use-debounced-mutation";
@@ -25,6 +25,7 @@ interface RuleChecklistProps {
 	rules: Rule[];
 	checks: RuleCheck[];
 	onUpdate?: () => void;
+	onComplianceChange?: (compliance: number) => void;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -46,11 +47,12 @@ export function RuleChecklist({
 	rules,
 	checks,
 	onUpdate,
+	onComplianceChange,
 }: RuleChecklistProps) {
 	// Use shared optimistic state utility
 	const {
 		applyUpdate: applyOptimisticUpdate,
-		clearUpdates: clearOptimisticUpdates,
+		clearUpdate: clearOptimisticUpdate,
 		updates: optimisticUpdates,
 	} = useOptimisticState<{ checked: boolean }>();
 
@@ -59,15 +61,15 @@ export function RuleChecklist({
 			// Apply optimistic update immediately
 			applyOptimisticUpdate(ruleId, { checked });
 		},
-		onError: () => {
-			// On error, the optimistic state will be cleared in onSettled
-			// and the original data will show through after refetch
+		onError: (_error, variables) => {
+			// On error, clear only this rule's optimistic state
+			clearOptimisticUpdate(variables.ruleId);
 			toast.error("Failed to update rule");
 		},
-		onSettled: async () => {
-			// Wait for refetch to complete, then clear optimistic state
+		onSettled: async (_data, _error, variables) => {
+			// Wait for refetch to complete, then clear only this rule's optimistic state
 			await onUpdate?.();
-			clearOptimisticUpdates();
+			clearOptimisticUpdate(variables.ruleId);
 		},
 	});
 
@@ -111,6 +113,11 @@ export function RuleChecklist({
 		const checkedCount = rules.filter((r) => isChecked(r.id)).length;
 		return (checkedCount / rules.length) * 100;
 	}, [rules, isChecked]);
+
+	// Notify parent of compliance changes
+	useEffect(() => {
+		onComplianceChange?.(optimisticCompliance);
+	}, [optimisticCompliance, onComplianceChange]);
 
 	if (rules.length === 0) {
 		return (

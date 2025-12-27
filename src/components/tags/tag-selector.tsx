@@ -36,7 +36,10 @@ function getRandomColor() {
 interface TagSelectorProps {
 	tradeId: number;
 	currentTagIds: number[];
-	onTagAdded?: (tagId: number, tag: { id: number; name: string; color: string | null }) => void;
+	onTagAdded?: (
+		tagId: number,
+		tag: { id: number; name: string; color: string | null },
+	) => void;
 	onTagRemoved?: (tagId: number) => void;
 	onUpdate?: () => void;
 }
@@ -78,7 +81,11 @@ export function TagSelector({
 			refetchTags();
 			if (newTag) {
 				// Optimistically add the new tag
-				onTagAdded?.(newTag.id, { id: newTag.id, name: newTag.name, color: newTag.color });
+				onTagAdded?.(newTag.id, {
+					id: newTag.id,
+					name: newTag.name,
+					color: newTag.color,
+				});
 				addTag.mutate({ tradeId, tagId: newTag.id });
 			}
 			setNewTagName("");
@@ -88,7 +95,11 @@ export function TagSelector({
 		},
 	});
 
-	const handleToggleTag = (tagId: number, isSelected: boolean, tag?: { id: number; name: string; color: string | null }) => {
+	const handleToggleTag = (
+		tagId: number,
+		isSelected: boolean,
+		tag?: { id: number; name: string; color: string | null },
+	) => {
 		if (isSelected) {
 			onTagRemoved?.(tagId);
 			removeTag.mutate({ tradeId, tagId });
@@ -204,7 +215,11 @@ export function TradeTags({
 		applyUpdate: applyOptimisticUpdate,
 		clearUpdates: clearOptimisticUpdates,
 		updates: optimisticUpdates,
-	} = useOptimisticState<{ removed?: boolean; added?: boolean; tag?: { id: number; name: string; color: string | null } }>();
+	} = useOptimisticState<{
+		removed?: boolean;
+		added?: boolean;
+		tag?: { id: number; name: string; color: string | null };
+	}>();
 
 	const removeTag = api.tags.removeFromTrade.useMutation({
 		onMutate: ({ tagId }) => {
@@ -225,7 +240,10 @@ export function TradeTags({
 		removeTag.mutate({ tradeId, tagId });
 	};
 
-	const handleTagAdded = (tagId: number, tag: { id: number; name: string; color: string | null }) => {
+	const handleTagAdded = (
+		tagId: number,
+		tag: { id: number; name: string; color: string | null },
+	) => {
 		applyOptimisticUpdate(tagId, { added: true, tag });
 	};
 
@@ -247,10 +265,22 @@ export function TradeTags({
 		}),
 		// Optimistically added tags
 		...Array.from(optimisticUpdates.entries())
-			.filter((entry): entry is [number | string, { added: true; tag: { id: number; name: string; color: string | null } }] => {
-				const [id, update] = entry;
-				return Boolean(update.added && update.tag && !tags.find(t => t.tagId === id));
-			})
+			.filter(
+				(
+					entry,
+				): entry is [
+					number | string,
+					{
+						added: true;
+						tag: { id: number; name: string; color: string | null };
+					},
+				] => {
+					const [id, update] = entry;
+					return Boolean(
+						update.added && update.tag && !tags.find((t) => t.tagId === id),
+					);
+				},
+			)
 			.map(([id, update]) => ({
 				tagId: id as number,
 				tag: update.tag,

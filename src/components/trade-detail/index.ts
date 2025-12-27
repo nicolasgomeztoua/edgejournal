@@ -1,5 +1,3 @@
-"use client";
-
 export { ContentPanel } from "./content-panel";
 export {
 	EditableField,

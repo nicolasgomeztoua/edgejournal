@@ -127,21 +127,5 @@ export function getPnLColorClass(
 	return "text-breakeven";
 }
 
-/**
- * Calculate win rate from trades
- */
-export function calculateWinRate(wins: number, total: number): number {
-	if (total === 0) return 0;
-	return (wins / total) * 100;
-}
-
-/**
- * Calculate profit factor
- */
-export function calculateProfitFactor(
-	grossProfit: number,
-	grossLoss: number,
-): number {
-	if (grossLoss === 0) return grossProfit > 0 ? Infinity : 0;
-	return Math.abs(grossProfit / grossLoss);
-}
+// NOTE: calculateWinRate and calculateProfitFactor have been moved to
+// @/lib/stats-calculations.ts for consistency with aggregate stats

@@ -11,6 +11,7 @@ import {
 	sql,
 } from "drizzle-orm";
 import { z } from "zod";
+import { calculateAggregateStats } from "@/lib/stats-calculations";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import {
 	accounts,
@@ -805,56 +806,11 @@ export const tradesRouter = createTRPCRouter({
 				where: and(...conditions),
 			});
 
-			const totalTrades = closedTrades.length;
-
-			// Classify trades using breakeven threshold
-			// Win: P&L > threshold, Loss: P&L < -threshold, Breakeven: within ±threshold
-			const wins = closedTrades.filter((t) => {
-				const pnl = t.netPnl ? parseFloat(t.netPnl) : 0;
-				return pnl > beThreshold;
-			}).length;
-
-			const losses = closedTrades.filter((t) => {
-				const pnl = t.netPnl ? parseFloat(t.netPnl) : 0;
-				return pnl < -beThreshold;
-			}).length;
-
-			const breakevens = totalTrades - wins - losses;
-
-			const totalPnl = closedTrades.reduce(
-				(sum, t) => sum + (t.netPnl ? parseFloat(t.netPnl) : 0),
-				0,
-			);
-
-			// For profit factor, use threshold-adjusted wins/losses
-			const grossProfit = closedTrades.reduce((sum, t) => {
-				const pnl = t.netPnl ? parseFloat(t.netPnl) : 0;
-				return pnl > beThreshold ? sum + pnl : sum;
-			}, 0);
-			const grossLoss = closedTrades.reduce((sum, t) => {
-				const pnl = t.netPnl ? parseFloat(t.netPnl) : 0;
-				return pnl < -beThreshold ? sum + Math.abs(pnl) : sum;
-			}, 0);
-
-			// Win rate excludes breakevens - only wins vs losses
-			const decisiveTrades = wins + losses;
-			const winRate = decisiveTrades > 0 ? (wins / decisiveTrades) * 100 : 0;
-			const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : 0;
-			const avgWin = wins > 0 ? grossProfit / wins : 0;
-			const avgLoss = losses > 0 ? grossLoss / losses : 0;
+			// Use shared stats calculator
+			const stats = calculateAggregateStats(closedTrades, beThreshold);
 
 			return {
-				totalTrades,
-				wins,
-				losses,
-				breakevens,
-				winRate,
-				totalPnl,
-				grossProfit,
-				grossLoss,
-				profitFactor,
-				avgWin,
-				avgLoss,
+				...stats,
 				breakevenThreshold: beThreshold,
 			};
 		}),

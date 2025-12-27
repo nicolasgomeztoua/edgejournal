@@ -116,10 +116,15 @@ notes: z.string().optional(),
 ```
 
 ### Component Structure
-- Use `"use client"` directive for interactive components
 - Place page-specific components in `_components/` folder
 - Place shared components in `src/components/`
 - Use barrel exports (`index.ts`) for component folders
+
+### "use client" Directive
+- Only add `"use client"` at the **entry point** of the client boundary (e.g., page components or top-level interactive components)
+- **Do NOT add `"use client"` to child components** that are already imported by a `"use client"` parent - they inherit the client context automatically
+- This avoids Next.js TypeScript plugin warnings about non-serializable props (functions passed to client components)
+- When in doubt, check if the component's parent already has `"use client"` before adding it
 
 ### Styling Conventions
 - Use Tailwind CSS classes

@@ -1,5 +1,3 @@
-"use client";
-
 import {
 	BookMarked,
 	Camera,
@@ -8,6 +6,7 @@ import {
 	TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 import { ComplianceBadge, RuleChecklist } from "@/components/strategy";
 import { TradeTags } from "@/components/tags/tag-selector";
 import { Button } from "@/components/ui/button";
@@ -158,6 +157,9 @@ function StrategySection({
 		{ tradeId },
 		{ enabled: !!strategyId },
 	);
+	const [optimisticCompliance, setOptimisticCompliance] = useState<
+		number | null
+	>(null);
 
 	const updateTradeMutation = api.trades.update.useMutation({
 		onSuccess: () => {
@@ -200,7 +202,10 @@ function StrategySection({
 
 				{strategyId && ruleChecksData?.strategy && (
 					<>
-						<ComplianceBadge compliance={ruleChecksData.compliance} size="sm" />
+						<ComplianceBadge
+							compliance={optimisticCompliance ?? ruleChecksData.compliance}
+							size="sm"
+						/>
 						<Button asChild className="h-7 w-7" size="icon" variant="ghost">
 							<Link href={`/strategies/${strategyId}`}>
 								<ExternalLink className="h-3 w-3" />
@@ -213,6 +218,7 @@ function StrategySection({
 			{strategyId && ruleChecksData && ruleChecksData.rules.length > 0 && (
 				<RuleChecklist
 					checks={ruleChecksData.checks}
+					onComplianceChange={setOptimisticCompliance}
 					onUpdate={() =>
 						utils.strategies.getTradeRuleChecks.invalidate({ tradeId })
 					}

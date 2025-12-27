@@ -302,7 +302,9 @@ export default function StrategiesPage() {
 							<StrategyCard
 								key={strategy.id}
 								onDelete={() => handleDelete(strategy.id)}
-								onDuplicate={() => duplicateMutation.mutate({ id: strategy.id })}
+								onDuplicate={() =>
+									duplicateMutation.mutate({ id: strategy.id })
+								}
 								onEdit={() => router.push(`/strategies/${strategy.id}`)}
 								stats={statsMap.get(strategy.id) ?? null}
 								strategy={strategy}

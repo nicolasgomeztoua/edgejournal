@@ -7,15 +7,18 @@ import { useState } from "react";
 import { toast } from "sonner";
 import type { StrategyFormData } from "@/components/strategy";
 import { StrategyForm } from "@/components/strategy";
-import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { api } from "@/trpc/react";
@@ -25,7 +28,7 @@ export default function StrategyDetailPage() {
 	const router = useRouter();
 	const strategyId = parseInt(params.id as string, 10);
 
-	const [isDeleting, setIsDeleting] = useState(false);
+	const [deleteOpen, setDeleteOpen] = useState(false);
 
 	const utils = api.useUtils();
 
@@ -154,6 +157,43 @@ export default function StrategyDetailPage() {
 						<Copy className="mr-2 h-3 w-3" />
 						Duplicate
 					</Button>
+					<AlertDialog onOpenChange={setDeleteOpen} open={deleteOpen}>
+						<AlertDialogTrigger asChild>
+							<Button className="h-8 w-8" size="icon" variant="ghost">
+								<Trash2 className="h-4 w-4 text-muted-foreground transition-colors hover:text-loss" />
+							</Button>
+						</AlertDialogTrigger>
+						<AlertDialogContent className="border-border bg-background">
+							<AlertDialogHeader>
+								<AlertDialogTitle className="font-mono uppercase tracking-wider">
+									Delete Strategy
+								</AlertDialogTitle>
+								<AlertDialogDescription className="font-mono text-xs">
+									Are you sure you want to delete &quot;{strategy.name}&quot;?
+									This action cannot be undone. The strategy will be removed
+									from all associated trades.
+								</AlertDialogDescription>
+							</AlertDialogHeader>
+							<AlertDialogFooter>
+								<AlertDialogCancel className="font-mono text-xs">
+									Cancel
+								</AlertDialogCancel>
+								<AlertDialogAction
+									className="bg-loss font-mono text-xs hover:bg-loss/90"
+									disabled={deleteMutation.isPending}
+									onClick={(e) => {
+										e.preventDefault();
+										deleteMutation.mutate({ id: strategyId });
+									}}
+								>
+									{deleteMutation.isPending && (
+										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									)}
+									Delete
+								</AlertDialogAction>
+							</AlertDialogFooter>
+						</AlertDialogContent>
+					</AlertDialog>
 				</div>
 			</div>
 
@@ -234,55 +274,6 @@ export default function StrategyDetailPage() {
 					submitLabel="Save Changes"
 				/>
 			</div>
-
-			{/* Danger zone */}
-			<div className="rounded border border-loss/20 bg-loss/5 p-6">
-				<h3 className="font-mono text-loss text-sm uppercase tracking-wider">
-					Danger Zone
-				</h3>
-				<p className="mt-2 font-mono text-muted-foreground text-sm">
-					Deleting this strategy will remove it from all associated trades.
-				</p>
-				<Button
-					className="mt-4 font-mono text-xs uppercase tracking-wider"
-					onClick={() => setIsDeleting(true)}
-					variant="destructive"
-				>
-					<Trash2 className="mr-2 h-4 w-4" />
-					Delete Strategy
-				</Button>
-			</div>
-
-			{/* Delete confirmation dialog */}
-			<Dialog onOpenChange={setIsDeleting} open={isDeleting}>
-				<DialogContent className="border-border bg-background">
-					<DialogHeader>
-						<DialogTitle className="font-mono uppercase tracking-wider">
-							Delete Strategy
-						</DialogTitle>
-						<DialogDescription className="font-mono text-xs">
-							Are you sure you want to delete &quot;{strategy.name}&quot;? This
-							action cannot be undone.
-						</DialogDescription>
-					</DialogHeader>
-					<DialogFooter>
-						<Button onClick={() => setIsDeleting(false)} variant="ghost">
-							Cancel
-						</Button>
-						<Button
-							disabled={deleteMutation.isPending}
-							onClick={() => deleteMutation.mutate({ id: strategyId })}
-							variant="destructive"
-						>
-							{deleteMutation.isPending && (
-								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-							)}
-							Delete
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
 		</div>
 	);
 }
-

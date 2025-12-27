@@ -1,9 +1,10 @@
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
+import { calculateAggregateStats } from "@/lib/stats-calculations";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import {
-	strategyRules,
 	strategies,
+	strategyRules,
 	tradeRuleChecks,
 	trades,
 	userSettings,
@@ -445,69 +446,20 @@ export const strategiesRouter = createTRPCRouter({
 				),
 			});
 
-			const totalTrades = strategyTrades.length;
-
-			if (totalTrades === 0) {
-				return {
-					totalTrades: 0,
-					wins: 0,
-					losses: 0,
-					breakevens: 0,
-					winRate: 0,
-					totalPnl: 0,
-					avgPnl: 0,
-					profitFactor: 0,
-					avgWin: 0,
-					avgLoss: 0,
-				};
-			}
-
-			// Calculate stats
-			const wins = strategyTrades.filter((t) => {
-				const pnl = t.netPnl ? parseFloat(t.netPnl) : 0;
-				return pnl > beThreshold;
-			}).length;
-
-			const losses = strategyTrades.filter((t) => {
-				const pnl = t.netPnl ? parseFloat(t.netPnl) : 0;
-				return pnl < -beThreshold;
-			}).length;
-
-			const breakevens = totalTrades - wins - losses;
-
-			const totalPnl = strategyTrades.reduce(
-				(sum, t) => sum + (t.netPnl ? parseFloat(t.netPnl) : 0),
-				0,
-			);
-
-			const grossProfit = strategyTrades.reduce((sum, t) => {
-				const pnl = t.netPnl ? parseFloat(t.netPnl) : 0;
-				return pnl > beThreshold ? sum + pnl : sum;
-			}, 0);
-
-			const grossLoss = strategyTrades.reduce((sum, t) => {
-				const pnl = t.netPnl ? parseFloat(t.netPnl) : 0;
-				return pnl < -beThreshold ? sum + Math.abs(pnl) : sum;
-			}, 0);
-
-			const decisiveTrades = wins + losses;
-			const winRate = decisiveTrades > 0 ? (wins / decisiveTrades) * 100 : 0;
-			const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : 0;
-			const avgWin = wins > 0 ? grossProfit / wins : 0;
-			const avgLoss = losses > 0 ? grossLoss / losses : 0;
-			const avgPnl = totalPnl / totalTrades;
+			// Use shared stats calculator
+			const stats = calculateAggregateStats(strategyTrades, beThreshold);
 
 			return {
-				totalTrades,
-				wins,
-				losses,
-				breakevens,
-				winRate,
-				totalPnl,
-				avgPnl,
-				profitFactor,
-				avgWin,
-				avgLoss,
+				totalTrades: stats.totalTrades,
+				wins: stats.wins,
+				losses: stats.losses,
+				breakevens: stats.breakevens,
+				winRate: stats.winRate,
+				totalPnl: stats.totalPnl,
+				avgPnl: stats.avgPnl,
+				profitFactor: stats.profitFactor,
+				avgWin: stats.avgWin,
+				avgLoss: stats.avgLoss,
 			};
 		}),
 
@@ -772,7 +724,7 @@ export const strategiesRouter = createTRPCRouter({
 			},
 		});
 
-		// Get all closed trades with strategies
+		// Get all closed trades with strategies (include fields needed for R-multiple)
 		const allTrades = await ctx.db.query.trades.findMany({
 			where: and(
 				eq(trades.userId, ctx.user.id),
@@ -789,100 +741,20 @@ export const strategiesRouter = createTRPCRouter({
 			},
 		});
 
-		// Calculate stats for each strategy
+		// Calculate stats for each strategy using shared module
 		const statsMap = allStrategies.map((strategy) => {
 			const strategyTrades = allTrades.filter(
 				(t) => t.strategyId === strategy.id,
 			);
-			const totalTrades = strategyTrades.length;
 
-			if (totalTrades === 0) {
-				return {
-					strategyId: strategy.id,
-					strategyName: strategy.name,
-					strategyColor: strategy.color,
-					totalTrades: 0,
-					wins: 0,
-					losses: 0,
-					breakevens: 0,
-					winRate: 0,
-					totalPnl: 0,
-					avgPnl: 0,
-					profitFactor: 0,
-					avgWin: 0,
-					avgLoss: 0,
-					avgRMultiple: null as number | null,
-				};
-			}
-
-			const wins = strategyTrades.filter((t) => {
-				const pnl = t.netPnl ? parseFloat(t.netPnl) : 0;
-				return pnl > beThreshold;
-			}).length;
-
-			const losses = strategyTrades.filter((t) => {
-				const pnl = t.netPnl ? parseFloat(t.netPnl) : 0;
-				return pnl < -beThreshold;
-			}).length;
-
-			const breakevens = totalTrades - wins - losses;
-
-			const totalPnl = strategyTrades.reduce(
-				(sum, t) => sum + (t.netPnl ? parseFloat(t.netPnl) : 0),
-				0,
-			);
-
-			const grossProfit = strategyTrades.reduce((sum, t) => {
-				const pnl = t.netPnl ? parseFloat(t.netPnl) : 0;
-				return pnl > beThreshold ? sum + pnl : sum;
-			}, 0);
-
-			const grossLoss = strategyTrades.reduce((sum, t) => {
-				const pnl = t.netPnl ? parseFloat(t.netPnl) : 0;
-				return pnl < -beThreshold ? sum + Math.abs(pnl) : sum;
-			}, 0);
-
-			// Calculate average R-multiple for trades with stop losses
-			const tradesWithSL = strategyTrades.filter(
-				(t) => t.stopLoss && t.netPnl,
-			);
-			let avgRMultiple: number | null = null;
-			if (tradesWithSL.length > 0) {
-				const rMultiples = tradesWithSL.map((t) => {
-					const riskPerUnit = Math.abs(
-						parseFloat(t.entryPrice) - parseFloat(t.stopLoss!),
-					);
-					if (riskPerUnit === 0) return 0;
-					return (
-						parseFloat(t.netPnl!) / (riskPerUnit * parseFloat(t.quantity))
-					);
-				});
-				avgRMultiple =
-					rMultiples.reduce((a, b) => a + b, 0) / rMultiples.length;
-			}
-
-			const decisiveTrades = wins + losses;
-			const winRate = decisiveTrades > 0 ? (wins / decisiveTrades) * 100 : 0;
-			const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? Infinity : 0;
-			const avgWin = wins > 0 ? grossProfit / wins : 0;
-			const avgLoss = losses > 0 ? grossLoss / losses : 0;
-			const avgPnl = totalPnl / totalTrades;
+			// Use shared stats calculator
+			const stats = calculateAggregateStats(strategyTrades, beThreshold);
 
 			return {
 				strategyId: strategy.id,
 				strategyName: strategy.name,
 				strategyColor: strategy.color,
-				totalTrades,
-				wins,
-				losses,
-				breakevens,
-				winRate,
-				totalPnl,
-				avgPnl,
-				profitFactor,
-				avgWin,
-				avgLoss,
-				avgRMultiple,
+				...stats,
 			};
 		});
 
@@ -923,10 +795,13 @@ export const strategiesRouter = createTRPCRouter({
 		// Build cumulative P&L curves for each strategy
 		const curves = allStrategies.map((strategy) => {
 			const strategyTrades = allTrades
-				.filter((t) => t.strategyId === strategy.id && t.exitTime)
+				.filter(
+					(t): t is typeof t & { exitTime: Date } =>
+						t.strategyId === strategy.id && t.exitTime !== null,
+				)
 				.sort(
 					(a, b) =>
-						new Date(a.exitTime!).getTime() - new Date(b.exitTime!).getTime(),
+						new Date(a.exitTime).getTime() - new Date(b.exitTime).getTime(),
 				);
 
 			let cumulative = 0;
@@ -950,4 +825,3 @@ export const strategiesRouter = createTRPCRouter({
 		return curves;
 	}),
 });
-
