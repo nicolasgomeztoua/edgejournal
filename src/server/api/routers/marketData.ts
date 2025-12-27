@@ -43,8 +43,8 @@ export const marketDataRouter = createTRPCRouter({
 					"4h",
 					"1day",
 				]),
-				startDate: z.string().datetime(),
-				endDate: z.string().datetime(),
+				startDate: z.iso.datetime(),
+				endDate: z.iso.datetime(),
 			}),
 		)
 		.query(async ({ input }) => {
@@ -115,8 +115,8 @@ export const marketDataRouter = createTRPCRouter({
 		.input(
 			z.object({
 				symbol: z.string(),
-				entryTime: z.string().datetime(),
-				exitTime: z.string().datetime().optional(),
+				entryTime: z.iso.datetime(),
+				exitTime: z.iso.datetime().optional(),
 				entryPrice: z.number(),
 				exitPrice: z.number().optional(),
 				stopLoss: z.number().optional(),

@@ -33,11 +33,11 @@ const createTradeSchema = z.object({
 	instrumentType: instrumentTypeEnum,
 	direction: directionEnum,
 	entryPrice: z.string(),
-	entryTime: z.string().datetime(),
+	entryTime: z.iso.datetime(),
 	quantity: z.string(),
 	// Exit fields (for closed trades)
 	exitPrice: z.string().optional(),
-	exitTime: z.string().datetime().optional(),
+	exitTime: z.iso.datetime().optional(),
 	// P&L (user-provided for closed trades)
 	realizedPnl: z.string().optional(), // User provides PnL directly
 	// Risk management
@@ -62,7 +62,7 @@ const updateTradeSchema = z.object({
 	direction: directionEnum.optional(),
 	entryPrice: z.string().optional(),
 	exitPrice: z.string().optional(),
-	exitTime: z.string().datetime().optional(),
+	exitTime: z.iso.datetime().optional(),
 	quantity: z.string().optional(),
 	stopLoss: z.string().optional(),
 	takeProfit: z.string().optional(),
@@ -93,7 +93,7 @@ const addExecutionSchema = z.object({
 	executionType: executionTypeEnum,
 	price: z.string(),
 	quantity: z.string(),
-	executedAt: z.string().datetime(),
+	executedAt: z.iso.datetime(),
 	fees: z.string().optional(),
 	notes: z.string().optional(),
 	realizedPnl: z.string().optional(), // User provides PnL for exit/scale_out
@@ -136,8 +136,8 @@ export const tradesRouter = createTRPCRouter({
 					status: tradeStatusEnum.nullish(),
 					symbol: z.string().nullish(),
 					tradeDirection: directionEnum.nullish(),
-					startDate: z.string().datetime().nullish(),
-					endDate: z.string().datetime().nullish(),
+					startDate: z.iso.datetime().nullish(),
+					endDate: z.iso.datetime().nullish(),
 					accountId: z.number().nullish(),
 					search: z.string().nullish(), // Server-side search
 					includeDeleted: z.boolean().nullish(), // Include soft-deleted trades
@@ -514,7 +514,7 @@ export const tradesRouter = createTRPCRouter({
 			z.object({
 				id: z.number(),
 				exitPrice: z.string(),
-				exitTime: z.string().datetime(),
+				exitTime: z.iso.datetime(),
 				fees: z.string().optional(),
 				realizedPnl: z.string(), // User provides PnL directly
 			}),
@@ -721,8 +721,8 @@ export const tradesRouter = createTRPCRouter({
 		.input(
 			z
 				.object({
-					startDate: z.string().datetime().optional(),
-					endDate: z.string().datetime().optional(),
+					startDate: z.iso.datetime().optional(),
+					endDate: z.iso.datetime().optional(),
 					accountId: z.number().optional(), // Filter by account
 				})
 				.optional(),
