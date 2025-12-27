@@ -14,6 +14,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { useOptimisticState } from "@/hooks/use-debounced-mutation";
 import { api } from "@/trpc/react";
 
 const PRESET_COLORS = [
@@ -35,12 +36,16 @@ function getRandomColor() {
 interface TagSelectorProps {
 	tradeId: number;
 	currentTagIds: number[];
+	onTagAdded?: (tagId: number, tag: { id: number; name: string; color: string | null }) => void;
+	onTagRemoved?: (tagId: number) => void;
 	onUpdate?: () => void;
 }
 
 export function TagSelector({
 	tradeId,
 	currentTagIds,
+	onTagAdded,
+	onTagRemoved,
 	onUpdate,
 }: TagSelectorProps) {
 	const [isOpen, setIsOpen] = useState(false);
@@ -49,17 +54,19 @@ export function TagSelector({
 	const { data: tags, refetch: refetchTags } = api.tags.getAll.useQuery();
 
 	const addTag = api.tags.addToTrade.useMutation({
-		onSuccess: () => {
-			onUpdate?.();
+		onSuccess: async () => {
+			await onUpdate?.();
 		},
-		onError: (error) => {
+		onError: (error, variables) => {
+			// Rollback optimistic update
+			onTagRemoved?.(variables.tagId);
 			toast.error(error.message || "Failed to add tag");
 		},
 	});
 
 	const removeTag = api.tags.removeFromTrade.useMutation({
-		onSuccess: () => {
-			onUpdate?.();
+		onSuccess: async () => {
+			await onUpdate?.();
 		},
 		onError: (error) => {
 			toast.error(error.message || "Failed to remove tag");
@@ -70,6 +77,8 @@ export function TagSelector({
 		onSuccess: (newTag) => {
 			refetchTags();
 			if (newTag) {
+				// Optimistically add the new tag
+				onTagAdded?.(newTag.id, { id: newTag.id, name: newTag.name, color: newTag.color });
 				addTag.mutate({ tradeId, tagId: newTag.id });
 			}
 			setNewTagName("");
@@ -79,10 +88,12 @@ export function TagSelector({
 		},
 	});
 
-	const handleToggleTag = (tagId: number, isSelected: boolean) => {
+	const handleToggleTag = (tagId: number, isSelected: boolean, tag?: { id: number; name: string; color: string | null }) => {
 		if (isSelected) {
+			onTagRemoved?.(tagId);
 			removeTag.mutate({ tradeId, tagId });
-		} else {
+		} else if (tag) {
+			onTagAdded?.(tagId, tag);
 			addTag.mutate({ tradeId, tagId });
 		}
 	};
@@ -119,7 +130,7 @@ export function TagSelector({
 									key={tag.id}
 									onSelect={(e) => {
 										e.preventDefault();
-										handleToggleTag(tag.id, isSelected);
+										handleToggleTag(tag.id, isSelected, tag);
 									}}
 								>
 									<div
@@ -188,38 +199,61 @@ export function TradeTags({
 	onUpdate,
 	maxDisplay = 2,
 }: TradeTagsProps) {
-	// Optimistic state for removed tags
-	const [optimisticallyRemoved, setOptimisticallyRemoved] = useState<
-		Set<number>
-	>(new Set());
+	// Use shared optimistic state utility
+	const {
+		applyUpdate: applyOptimisticUpdate,
+		clearUpdates: clearOptimisticUpdates,
+		updates: optimisticUpdates,
+	} = useOptimisticState<{ removed?: boolean; added?: boolean; tag?: { id: number; name: string; color: string | null } }>();
 
 	const removeTag = api.tags.removeFromTrade.useMutation({
-		onSuccess: () => {
-			onUpdate?.();
+		onMutate: ({ tagId }) => {
+			// Mark as optimistically removed
+			applyOptimisticUpdate(tagId, { removed: true });
 		},
 		onError: (error, variables) => {
-			// Rollback on error
-			setOptimisticallyRemoved((prev) => {
-				const next = new Set(prev);
-				next.delete(variables.tagId);
-				return next;
-			});
+			// Rollback - remove the optimistic update
 			toast.error(error.message || "Failed to remove tag");
 		},
-		onSettled: () => {
-			// Clear optimistic state after server responds
-			setOptimisticallyRemoved(new Set());
+		onSettled: async () => {
+			await onUpdate?.();
+			clearOptimisticUpdates();
 		},
 	});
 
 	const handleRemoveTag = (tagId: number) => {
-		// Optimistically remove from UI
-		setOptimisticallyRemoved((prev) => new Set(prev).add(tagId));
 		removeTag.mutate({ tradeId, tagId });
 	};
 
-	// Filter out optimistically removed tags
-	const displayTags = tags.filter((t) => !optimisticallyRemoved.has(t.tagId));
+	const handleTagAdded = (tagId: number, tag: { id: number; name: string; color: string | null }) => {
+		applyOptimisticUpdate(tagId, { added: true, tag });
+	};
+
+	const handleTagRemoved = (tagId: number) => {
+		applyOptimisticUpdate(tagId, { removed: true });
+	};
+
+	const handleUpdate = async () => {
+		await onUpdate?.();
+		clearOptimisticUpdates();
+	};
+
+	// Build display tags with optimistic updates applied
+	const displayTags = [
+		// Existing tags, filtered by optimistic removals
+		...tags.filter((t) => {
+			const update = optimisticUpdates.get(t.tagId);
+			return !update?.removed;
+		}),
+		// Optimistically added tags
+		...Array.from(optimisticUpdates.entries())
+			.filter(([id, update]) => update.added && update.tag && !tags.find(t => t.tagId === id))
+			.map(([id, update]) => ({
+				tagId: id as number,
+				tag: update.tag!,
+			})),
+	];
+
 	const currentTagIds = displayTags.map((t) => t.tagId);
 
 	return (
@@ -254,7 +288,9 @@ export function TradeTags({
 			)}
 			<TagSelector
 				currentTagIds={currentTagIds}
-				onUpdate={onUpdate}
+				onTagAdded={handleTagAdded}
+				onTagRemoved={handleTagRemoved}
+				onUpdate={handleUpdate}
 				tradeId={tradeId}
 			/>
 		</div>

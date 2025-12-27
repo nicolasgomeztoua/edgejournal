@@ -40,6 +40,13 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StarRating } from "@/components/ui/star-rating";
 import {
@@ -146,6 +153,9 @@ export default function JournalPage() {
 			{ enabled: tab === "trash" },
 		);
 
+	// Strategies list for dropdown
+	const { data: strategiesList } = api.strategies.getSimpleList.useQuery();
+
 	const utils = api.useUtils();
 
 	// Optimistic state for instant UI updates
@@ -239,6 +249,27 @@ export default function JournalPage() {
 		onSettled: async () => {
 			await utils.trades.getAll.invalidate();
 			clearOptimisticUpdates();
+		},
+	});
+
+	// Strategy update mutation with optimistic update
+	const updateStrategyMutation = api.trades.updateStrategy.useMutation({
+		onMutate: ({ id, strategyId }) => {
+			// Find strategy details for optimistic update
+			const strategy = strategiesList?.find((s) => s.id === strategyId);
+			applyOptimisticUpdate(id, {
+				strategyId,
+				strategy: strategy
+					? { id: strategy.id, name: strategy.name, color: strategy.color }
+					: null,
+			});
+		},
+		onSettled: async () => {
+			await utils.trades.getAll.invalidate();
+			clearOptimisticUpdates();
+		},
+		onError: () => {
+			toast.error("Failed to update strategy");
 		},
 	});
 
@@ -554,21 +585,47 @@ export default function JournalPage() {
 				);
 			case "strategy":
 				return (
-					<span className="font-mono text-xs">
-						{trade.strategy ? (
-							<div className="flex items-center gap-1.5">
-								<div
-									className="h-1.5 w-1.5 rounded-full"
-									style={{
-										backgroundColor: trade.strategy.color ?? "#d4ff00",
-									}}
-								/>
-								{trade.strategy.name}
-							</div>
-						) : (
-							<span className="text-muted-foreground/50">—</span>
-						)}
-					</span>
+					<Select
+						onValueChange={(value) => {
+							const strategyId = value === "none" ? null : parseInt(value, 10);
+							updateStrategyMutation.mutate({ id: trade.id, strategyId });
+						}}
+						value={trade.strategyId?.toString() ?? "none"}
+					>
+						<SelectTrigger className="h-7 w-[130px] border-transparent bg-transparent px-2 font-mono text-xs hover:border-border focus:ring-0 focus:ring-offset-0">
+							<SelectValue>
+								{trade.strategy ? (
+									<div className="flex items-center gap-1.5">
+										<div
+											className="h-1.5 w-1.5 shrink-0 rounded-full"
+											style={{
+												backgroundColor: trade.strategy.color ?? "#d4ff00",
+											}}
+										/>
+										<span className="truncate">{trade.strategy.name}</span>
+									</div>
+								) : (
+									<span className="text-muted-foreground/50">None</span>
+								)}
+							</SelectValue>
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="none">
+								<span className="text-muted-foreground">None</span>
+							</SelectItem>
+							{strategiesList?.map((s) => (
+								<SelectItem key={s.id} value={s.id.toString()}>
+									<div className="flex items-center gap-1.5">
+										<div
+											className="h-1.5 w-1.5 shrink-0 rounded-full"
+											style={{ backgroundColor: s.color ?? "#d4ff00" }}
+										/>
+										{s.name}
+									</div>
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
 				);
 			case "actions":
 				return (

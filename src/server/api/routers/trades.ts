@@ -1137,6 +1137,32 @@ export const tradesRouter = createTRPCRouter({
 			return updated;
 		}),
 
+	// Update trade strategy
+	updateStrategy: protectedProcedure
+		.input(
+			z.object({
+				id: z.number(),
+				strategyId: z.number().nullable(),
+			}),
+		)
+		.mutation(async ({ ctx, input }) => {
+			const existingTrade = await ctx.db.query.trades.findFirst({
+				where: and(eq(trades.id, input.id), eq(trades.userId, ctx.user.id)),
+			});
+
+			if (!existingTrade) {
+				throw new Error("Trade not found");
+			}
+
+			const [updated] = await ctx.db
+				.update(trades)
+				.set({ strategyId: input.strategyId })
+				.where(eq(trades.id, input.id))
+				.returning();
+
+			return updated;
+		}),
+
 	// Bulk mark as reviewed
 	bulkMarkReviewed: protectedProcedure
 		.input(

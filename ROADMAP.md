@@ -144,14 +144,14 @@ Document and track trading strategies with clear rules.
 - [x] Assign trade to strategy dropdown
 - [x] Rule adherence checkboxes
 - [x] Compliance percentage display
-- [ ] Quick strategy assignment in trade log
+- [x] Quick strategy assignment in trade log
 
 #### 2.4 Strategy Analytics
-- [ ] Performance metrics per strategy
-- [ ] Win rate by strategy
-- [ ] Profit factor by strategy
-- [ ] Average R per strategy
-- [ ] Compare strategies view/chart
+- [x] Performance metrics per strategy
+- [x] Win rate by strategy
+- [x] Profit factor by strategy
+- [x] Average R per strategy
+- [x] Compare strategies view/chart
 
 ---
 
@@ -564,7 +564,7 @@ ALTER TABLE user_settings ADD COLUMN dashboard_layout_id INTEGER;
 | Phase | Name | Duration | Status |
 |-------|------|----------|--------|
 | 1 | Enhanced Trade Log | 2-3 weeks | ✅ Complete |
-| 2 | Strategy System | 2 weeks | 🔄 In Progress (Analytics pending) |
+| 2 | Strategy System | 2 weeks | ✅ Complete |
 | 3 | Dashboard Customization | 2-3 weeks | ⏳ Pending |
 | 4 | Advanced Analytics | 3-4 weeks | ⏳ Pending |
 | 5 | Trade Detail Enhancements | 2 weeks | 🔄 In Progress (Layout done, Screenshot/Chart pending) |

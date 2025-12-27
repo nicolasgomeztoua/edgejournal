@@ -1,6 +1,6 @@
 "use client";
 
-import { BookMarked, Plus } from "lucide-react";
+import { BarChart3, BookMarked, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -94,12 +94,24 @@ export default function StrategiesPage() {
 						and checklists.
 					</p>
 				</div>
-				<Button asChild className="font-mono text-xs uppercase tracking-wider">
-					<Link href="/strategies/new">
-						<Plus className="mr-2 h-4 w-4" />
-						New Strategy
-					</Link>
-				</Button>
+				<div className="flex items-center gap-2">
+					<Button
+						asChild
+						className="font-mono text-xs uppercase tracking-wider"
+						variant="outline"
+					>
+						<Link href="/strategies/analytics">
+							<BarChart3 className="mr-2 h-4 w-4" />
+							Analytics
+						</Link>
+					</Button>
+					<Button asChild className="font-mono text-xs uppercase tracking-wider">
+						<Link href="/strategies/new">
+							<Plus className="mr-2 h-4 w-4" />
+							New Strategy
+						</Link>
+					</Button>
+				</div>
 			</div>
 
 			{/* Loading state */}

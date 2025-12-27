@@ -729,5 +729,225 @@ export const strategiesRouter = createTRPCRouter({
 				compliance,
 			};
 		}),
+
+	// Get simple list of strategies for dropdowns
+	getSimpleList: protectedProcedure.query(async ({ ctx }) => {
+		const results = await ctx.db.query.strategies.findMany({
+			where: and(
+				eq(strategies.userId, ctx.user.id),
+				eq(strategies.isActive, true),
+			),
+			columns: {
+				id: true,
+				name: true,
+				color: true,
+			},
+			orderBy: [strategies.name],
+		});
+
+		return results;
+	}),
+
+	// Get stats for all strategies at once (batch)
+	getAllStats: protectedProcedure.query(async ({ ctx }) => {
+		// Get user's breakeven threshold
+		const userSettingsResult = await ctx.db.query.userSettings.findFirst({
+			where: eq(userSettings.userId, ctx.user.id),
+			columns: { breakevenThreshold: true },
+		});
+		const beThreshold = parseFloat(
+			userSettingsResult?.breakevenThreshold ?? "3.00",
+		);
+
+		// Get all active strategies
+		const allStrategies = await ctx.db.query.strategies.findMany({
+			where: and(
+				eq(strategies.userId, ctx.user.id),
+				eq(strategies.isActive, true),
+			),
+			columns: {
+				id: true,
+				name: true,
+				color: true,
+			},
+		});
+
+		// Get all closed trades with strategies
+		const allTrades = await ctx.db.query.trades.findMany({
+			where: and(
+				eq(trades.userId, ctx.user.id),
+				eq(trades.status, "closed"),
+				isNull(trades.deletedAt),
+			),
+			columns: {
+				id: true,
+				strategyId: true,
+				netPnl: true,
+				entryPrice: true,
+				stopLoss: true,
+				quantity: true,
+			},
+		});
+
+		// Calculate stats for each strategy
+		const statsMap = allStrategies.map((strategy) => {
+			const strategyTrades = allTrades.filter(
+				(t) => t.strategyId === strategy.id,
+			);
+			const totalTrades = strategyTrades.length;
+
+			if (totalTrades === 0) {
+				return {
+					strategyId: strategy.id,
+					strategyName: strategy.name,
+					strategyColor: strategy.color,
+					totalTrades: 0,
+					wins: 0,
+					losses: 0,
+					breakevens: 0,
+					winRate: 0,
+					totalPnl: 0,
+					avgPnl: 0,
+					profitFactor: 0,
+					avgWin: 0,
+					avgLoss: 0,
+					avgRMultiple: null as number | null,
+				};
+			}
+
+			const wins = strategyTrades.filter((t) => {
+				const pnl = t.netPnl ? parseFloat(t.netPnl) : 0;
+				return pnl > beThreshold;
+			}).length;
+
+			const losses = strategyTrades.filter((t) => {
+				const pnl = t.netPnl ? parseFloat(t.netPnl) : 0;
+				return pnl < -beThreshold;
+			}).length;
+
+			const breakevens = totalTrades - wins - losses;
+
+			const totalPnl = strategyTrades.reduce(
+				(sum, t) => sum + (t.netPnl ? parseFloat(t.netPnl) : 0),
+				0,
+			);
+
+			const grossProfit = strategyTrades.reduce((sum, t) => {
+				const pnl = t.netPnl ? parseFloat(t.netPnl) : 0;
+				return pnl > beThreshold ? sum + pnl : sum;
+			}, 0);
+
+			const grossLoss = strategyTrades.reduce((sum, t) => {
+				const pnl = t.netPnl ? parseFloat(t.netPnl) : 0;
+				return pnl < -beThreshold ? sum + Math.abs(pnl) : sum;
+			}, 0);
+
+			// Calculate average R-multiple for trades with stop losses
+			const tradesWithSL = strategyTrades.filter(
+				(t) => t.stopLoss && t.netPnl,
+			);
+			let avgRMultiple: number | null = null;
+			if (tradesWithSL.length > 0) {
+				const rMultiples = tradesWithSL.map((t) => {
+					const riskPerUnit = Math.abs(
+						parseFloat(t.entryPrice) - parseFloat(t.stopLoss!),
+					);
+					if (riskPerUnit === 0) return 0;
+					return (
+						parseFloat(t.netPnl!) / (riskPerUnit * parseFloat(t.quantity))
+					);
+				});
+				avgRMultiple =
+					rMultiples.reduce((a, b) => a + b, 0) / rMultiples.length;
+			}
+
+			const decisiveTrades = wins + losses;
+			const winRate = decisiveTrades > 0 ? (wins / decisiveTrades) * 100 : 0;
+			const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? Infinity : 0;
+			const avgWin = wins > 0 ? grossProfit / wins : 0;
+			const avgLoss = losses > 0 ? grossLoss / losses : 0;
+			const avgPnl = totalPnl / totalTrades;
+
+			return {
+				strategyId: strategy.id,
+				strategyName: strategy.name,
+				strategyColor: strategy.color,
+				totalTrades,
+				wins,
+				losses,
+				breakevens,
+				winRate,
+				totalPnl,
+				avgPnl,
+				profitFactor,
+				avgWin,
+				avgLoss,
+				avgRMultiple,
+			};
+		});
+
+		return statsMap;
+	}),
+
+	// Get comparative P&L data for charting (cumulative P&L over time per strategy)
+	getComparativeData: protectedProcedure.query(async ({ ctx }) => {
+		// Get all active strategies
+		const allStrategies = await ctx.db.query.strategies.findMany({
+			where: and(
+				eq(strategies.userId, ctx.user.id),
+				eq(strategies.isActive, true),
+			),
+			columns: {
+				id: true,
+				name: true,
+				color: true,
+			},
+		});
+
+		// Get all closed trades with strategies, ordered by exit time
+		const allTrades = await ctx.db.query.trades.findMany({
+			where: and(
+				eq(trades.userId, ctx.user.id),
+				eq(trades.status, "closed"),
+				isNull(trades.deletedAt),
+			),
+			columns: {
+				id: true,
+				strategyId: true,
+				netPnl: true,
+				exitTime: true,
+			},
+			orderBy: [trades.exitTime],
+		});
+
+		// Build cumulative P&L curves for each strategy
+		const curves = allStrategies.map((strategy) => {
+			const strategyTrades = allTrades
+				.filter((t) => t.strategyId === strategy.id && t.exitTime)
+				.sort(
+					(a, b) =>
+						new Date(a.exitTime!).getTime() - new Date(b.exitTime!).getTime(),
+				);
+
+			let cumulative = 0;
+			const dataPoints = strategyTrades.map((trade, index) => {
+				cumulative += trade.netPnl ? parseFloat(trade.netPnl) : 0;
+				return {
+					tradeNumber: index + 1,
+					date: trade.exitTime,
+					pnl: cumulative,
+				};
+			});
+
+			return {
+				strategyId: strategy.id,
+				strategyName: strategy.name,
+				strategyColor: strategy.color ?? "#d4ff00",
+				dataPoints,
+			};
+		});
+
+		return curves;
+	}),
 });
 

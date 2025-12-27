@@ -1,8 +1,10 @@
 "use client";
 
 import { CheckCircle2, Circle } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo } from "react";
+import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useOptimisticState } from "@/hooks/use-debounced-mutation";
 import { cn } from "@/lib/utils";
 import { api } from "@/trpc/react";
 
@@ -45,23 +47,27 @@ export function RuleChecklist({
 	checks,
 	onUpdate,
 }: RuleChecklistProps) {
-	const [pendingChecks, setPendingChecks] = useState<Map<number, boolean>>(
-		new Map(),
-	);
+	// Use shared optimistic state utility
+	const {
+		applyUpdate: applyOptimisticUpdate,
+		clearUpdates: clearOptimisticUpdates,
+		updates: optimisticUpdates,
+	} = useOptimisticState<{ checked: boolean }>();
 
 	const checkRule = api.strategies.checkRule.useMutation({
 		onMutate: ({ ruleId, checked }) => {
-			setPendingChecks((prev) => new Map(prev).set(ruleId, checked));
+			// Apply optimistic update immediately
+			applyOptimisticUpdate(ruleId, { checked });
 		},
-		onSuccess: () => {
-			onUpdate?.();
+		onError: () => {
+			// On error, the optimistic state will be cleared in onSettled
+			// and the original data will show through after refetch
+			toast.error("Failed to update rule");
 		},
-		onSettled: (_data, _error, { ruleId }) => {
-			setPendingChecks((prev) => {
-				const next = new Map(prev);
-				next.delete(ruleId);
-				return next;
-			});
+		onSettled: async () => {
+			// Wait for refetch to complete, then clear optimistic state
+			await onUpdate?.();
+			clearOptimisticUpdates();
 		},
 	});
 
@@ -73,29 +79,38 @@ export function RuleChecklist({
 	);
 
 	// Group rules by category
-	const groupedRules: Record<string, Rule[]> = {};
-	for (const rule of rules) {
-		const category = rule.category;
-		if (!groupedRules[category]) {
-			groupedRules[category] = [];
+	const groupedRules = useMemo(() => {
+		const groups: Record<string, Rule[]> = {};
+		for (const rule of rules) {
+			const category = rule.category;
+			if (!groups[category]) {
+				groups[category] = [];
+			}
+			groups[category].push(rule);
 		}
-		groupedRules[category].push(rule);
-	}
+		return groups;
+	}, [rules]);
 
 	// Get check status for a rule (with optimistic updates)
-	const isChecked = (ruleId: number): boolean => {
-		if (pendingChecks.has(ruleId)) {
-			return pendingChecks.get(ruleId) ?? false;
-		}
-		return checks.find((c) => c.ruleId === ruleId)?.checked ?? false;
-	};
+	const isChecked = useCallback(
+		(ruleId: number): boolean => {
+			// Check optimistic state first
+			const optimistic = optimisticUpdates.get(ruleId);
+			if (optimistic?.checked !== undefined) {
+				return optimistic.checked;
+			}
+			// Fall back to server data
+			return checks.find((c) => c.ruleId === ruleId)?.checked ?? false;
+		},
+		[optimisticUpdates, checks],
+	);
 
 	// Calculate optimistic compliance
-	const optimisticCompliance = (() => {
+	const optimisticCompliance = useMemo(() => {
 		if (rules.length === 0) return 100;
 		const checkedCount = rules.filter((r) => isChecked(r.id)).length;
 		return (checkedCount / rules.length) * 100;
-	})();
+	}, [rules, isChecked]);
 
 	if (rules.length === 0) {
 		return (
@@ -194,4 +209,3 @@ export function RuleChecklist({
 		</div>
 	);
 }
-
