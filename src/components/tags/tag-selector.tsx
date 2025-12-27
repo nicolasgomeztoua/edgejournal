@@ -211,7 +211,7 @@ export function TradeTags({
 			// Mark as optimistically removed
 			applyOptimisticUpdate(tagId, { removed: true });
 		},
-		onError: (error, variables) => {
+		onError: (error) => {
 			// Rollback - remove the optimistic update
 			toast.error(error.message || "Failed to remove tag");
 		},
@@ -247,10 +247,13 @@ export function TradeTags({
 		}),
 		// Optimistically added tags
 		...Array.from(optimisticUpdates.entries())
-			.filter(([id, update]) => update.added && update.tag && !tags.find(t => t.tagId === id))
+			.filter((entry): entry is [number | string, { added: true; tag: { id: number; name: string; color: string | null } }] => {
+				const [id, update] = entry;
+				return Boolean(update.added && update.tag && !tags.find(t => t.tagId === id));
+			})
 			.map(([id, update]) => ({
 				tagId: id as number,
-				tag: update.tag!,
+				tag: update.tag,
 			})),
 	];
 
