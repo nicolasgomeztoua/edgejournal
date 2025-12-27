@@ -552,6 +552,24 @@ export default function JournalPage() {
 						{trade.account?.name || "—"}
 					</span>
 				);
+			case "playbook":
+				return (
+					<span className="font-mono text-xs">
+						{trade.playbook ? (
+							<div className="flex items-center gap-1.5">
+								<div
+									className="h-1.5 w-1.5 rounded-full"
+									style={{
+										backgroundColor: trade.playbook.color ?? "#d4ff00",
+									}}
+								/>
+								{trade.playbook.name}
+							</div>
+						) : (
+							<span className="text-muted-foreground/50">—</span>
+						)}
+					</span>
+				);
 			case "actions":
 				return (
 					<DropdownMenu>

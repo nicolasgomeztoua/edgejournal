@@ -111,7 +111,7 @@ function Section({
 				<span className="h-px w-3 bg-primary/40" />
 				<span className="text-primary/80">{label}</span>
 			</h2>
-			<div className="rounded-sm border-y border-y-white/10 border-r border-r-white/10 border-l-2 border-l-primary/20 bg-secondary p-5">
+			<div className="rounded border-y border-y-white/5 border-r border-r-white/5 border-l-2 border-l-primary/20 bg-white/[0.01] p-5">
 				{children}
 			</div>
 		</div>

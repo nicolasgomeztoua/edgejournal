@@ -86,7 +86,7 @@
 	--secondary: #141414;
 	--secondary-foreground: #e5e5e5;
 	--muted: #1a1a1a;
-	--muted-foreground: #737373;
+	--muted-foreground: #a3a3a3;
 	--accent: #00d4ff;
 	--accent-foreground: #050505;
 	--destructive: #ff3b3b;
@@ -392,21 +392,21 @@
    Precision colors designed for long coding sessions */
 .theme-solarized-light {
 	--background: #fdf6e3;
-	--foreground: #586e75;
+	--foreground: #657b83;
 	--card: #fdf6e3;
-	--card-foreground: #586e75;
+	--card-foreground: #657b83;
 	--popover: #fdf6e3;
-	--popover-foreground: #586e75;
+	--popover-foreground: #657b83;
 	--primary: #268bd2;
 	--primary-foreground: #fdf6e3;
 	--secondary: #eee8d5;
 	--secondary-foreground: #586e75;
 	--muted: #eee8d5;
-	--muted-foreground: #839496;
-	--accent: #e8e2d0;
+	--muted-foreground: #93a1a1;
+	--accent: #eee8d5;
 	--accent-foreground: #268bd2;
 	--destructive: #dc322f;
-	--border: #d3cbb7;
+	--border: #eee8d5;
 	--input: #eee8d5;
 	--ring: #268bd2;
 	--chart-1: #268bd2;

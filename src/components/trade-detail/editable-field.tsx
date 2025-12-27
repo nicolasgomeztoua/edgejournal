@@ -114,9 +114,9 @@ export function EditableField({
 				<input
 					className={cn(
 						"h-10 w-full rounded border px-3 font-mono text-sm transition-all",
-						"border-white/25 bg-white/[0.04] placeholder:text-muted-foreground/50",
-						"hover:border-primary/30 hover:bg-white/[0.06]",
-						"focus:border-primary/60 focus:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-primary/25",
+						"border-black/10 bg-black/[0.02] dark:border-white/25 dark:bg-white/[0.04] placeholder:text-muted-foreground/50",
+						"hover:border-primary/30 hover:bg-black/[0.04] dark:hover:bg-white/[0.06]",
+						"focus:border-primary/60 focus:bg-black/[0.04] dark:focus:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-primary/25",
 						"disabled:cursor-not-allowed disabled:opacity-50",
 						align === "right" && "text-right",
 						prefix && "pl-7",
@@ -200,9 +200,9 @@ export function EditableTextarea({
 			<textarea
 				className={cn(
 					"w-full resize-none rounded border px-3 py-3 font-mono text-sm transition-all",
-					"border-white/25 bg-white/[0.04] placeholder:text-muted-foreground/50",
-					"hover:border-primary/30 hover:bg-white/[0.06]",
-					"focus:border-primary/60 focus:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-primary/25",
+					"border-black/10 bg-black/[0.02] dark:border-white/25 dark:bg-white/[0.04] placeholder:text-muted-foreground/50",
+					"hover:border-primary/30 hover:bg-black/[0.04] dark:hover:bg-white/[0.06]",
+					"focus:border-primary/60 focus:bg-black/[0.04] dark:focus:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-primary/25",
 				)}
 				id={id}
 				onBlur={handleBlur}
@@ -256,9 +256,9 @@ export function EditableSelect({
 			<select
 				className={cn(
 					"h-10 w-full cursor-pointer appearance-none rounded border px-3 pr-8 font-mono text-sm transition-all",
-					"border-white/25 bg-white/[0.04]",
-					"hover:border-primary/30 hover:bg-white/[0.06]",
-					"focus:border-primary/60 focus:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-primary/25",
+					"border-black/10 bg-black/[0.02] dark:border-white/25 dark:bg-white/[0.04]",
+					"hover:border-primary/30 hover:bg-black/[0.04] dark:hover:bg-white/[0.06]",
+					"focus:border-primary/60 focus:bg-black/[0.04] dark:focus:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-primary/25",
 					!value && "text-muted-foreground/50",
 					selectedOption?.color,
 				)}

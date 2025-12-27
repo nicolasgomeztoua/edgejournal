@@ -28,6 +28,7 @@ const DEFAULT_COLUMNS: TradeColumn[] = [
 	{ id: "rMultiple", label: "R-Multiple", visible: false, order: 13 },
 	{ id: "tags", label: "Tags", visible: false, order: 14 },
 	{ id: "account", label: "Account", visible: false, order: 15 },
+	{ id: "playbook", label: "Playbook", visible: false, order: 16 },
 	{ id: "actions", label: "", visible: true, order: 99 },
 ];
 
