@@ -1,59 +1,22 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 
+import {
+	accountTypeEnum,
+	drawdownTypeEnum,
+	payoutFrequencyEnum,
+	propFieldsSchema,
+	tradingPlatformEnum,
+} from "@/lib/schemas";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { accountGroups, accounts, trades } from "@/server/db/schema";
-
-// Platform enum values (must match schema)
-const platformEnum = z.enum(["mt4", "mt5", "projectx", "ninjatrader", "other"]);
-
-// Account type enum (matches new schema)
-const accountTypeEnum = z.enum([
-	"prop_challenge",
-	"prop_funded",
-	"live",
-	"demo",
-]);
-
-// Drawdown type enum
-const drawdownTypeEnum = z.enum(["trailing", "static", "eod"]);
-
-// Payout frequency enum
-const payoutFrequencyEnum = z.enum(["weekly", "bi_weekly", "monthly"]);
-
-// Challenge status enum
-const challengeStatusEnum = z.enum(["active", "passed", "failed"]);
-
-// Prop firm fields schema (optional, only for prop accounts)
-const propFieldsSchema = z.object({
-	// Drawdown rules
-	maxDrawdown: z.string().optional(), // % as string
-	drawdownType: drawdownTypeEnum.optional(),
-	dailyLossLimit: z.string().optional(), // % as string
-
-	// Challenge rules (for prop_challenge)
-	profitTarget: z.string().optional(), // % as string
-	consistencyRule: z.string().optional(), // % as string
-	minTradingDays: z.number().optional(),
-	challengeStartDate: z.string().optional(), // ISO date string
-	challengeEndDate: z.string().optional(), // ISO date string
-	challengeStatus: challengeStatusEnum.optional(),
-
-	// Funded rules (for prop_funded)
-	profitSplit: z.string().optional(), // % as string
-	payoutFrequency: payoutFrequencyEnum.optional(),
-
-	// Linking
-	linkedAccountId: z.number().optional(),
-	groupId: z.number().optional(),
-});
 
 // Input schemas
 const createAccountSchema = z
 	.object({
 		name: z.string().min(1).max(100),
 		broker: z.string().optional(),
-		platform: platformEnum.default("other"),
+		platform: tradingPlatformEnum.default("other"),
 		accountType: accountTypeEnum.default("live"),
 		initialBalance: z.string().optional(),
 		currency: z.string().default("USD"),
@@ -69,7 +32,7 @@ const updateAccountSchema = z
 		id: z.number(),
 		name: z.string().min(1).max(100).optional(),
 		broker: z.string().optional(),
-		platform: platformEnum.optional(),
+		platform: tradingPlatformEnum.optional(),
 		accountType: accountTypeEnum.optional(),
 		initialBalance: z.string().optional(),
 		currency: z.string().optional(),

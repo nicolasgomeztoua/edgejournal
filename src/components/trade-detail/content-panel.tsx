@@ -4,31 +4,17 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { api } from "@/trpc/react";
+import type { TradeForContentPanel } from "@/types";
 import { EditableTextarea } from "./editable-field";
 
 // =============================================================================
 // TYPES
 // =============================================================================
 
-interface Trade {
-	id: number;
-	symbol: string;
-	direction: "long" | "short";
-	status: "open" | "closed";
-	entryPrice: string;
-	exitPrice: string | null;
-	stopLoss: string | null;
-	takeProfit: string | null;
+// Use shared type (notes field comes from API, tradeTags already included)
+type Trade = TradeForContentPanel & {
 	notes: string | null;
-	tradeTags?: Array<{
-		tagId: number;
-		tag: {
-			id: number;
-			name: string;
-			color: string | null;
-		};
-	}>;
-}
+};
 
 interface ContentPanelProps {
 	trade: Trade;

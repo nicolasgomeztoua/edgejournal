@@ -11,21 +11,27 @@ import {
 	sql,
 } from "drizzle-orm";
 import { z } from "zod";
-import { calculateAggregateStats } from "@/lib/stats-calculations";
-import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import {
-	accounts,
-	tradeExecutions,
-	trades,
-	tradeTags,
-	userSettings,
-} from "@/server/db/schema";
+	directionEnum,
+	emotionalStateEnum,
+	executionTypeEnum,
+	exitReasonEnum,
+	instrumentTypeEnum,
+	tradeStatusEnum,
+} from "@/lib/schemas";
+import { calculateAggregateStats } from "@/lib/stats-calculations";
+import {
+	getActiveAccountsSubquery,
+	getUserBreakevenThreshold,
+} from "@/server/api/helpers";
+import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import { tradeExecutions, trades, tradeTags } from "@/server/db/schema";
 
 // Input schemas
 const createTradeSchema = z.object({
 	symbol: z.string().min(1),
-	instrumentType: z.enum(["futures", "forex"]),
-	direction: z.enum(["long", "short"]),
+	instrumentType: instrumentTypeEnum,
+	direction: directionEnum,
 	entryPrice: z.string(),
 	entryTime: z.string().datetime(),
 	quantity: z.string(),
@@ -41,17 +47,7 @@ const createTradeSchema = z.object({
 	fees: z.string().optional(),
 	// Metadata
 	setupType: z.string().optional(),
-	emotionalState: z
-		.enum([
-			"confident",
-			"fearful",
-			"greedy",
-			"neutral",
-			"frustrated",
-			"excited",
-			"anxious",
-		])
-		.optional(),
+	emotionalState: emotionalStateEnum.optional(),
 	notes: z.string().optional(),
 	tagIds: z.array(z.number()).optional(),
 	accountId: z.number(), // Required: Link to trading account
@@ -62,8 +58,8 @@ const createTradeSchema = z.object({
 const updateTradeSchema = z.object({
 	id: z.number(),
 	symbol: z.string().optional(),
-	instrumentType: z.enum(["futures", "forex"]).optional(),
-	direction: z.enum(["long", "short"]).optional(),
+	instrumentType: instrumentTypeEnum.optional(),
+	direction: directionEnum.optional(),
 	entryPrice: z.string().optional(),
 	exitPrice: z.string().optional(),
 	exitTime: z.string().datetime().optional(),
@@ -76,33 +72,14 @@ const updateTradeSchema = z.object({
 	fees: z.string().optional(),
 	netPnl: z.string().optional(),
 	setupType: z.string().optional(),
-	emotionalState: z
-		.enum([
-			"confident",
-			"fearful",
-			"greedy",
-			"neutral",
-			"frustrated",
-			"excited",
-			"anxious",
-		])
-		.nullish(),
+	emotionalState: emotionalStateEnum.nullish(),
 	notes: z.string().optional(),
-	status: z.enum(["open", "closed"]).optional(),
+	status: tradeStatusEnum.optional(),
 	// Trailing stop fields
 	trailedStopLoss: z.string().nullish(),
 	wasTrailed: z.boolean().optional(),
 	// Exit reason
-	exitReason: z
-		.enum([
-			"manual",
-			"stop_loss",
-			"trailing_stop",
-			"take_profit",
-			"time_based",
-			"breakeven",
-		])
-		.nullish(),
+	exitReason: exitReasonEnum.nullish(),
 	// Rating and review
 	rating: z.number().min(1).max(5).optional().nullable(),
 	isReviewed: z.boolean().optional(),
@@ -113,7 +90,7 @@ const updateTradeSchema = z.object({
 // Schema for adding a partial exit / execution
 const addExecutionSchema = z.object({
 	tradeId: z.number(),
-	executionType: z.enum(["entry", "exit", "scale_in", "scale_out"]),
+	executionType: executionTypeEnum,
 	price: z.string(),
 	quantity: z.string(),
 	executedAt: z.string().datetime(),
@@ -125,8 +102,8 @@ const addExecutionSchema = z.object({
 // Batch import schema for CSV imports
 const batchImportTradeSchema = z.object({
 	symbol: z.string().min(1),
-	instrumentType: z.enum(["futures", "forex"]),
-	direction: z.enum(["long", "short"]),
+	instrumentType: instrumentTypeEnum,
+	direction: directionEnum,
 	entryPrice: z.string(),
 	entryTime: z.string(), // ISO string
 	exitPrice: z.string().optional(),
@@ -156,16 +133,16 @@ export const tradesRouter = createTRPCRouter({
 					limit: z.number().min(1).max(100).default(50),
 					cursor: z.number().nullish(),
 					direction: z.enum(["forward", "backward"]).optional(), // tRPC infinite query pagination direction
-					status: z.enum(["open", "closed"]).nullish(),
+					status: tradeStatusEnum.nullish(),
 					symbol: z.string().nullish(),
-					tradeDirection: z.enum(["long", "short"]).nullish(),
+					tradeDirection: directionEnum.nullish(),
 					startDate: z.string().datetime().nullish(),
 					endDate: z.string().datetime().nullish(),
 					accountId: z.number().nullish(),
 					search: z.string().nullish(), // Server-side search
 					includeDeleted: z.boolean().nullish(), // Include soft-deleted trades
 					// Advanced filters
-					result: z.enum(["win", "loss", "breakeven"]).nullish(),
+					result: z.enum(["win", "loss", "breakeven"]).nullish(), // Filter-specific, not a DB enum
 					minPnl: z.number().nullish(),
 					maxPnl: z.number().nullish(),
 					rating: z.number().min(1).max(5).nullish(),
@@ -175,16 +152,7 @@ export const tradesRouter = createTRPCRouter({
 					setupType: z.string().nullish(),
 					dayOfWeek: z.array(z.number().min(0).max(6)).nullish(), // 0=Sunday, 6=Saturday
 					tagIds: z.array(z.number()).nullish(),
-					exitReason: z
-						.enum([
-							"manual",
-							"stop_loss",
-							"trailing_stop",
-							"take_profit",
-							"time_based",
-							"breakeven",
-						])
-						.nullish(),
+					exitReason: exitReasonEnum.nullish(),
 					strategyId: z.number().nullish(),
 				})
 				.optional(),
@@ -204,12 +172,7 @@ export const tradesRouter = createTRPCRouter({
 				conditions.push(eq(trades.accountId, input.accountId));
 			} else {
 				// Only include trades from active accounts when querying across all accounts
-				const activeAccountIds = ctx.db
-					.select({ id: accounts.id })
-					.from(accounts)
-					.where(
-						and(eq(accounts.userId, ctx.user.id), eq(accounts.isActive, true)),
-					);
+				const activeAccountIds = getActiveAccountsSubquery(ctx.db, ctx.user.id);
 				conditions.push(sql`${trades.accountId} IN (${activeAccountIds})`);
 			}
 			if (input?.status) {
@@ -766,15 +729,7 @@ export const tradesRouter = createTRPCRouter({
 		)
 		.query(async ({ ctx, input }) => {
 			// Get user's breakeven threshold setting
-			const userSettingsResult = await ctx.db.query.userSettings.findFirst({
-				where: eq(userSettings.userId, ctx.user.id),
-				columns: {
-					breakevenThreshold: true,
-				},
-			});
-			const beThreshold = parseFloat(
-				userSettingsResult?.breakevenThreshold ?? "3.00",
-			);
+			const beThreshold = await getUserBreakevenThreshold(ctx.db, ctx.user.id);
 
 			const conditions = [
 				eq(trades.userId, ctx.user.id),
@@ -787,12 +742,7 @@ export const tradesRouter = createTRPCRouter({
 				conditions.push(eq(trades.accountId, input.accountId));
 			} else {
 				// Only include trades from active accounts when querying across all accounts
-				const activeAccountIds = ctx.db
-					.select({ id: accounts.id })
-					.from(accounts)
-					.where(
-						and(eq(accounts.userId, ctx.user.id), eq(accounts.isActive, true)),
-					);
+				const activeAccountIds = getActiveAccountsSubquery(ctx.db, ctx.user.id);
 				conditions.push(sql`${trades.accountId} IN (${activeAccountIds})`);
 			}
 			if (input?.startDate) {

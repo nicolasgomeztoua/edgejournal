@@ -10,7 +10,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { cn, formatDate, formatTime } from "@/lib/utils";
 
 // =============================================================================
 // TYPES
@@ -78,16 +78,6 @@ export function ExecutionTimeline({
 
 	function isAddType(type: Execution["executionType"]) {
 		return type === "entry" || type === "scale_in";
-	}
-
-	function formatTime(date: string | Date) {
-		const d = new Date(date);
-		return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-	}
-
-	function formatDate(date: string | Date) {
-		const d = new Date(date);
-		return d.toLocaleDateString([], { month: "short", day: "numeric" });
 	}
 
 	function handleAddExecution() {

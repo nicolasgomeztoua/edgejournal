@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
 	cn,
 	formatCurrency,
+	formatDate,
 	formatPercent,
 	getPnLColorClass,
 } from "@/lib/utils";
@@ -242,7 +243,7 @@ function CumulativePnLChart() {
 				return {
 					trade: i + 1,
 					pnl: cumulative,
-					date: t.exitTime ? new Date(t.exitTime).toLocaleDateString() : "",
+					date: t.exitTime ? formatDate(t.exitTime) : "",
 				};
 			});
 

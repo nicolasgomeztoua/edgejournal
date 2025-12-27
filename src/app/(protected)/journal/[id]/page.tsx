@@ -38,7 +38,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDebouncedMutation } from "@/hooks/use-debounced-mutation";
 import { calculateAllStats } from "@/lib/trade-calculations";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { api } from "@/trpc/react";
 
 // =============================================================================
@@ -376,7 +376,7 @@ export default function TradeDetailPage() {
 								)}
 							</div>
 							<p className="font-mono text-[10px] text-muted-foreground">
-								{new Date(trade.entryTime).toLocaleDateString("en-US", {
+								{formatDate(trade.entryTime, {
 									weekday: "short",
 									month: "short",
 									day: "numeric",
@@ -707,7 +707,7 @@ export default function TradeDetailPage() {
 									{trade.symbol} {trade.direction.toUpperCase()}
 								</p>
 								<p className="font-mono text-[10px] text-muted-foreground">
-									{new Date(trade.entryTime).toLocaleDateString()}
+									{formatDate(trade.entryTime)}
 								</p>
 							</div>
 						</div>

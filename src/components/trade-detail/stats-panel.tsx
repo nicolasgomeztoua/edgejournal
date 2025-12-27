@@ -22,8 +22,9 @@ import {
 import { StarRating } from "@/components/ui/star-rating";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { TradeStats } from "@/lib/trade-calculations";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency, formatTime } from "@/lib/utils";
 import { api } from "@/trpc/react";
+import type { TradeForStatsPanel } from "@/types";
 import { EditableField } from "./editable-field";
 import { type Execution, ExecutionTimeline } from "./execution-timeline";
 
@@ -31,38 +32,12 @@ import { type Execution, ExecutionTimeline } from "./execution-timeline";
 // TYPES
 // =============================================================================
 
-interface Trade {
-	id: number;
-	symbol: string;
-	direction: "long" | "short";
-	status: "open" | "closed";
-	instrumentType: "futures" | "forex";
-	quantity: string;
-	entryPrice: string;
-	exitPrice: string | null;
+// Extend the shared type with API-specific fields (dates come as strings over tRPC)
+interface Trade
+	extends Omit<TradeForStatsPanel, "entryTime" | "exitTime" | "executions"> {
 	entryTime: Date | string;
 	exitTime: Date | string | null;
-	stopLoss: string | null;
-	takeProfit: string | null;
-	fees: string | null;
-	netPnl: string | null;
-	rating: number | null;
-	strategyId: number | null;
-	executions?: Execution[];
-	// Risk management
-	wasTrailed?: boolean | null;
-	trailedStopLoss?: string | null;
-	// Context
-	emotionalState?: string | null;
-	exitReason?: string | null;
-	tradeTags?: Array<{
-		tagId: number;
-		tag: {
-			id: number;
-			name: string;
-			color: string | null;
-		};
-	}>;
+	executions?: Execution[]; // Local Execution type (simpler than full TradeExecution)
 }
 
 interface StatsPanelProps {
@@ -517,21 +492,11 @@ export function StatsPanel({
 									/>
 									<StatRow
 										label="Entry Time"
-										value={new Date(trade.entryTime).toLocaleTimeString([], {
-											hour: "2-digit",
-											minute: "2-digit",
-										})}
+										value={formatTime(trade.entryTime)}
 									/>
 									<StatRow
 										label="Exit Time"
-										value={
-											trade.exitTime
-												? new Date(trade.exitTime).toLocaleTimeString([], {
-														hour: "2-digit",
-														minute: "2-digit",
-													})
-												: null
-										}
+										value={trade.exitTime ? formatTime(trade.exitTime) : null}
 									/>
 								</div>
 							</Section>

@@ -1,13 +1,13 @@
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { calculateAggregateStats } from "@/lib/stats-calculations";
+import { getUserBreakevenThreshold } from "@/server/api/helpers";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import {
 	strategies,
 	strategyRules,
 	tradeRuleChecks,
 	trades,
-	userSettings,
 } from "@/server/db/schema";
 
 // =============================================================================
@@ -428,13 +428,7 @@ export const strategiesRouter = createTRPCRouter({
 			}
 
 			// Get user's breakeven threshold
-			const userSettingsResult = await ctx.db.query.userSettings.findFirst({
-				where: eq(userSettings.userId, ctx.user.id),
-				columns: { breakevenThreshold: true },
-			});
-			const beThreshold = parseFloat(
-				userSettingsResult?.breakevenThreshold ?? "3.00",
-			);
+			const beThreshold = await getUserBreakevenThreshold(ctx.db, ctx.user.id);
 
 			// Get all closed trades for this strategy
 			const strategyTrades = await ctx.db.query.trades.findMany({
@@ -703,13 +697,7 @@ export const strategiesRouter = createTRPCRouter({
 	// Get stats for all strategies at once (batch)
 	getAllStats: protectedProcedure.query(async ({ ctx }) => {
 		// Get user's breakeven threshold
-		const userSettingsResult = await ctx.db.query.userSettings.findFirst({
-			where: eq(userSettings.userId, ctx.user.id),
-			columns: { breakevenThreshold: true },
-		});
-		const beThreshold = parseFloat(
-			userSettingsResult?.breakevenThreshold ?? "3.00",
-		);
+		const beThreshold = await getUserBreakevenThreshold(ctx.db, ctx.user.id);
 
 		// Get all active strategies
 		const allStrategies = await ctx.db.query.strategies.findMany({
