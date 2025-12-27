@@ -116,9 +116,13 @@ function AnimatedCounter({
 function UserDashboard() {
 	const { data: stats, isLoading: statsLoading } = api.trades.getStats.useQuery(
 		{},
+		{ retry: false },
 	);
 	const { data: tradesData, isLoading: tradesLoading } =
-		api.trades.getAll.useQuery({ limit: 5, status: "closed" });
+		api.trades.getAll.useQuery(
+			{ limit: 5, status: "closed" },
+			{ retry: false },
+		);
 
 	const [animatedEquity, setAnimatedEquity] = useState<number[]>([]);
 
@@ -167,7 +171,7 @@ function UserDashboard() {
 
 	if (isLoading) {
 		return (
-			<div className="flex h-full items-center justify-center">
+			<div className="flex h-full min-h-[200px] items-center justify-center">
 				<Loader2 className="h-8 w-8 animate-spin text-primary" />
 			</div>
 		);
@@ -176,7 +180,7 @@ function UserDashboard() {
 	if (!hasData) {
 		// Show empty state with CTA
 		return (
-			<div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
+			<div className="flex h-full min-h-[200px] flex-col items-center justify-center gap-4 p-6 text-center sm:p-8">
 				<div className="rounded-full border border-white/10 bg-white/[0.02] p-4">
 					<BarChart3 className="h-8 w-8 text-muted-foreground" />
 				</div>
@@ -198,187 +202,139 @@ function UserDashboard() {
 	}
 
 	return (
-		<div className="grid h-full grid-cols-12 gap-3 p-4">
-			{/* Sidebar */}
-			<div className="col-span-2 flex flex-col gap-3">
-				<div className="rounded border border-white/5 bg-white/[0.02] p-3">
-					<div className="mb-2 font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-						Your Account
+		<div className="flex h-full flex-col gap-3 p-3 sm:p-4">
+			{/* Stats row - responsive grid */}
+			<div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+				<div className="rounded border border-white/5 bg-white/[0.02] p-2 sm:p-3">
+					<div className="flex items-center justify-between">
+						<span className="font-mono text-[9px] text-muted-foreground uppercase tracking-wider sm:text-[10px]">
+							Net P&L
+						</span>
+						{stats.totalPnl >= 0 ? (
+							<TrendingUp className="h-3 w-3 text-profit" />
+						) : (
+							<TrendingDown className="h-3 w-3 text-loss" />
+						)}
 					</div>
-					<div className="font-medium font-mono text-primary text-xs">
-						Live Data
+					<div
+						className={`mt-1 font-bold font-mono text-sm sm:text-lg ${stats.totalPnl >= 0 ? "text-profit" : "text-loss"}`}
+					>
+						{formatPnl(stats.totalPnl)}
+					</div>
+					<div className="hidden font-mono text-[10px] text-muted-foreground sm:block">
+						{stats.totalTrades} trades
 					</div>
 				</div>
-				<div className="flex-1 rounded border border-white/5 bg-white/[0.02] p-3">
-					<div className="mb-3 font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-						Quick Stats
+				<div className="rounded border border-white/5 bg-white/[0.02] p-2 sm:p-3">
+					<div className="flex items-center justify-between">
+						<span className="font-mono text-[9px] text-muted-foreground uppercase tracking-wider sm:text-[10px]">
+							Win Rate
+						</span>
+						<Target className="h-3 w-3 text-primary" />
 					</div>
-					<div className="space-y-2">
-						<div className="flex justify-between">
-							<span className="font-mono text-[10px] text-muted-foreground">
-								Win Rate
-							</span>
-							<span
-								className={`font-mono text-[10px] ${stats.winRate >= 50 ? "text-profit" : "text-loss"}`}
-							>
-								{stats.winRate.toFixed(1)}%
-							</span>
-						</div>
-						<div className="flex justify-between">
-							<span className="font-mono text-[10px] text-muted-foreground">
-								Profit Factor
-							</span>
-							<span
-								className={`font-mono text-[10px] ${stats.profitFactor >= 1 ? "text-profit" : "text-loss"}`}
-							>
-								{stats.profitFactor.toFixed(2)}
-							</span>
-						</div>
-						<div className="flex justify-between">
-							<span className="font-mono text-[10px] text-muted-foreground">
-								Total Trades
-							</span>
-							<span className="font-mono text-[10px]">{stats.totalTrades}</span>
-						</div>
+					<div className="mt-1 font-bold font-mono text-sm sm:text-lg">
+						{stats.winRate.toFixed(1)}%
+					</div>
+					<div className="hidden font-mono text-[10px] text-muted-foreground sm:block">
+						{stats.wins}W · {stats.losses}L
+					</div>
+				</div>
+				<div className="rounded border border-white/5 bg-white/[0.02] p-2 sm:p-3">
+					<div className="flex items-center justify-between">
+						<span className="font-mono text-[9px] text-muted-foreground uppercase tracking-wider sm:text-[10px]">
+							Avg Win
+						</span>
+						<TrendingUp className="h-3 w-3 text-profit" />
+					</div>
+					<div className="mt-1 font-bold font-mono text-profit text-sm sm:text-lg">
+						{formatPnl(stats.avgWin)}
+					</div>
+					<div className="hidden font-mono text-[10px] text-muted-foreground sm:block">
+						{stats.wins} wins
+					</div>
+				</div>
+				<div className="rounded border border-white/5 bg-white/[0.02] p-2 sm:p-3">
+					<div className="flex items-center justify-between">
+						<span className="font-mono text-[9px] text-muted-foreground uppercase tracking-wider sm:text-[10px]">
+							Avg Loss
+						</span>
+						<TrendingDown className="h-3 w-3 text-loss" />
+					</div>
+					<div className="mt-1 font-bold font-mono text-loss text-sm sm:text-lg">
+						-${stats.avgLoss.toFixed(2)}
+					</div>
+					<div className="hidden font-mono text-[10px] text-muted-foreground sm:block">
+						{stats.losses} losses
 					</div>
 				</div>
 			</div>
 
-			{/* Main content */}
-			<div className="col-span-10 flex flex-col gap-3">
-				{/* Stats row */}
-				<div className="grid grid-cols-4 gap-3">
-					<div className="rounded border border-white/5 bg-white/[0.02] p-3">
-						<div className="flex items-center justify-between">
-							<span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-								Net P&L
-							</span>
-							{stats.totalPnl >= 0 ? (
-								<TrendingUp className="h-3 w-3 text-profit" />
-							) : (
-								<TrendingDown className="h-3 w-3 text-loss" />
-							)}
-						</div>
-						<div
-							className={`mt-1 font-bold font-mono text-lg ${stats.totalPnl >= 0 ? "text-profit" : "text-loss"}`}
+			{/* Chart and trades - responsive layout */}
+			<div className="grid flex-1 grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
+				{/* Equity curve */}
+				<div className="rounded border border-white/5 bg-white/[0.02] p-2 sm:col-span-2 sm:p-3">
+					<div className="mb-2 flex items-center justify-between sm:mb-3">
+						<span className="font-mono text-[9px] text-muted-foreground uppercase tracking-wider sm:text-[10px]">
+							Equity Curve
+						</span>
+						<span
+							className={`font-mono text-[9px] sm:text-[10px] ${stats.totalPnl >= 0 ? "text-profit" : "text-loss"}`}
 						>
 							{formatPnl(stats.totalPnl)}
-						</div>
-						<div className="font-mono text-[10px] text-muted-foreground">
-							{stats.totalTrades} trades
-						</div>
+						</span>
 					</div>
-					<div className="rounded border border-white/5 bg-white/[0.02] p-3">
-						<div className="flex items-center justify-between">
-							<span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-								Win Rate
-							</span>
-							<Target className="h-3 w-3 text-primary" />
-						</div>
-						<div className="mt-1 font-bold font-mono text-lg">
-							{stats.winRate.toFixed(1)}%
-						</div>
-						<div className="font-mono text-[10px] text-muted-foreground">
-							{stats.wins}W · {stats.losses}L
-						</div>
-					</div>
-					<div className="rounded border border-white/5 bg-white/[0.02] p-3">
-						<div className="flex items-center justify-between">
-							<span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-								Avg Win
-							</span>
-							<TrendingUp className="h-3 w-3 text-profit" />
-						</div>
-						<div className="mt-1 font-bold font-mono text-lg text-profit">
-							{formatPnl(stats.avgWin)}
-						</div>
-						<div className="font-mono text-[10px] text-muted-foreground">
-							{stats.wins} wins
-						</div>
-					</div>
-					<div className="rounded border border-white/5 bg-white/[0.02] p-3">
-						<div className="flex items-center justify-between">
-							<span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-								Avg Loss
-							</span>
-							<TrendingDown className="h-3 w-3 text-loss" />
-						</div>
-						<div className="mt-1 font-bold font-mono text-lg text-loss">
-							-${stats.avgLoss.toFixed(2)}
-						</div>
-						<div className="font-mono text-[10px] text-muted-foreground">
-							{stats.losses} losses
-						</div>
+					<div className="flex h-20 items-end gap-[2px] sm:h-32">
+						{animatedEquity.map((value, i) => {
+							const height = ((value - minEquity) / range) * 100;
+							const isPositive = value >= 0;
+							return (
+								<div
+									className={`flex-1 rounded-t transition-all duration-300 ${
+										isPositive
+											? "bg-gradient-to-t from-primary/60 to-primary/30"
+											: "bg-gradient-to-t from-loss/60 to-loss/30"
+									}`}
+									key={`equity-${value.toFixed(2)}-${i}`}
+									style={{ height: `${Math.max(height, 2)}%` }}
+								/>
+							);
+						})}
 					</div>
 				</div>
 
-				{/* Chart and trades */}
-				<div className="grid flex-1 grid-cols-3 gap-3">
-					{/* Equity curve */}
-					<div className="col-span-2 rounded border border-white/5 bg-white/[0.02] p-3">
-						<div className="mb-3 flex items-center justify-between">
-							<span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-								Equity Curve
-							</span>
-							<span
-								className={`font-mono text-[10px] ${stats.totalPnl >= 0 ? "text-profit" : "text-loss"}`}
-							>
-								{formatPnl(stats.totalPnl)}
-							</span>
-						</div>
-						<div className="flex h-32 items-end gap-[2px]">
-							{animatedEquity.map((value, i) => {
-								const height = ((value - minEquity) / range) * 100;
-								const isPositive = value >= 0;
-								return (
-									<div
-										className={`flex-1 rounded-t transition-all duration-300 ${
-											isPositive
-												? "bg-gradient-to-t from-primary/60 to-primary/30"
-												: "bg-gradient-to-t from-loss/60 to-loss/30"
-										}`}
-										key={`equity-${value.toFixed(2)}-${i}`}
-										style={{ height: `${Math.max(height, 2)}%` }}
-									/>
-								);
-							})}
-						</div>
+				{/* Recent trades - hidden on smallest screens */}
+				<div className="hidden rounded border border-white/5 bg-white/[0.02] p-2 sm:block sm:p-3">
+					<div className="mb-3 font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
+						Recent Trades
 					</div>
-
-					{/* Recent trades */}
-					<div className="rounded border border-white/5 bg-white/[0.02] p-3">
-						<div className="mb-3 font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-							Recent Trades
-						</div>
-						<div className="space-y-2">
-							{recentTrades.slice(0, 5).map((trade) => {
-								const pnl = parseFloat(trade.netPnl ?? "0");
-								const isPositive = pnl >= 0;
-								return (
-									<div
-										className="flex items-center justify-between rounded bg-white/[0.02] px-2 py-1"
-										key={trade.id}
-									>
-										<div className="flex items-center gap-2">
-											<span className="font-mono text-[10px] text-muted-foreground">
-												{trade.symbol}
-											</span>
-											<span
-												className={`font-mono text-[10px] ${trade.direction === "long" ? "text-profit" : "text-loss"}`}
-											>
-												{trade.direction.toUpperCase()}
-											</span>
-										</div>
+					<div className="space-y-2">
+						{recentTrades.slice(0, 5).map((trade) => {
+							const pnl = parseFloat(trade.netPnl ?? "0");
+							const isPositive = pnl >= 0;
+							return (
+								<div
+									className="flex items-center justify-between rounded bg-white/[0.02] px-2 py-1"
+									key={trade.id}
+								>
+									<div className="flex items-center gap-2">
+										<span className="font-mono text-[10px] text-muted-foreground">
+											{trade.symbol}
+										</span>
 										<span
-											className={`font-medium font-mono text-[10px] ${isPositive ? "text-profit" : "text-loss"}`}
+											className={`font-mono text-[10px] ${trade.direction === "long" ? "text-profit" : "text-loss"}`}
 										>
-											{isPositive ? "+" : ""}
-											{pnl.toFixed(2)}
+											{trade.direction.toUpperCase()}
 										</span>
 									</div>
-								);
-							})}
-						</div>
+									<span
+										className={`font-medium font-mono text-[10px] ${isPositive ? "text-profit" : "text-loss"}`}
+									>
+										{isPositive ? "+" : ""}
+										{pnl.toFixed(2)}
+									</span>
+								</div>
+							);
+						})}
 					</div>
 				</div>
 			</div>
@@ -402,156 +358,122 @@ function DemoDashboard() {
 	const maxEquity = Math.max(...demoEquityCurve);
 
 	return (
-		<div className="grid h-full grid-cols-12 gap-3 p-4">
-			{/* Sidebar */}
-			<div className="col-span-2 flex flex-col gap-3">
-				<div className="rounded border border-white/5 bg-white/[0.02] p-3">
-					<div className="mb-2 font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-						Account
+		<div className="flex h-full flex-col gap-3 p-3 sm:p-4">
+			{/* Stats row - responsive grid */}
+			<div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+				<div className="rounded border border-white/5 bg-white/[0.02] p-2 sm:p-3">
+					<div className="flex items-center justify-between">
+						<span className="font-mono text-[9px] text-muted-foreground uppercase tracking-wider sm:text-[10px]">
+							Net P&L
+						</span>
+						<TrendingUp className="h-3 w-3 text-profit" />
 					</div>
-					<div className="font-medium font-mono text-xs">Demo Preview</div>
+					<div className="mt-1 font-bold font-mono text-profit text-sm sm:text-lg">
+						+$2,847.50
+					</div>
+					<div className="hidden font-mono text-[10px] text-muted-foreground sm:block">
+						47 trades
+					</div>
 				</div>
-				<div className="flex-1 rounded border border-white/5 bg-white/[0.02] p-3">
-					<div className="mb-3 font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-						Quick Stats
+				<div className="rounded border border-white/5 bg-white/[0.02] p-2 sm:p-3">
+					<div className="flex items-center justify-between">
+						<span className="font-mono text-[9px] text-muted-foreground uppercase tracking-wider sm:text-[10px]">
+							Win Rate
+						</span>
+						<Target className="h-3 w-3 text-primary" />
 					</div>
-					<div className="space-y-2">
-						<div className="flex justify-between">
-							<span className="font-mono text-[10px] text-muted-foreground">
-								Win Rate
-							</span>
-							<span className="font-mono text-[10px] text-profit">68%</span>
-						</div>
-						<div className="flex justify-between">
-							<span className="font-mono text-[10px] text-muted-foreground">
-								Profit Factor
-							</span>
-							<span className="font-mono text-[10px]">2.4</span>
-						</div>
-						<div className="flex justify-between">
-							<span className="font-mono text-[10px] text-muted-foreground">
-								Avg RR
-							</span>
-							<span className="font-mono text-[10px]">1.8:1</span>
-						</div>
+					<div className="mt-1 font-bold font-mono text-sm sm:text-lg">
+						68.1%
+					</div>
+					<div className="hidden font-mono text-[10px] text-muted-foreground sm:block">
+						32W · 15L
+					</div>
+				</div>
+				<div className="rounded border border-white/5 bg-white/[0.02] p-2 sm:p-3">
+					<div className="flex items-center justify-between">
+						<span className="font-mono text-[9px] text-muted-foreground uppercase tracking-wider sm:text-[10px]">
+							Best Trade
+						</span>
+						<TrendingUp className="h-3 w-3 text-profit" />
+					</div>
+					<div className="mt-1 font-bold font-mono text-profit text-sm sm:text-lg">
+						+$892.00
+					</div>
+					<div className="hidden font-mono text-[10px] text-muted-foreground sm:block">
+						ES · Long
+					</div>
+				</div>
+				<div className="rounded border border-white/5 bg-white/[0.02] p-2 sm:p-3">
+					<div className="flex items-center justify-between">
+						<span className="font-mono text-[9px] text-muted-foreground uppercase tracking-wider sm:text-[10px]">
+							Avg Win
+						</span>
+						<BarChart3 className="h-3 w-3 text-accent" />
+					</div>
+					<div className="mt-1 font-bold font-mono text-sm sm:text-lg">
+						$187.50
+					</div>
+					<div className="hidden font-mono text-[10px] text-muted-foreground sm:block">
+						vs -$94.20 loss
 					</div>
 				</div>
 			</div>
 
-			{/* Main content */}
-			<div className="col-span-10 flex flex-col gap-3">
-				{/* Stats row */}
-				<div className="grid grid-cols-4 gap-3">
-					<div className="rounded border border-white/5 bg-white/[0.02] p-3">
-						<div className="flex items-center justify-between">
-							<span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-								Net P&L
-							</span>
-							<TrendingUp className="h-3 w-3 text-profit" />
-						</div>
-						<div className="mt-1 font-bold font-mono text-lg text-profit">
+			{/* Chart and trades - responsive layout */}
+			<div className="grid flex-1 grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
+				{/* Equity curve */}
+				<div className="rounded border border-white/5 bg-white/[0.02] p-2 sm:col-span-2 sm:p-3">
+					<div className="mb-2 flex items-center justify-between sm:mb-3">
+						<span className="font-mono text-[9px] text-muted-foreground uppercase tracking-wider sm:text-[10px]">
+							Equity Curve
+						</span>
+						<span className="font-mono text-[9px] text-profit sm:text-[10px]">
 							+$2,847.50
-						</div>
-						<div className="font-mono text-[10px] text-muted-foreground">
-							47 trades
-						</div>
+						</span>
 					</div>
-					<div className="rounded border border-white/5 bg-white/[0.02] p-3">
-						<div className="flex items-center justify-between">
-							<span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-								Win Rate
-							</span>
-							<Target className="h-3 w-3 text-primary" />
-						</div>
-						<div className="mt-1 font-bold font-mono text-lg">68.1%</div>
-						<div className="font-mono text-[10px] text-muted-foreground">
-							32W · 15L
-						</div>
-					</div>
-					<div className="rounded border border-white/5 bg-white/[0.02] p-3">
-						<div className="flex items-center justify-between">
-							<span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-								Best Trade
-							</span>
-							<TrendingUp className="h-3 w-3 text-profit" />
-						</div>
-						<div className="mt-1 font-bold font-mono text-lg text-profit">
-							+$892.00
-						</div>
-						<div className="font-mono text-[10px] text-muted-foreground">
-							ES · Long
-						</div>
-					</div>
-					<div className="rounded border border-white/5 bg-white/[0.02] p-3">
-						<div className="flex items-center justify-between">
-							<span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-								Avg Win
-							</span>
-							<BarChart3 className="h-3 w-3 text-accent" />
-						</div>
-						<div className="mt-1 font-bold font-mono text-lg">$187.50</div>
-						<div className="font-mono text-[10px] text-muted-foreground">
-							vs -$94.20 loss
-						</div>
+					<div className="flex h-20 items-end gap-[2px] sm:h-32">
+						{animatedEquity.map((value, i) => (
+							<div
+								className="flex-1 rounded-t bg-gradient-to-t from-primary/60 to-primary/30 transition-all duration-300"
+								key={`demo-equity-${value.toFixed(2)}-${i}`}
+								style={{
+									height: `${(value / maxEquity) * 100}%`,
+									minHeight: "2px",
+								}}
+							/>
+						))}
 					</div>
 				</div>
 
-				{/* Chart and trades */}
-				<div className="grid flex-1 grid-cols-3 gap-3">
-					{/* Equity curve */}
-					<div className="col-span-2 rounded border border-white/5 bg-white/[0.02] p-3">
-						<div className="mb-3 flex items-center justify-between">
-							<span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-								Equity Curve
-							</span>
-							<span className="font-mono text-[10px] text-profit">
-								+$2,847.50
-							</span>
-						</div>
-						<div className="flex h-32 items-end gap-[2px]">
-							{animatedEquity.map((value, i) => (
-								<div
-									className="flex-1 rounded-t bg-gradient-to-t from-primary/60 to-primary/30 transition-all duration-300"
-									key={`demo-equity-${value.toFixed(2)}-${i}`}
-									style={{
-										height: `${(value / maxEquity) * 100}%`,
-										minHeight: "2px",
-									}}
-								/>
-							))}
-						</div>
+				{/* Recent trades - hidden on smallest screens */}
+				<div className="hidden rounded border border-white/5 bg-white/[0.02] p-2 sm:block sm:p-3">
+					<div className="mb-3 font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
+						Recent Trades
 					</div>
-
-					{/* Recent trades */}
-					<div className="rounded border border-white/5 bg-white/[0.02] p-3">
-						<div className="mb-3 font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-							Recent Trades
-						</div>
-						<div className="space-y-2">
-							{demoTrades.map((trade) => (
-								<div
-									className="flex items-center justify-between rounded bg-white/[0.02] px-2 py-1"
-									key={`${trade.symbol}-${trade.direction}-${trade.pnl}`}
-								>
-									<div className="flex items-center gap-2">
-										<span className="font-mono text-[10px] text-muted-foreground">
-											{trade.symbol}
-										</span>
-										<span
-											className={`font-mono text-[10px] ${trade.direction === "LONG" ? "text-profit" : "text-loss"}`}
-										>
-											{trade.direction}
-										</span>
-									</div>
+					<div className="space-y-2">
+						{demoTrades.map((trade) => (
+							<div
+								className="flex items-center justify-between rounded bg-white/[0.02] px-2 py-1"
+								key={`${trade.symbol}-${trade.direction}-${trade.pnl}`}
+							>
+								<div className="flex items-center gap-2">
+									<span className="font-mono text-[10px] text-muted-foreground">
+										{trade.symbol}
+									</span>
 									<span
-										className={`font-medium font-mono text-[10px] ${trade.positive ? "text-profit" : "text-loss"}`}
+										className={`font-mono text-[10px] ${trade.direction === "LONG" ? "text-profit" : "text-loss"}`}
 									>
-										{trade.positive ? "+" : ""}
-										{trade.pnl.toFixed(2)}
+										{trade.direction}
 									</span>
 								</div>
-							))}
-						</div>
+								<span
+									className={`font-medium font-mono text-[10px] ${trade.positive ? "text-profit" : "text-loss"}`}
+								>
+									{trade.positive ? "+" : ""}
+									{trade.pnl.toFixed(2)}
+								</span>
+							</div>
+						))}
 					</div>
 				</div>
 			</div>
@@ -702,7 +624,7 @@ export function Hero() {
 						</div>
 
 						{/* Terminal content */}
-						<div className="relative aspect-[16/8] overflow-hidden">
+						<div className="relative aspect-[4/3] overflow-hidden sm:aspect-[16/8]">
 							<DashboardPreview />
 
 							{/* Gradient overlay */}
