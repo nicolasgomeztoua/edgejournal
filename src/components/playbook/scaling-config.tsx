@@ -49,7 +49,8 @@ export function ScalingConfig({ value, onChange }: ScalingConfigProps) {
 		fieldValue: string | number,
 	) => {
 		const newScaleIn = [...(scalingRules.scaleIn ?? [])];
-		newScaleIn[idx] = { ...newScaleIn[idx], [field]: fieldValue };
+		const existing = newScaleIn[idx] ?? { trigger: "", sizePercent: 0 };
+		newScaleIn[idx] = { ...existing, [field]: fieldValue };
 		onChange({ ...scalingRules, scaleIn: newScaleIn });
 	};
 
@@ -59,7 +60,8 @@ export function ScalingConfig({ value, onChange }: ScalingConfigProps) {
 		fieldValue: string | number,
 	) => {
 		const newScaleOut = [...(scalingRules.scaleOut ?? [])];
-		newScaleOut[idx] = { ...newScaleOut[idx], [field]: fieldValue };
+		const existing = newScaleOut[idx] ?? { trigger: "", sizePercent: 0 };
+		newScaleOut[idx] = { ...existing, [field]: fieldValue };
 		onChange({ ...scalingRules, scaleOut: newScaleOut });
 	};
 
