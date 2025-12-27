@@ -84,7 +84,7 @@ const updateTradeSchema = z.object({
 			"excited",
 			"anxious",
 		])
-		.optional(),
+		.nullish(),
 	notes: z.string().optional(),
 	status: z.enum(["open", "closed"]).optional(),
 	// Trailing stop fields
@@ -100,7 +100,7 @@ const updateTradeSchema = z.object({
 			"time_based",
 			"breakeven",
 		])
-		.optional(),
+		.nullish(),
 	// Rating and review
 	rating: z.number().min(1).max(5).optional().nullable(),
 	isReviewed: z.boolean().optional(),

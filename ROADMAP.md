@@ -4,7 +4,7 @@
 >
 > **Estimated Timeline:** 6-9 months for full feature parity
 >
-> **Last Updated:** December 26, 2024
+> **Last Updated:** December 27, 2024
 
 ---
 
@@ -118,20 +118,20 @@ Document and track trading strategies with clear rules, like TradeZella's Playbo
 ### Tasks
 
 #### 2.1 Playbook Data Model
-- [ ] Create `playbooks` table
+- [x] Create `playbooks` table
   - id, userId, name, description, color
   - entry_criteria (text/JSON)
   - exit_rules (text/JSON)
   - position_sizing, risk_parameters
-- [ ] Create `playbook_rules` table (checklist items)
-- [ ] Add `playbookId` to trades table
+- [x] Create `playbook_rules` table (checklist items)
+- [x] Add `playbookId` to trades table
 
 #### 2.2 Playbook CRUD Pages
-- [ ] Playbooks listing page (`/playbooks`)
-- [ ] Create playbook form
-- [ ] Edit playbook form
-- [ ] Delete playbook with confirmation
-- [ ] Playbook card component
+- [x] Playbooks listing page (`/playbooks`)
+- [x] Create playbook form
+- [x] Edit playbook form
+- [x] Delete playbook with confirmation
+- [x] Playbook card component
 
 **New files:**
 - `src/app/(protected)/playbooks/page.tsx`
@@ -140,10 +140,10 @@ Document and track trading strategies with clear rules, like TradeZella's Playbo
 - `src/server/api/routers/playbooks.ts`
 
 #### 2.3 Trade-Playbook Integration
-- [ ] Playbook tab on trade detail page
-- [ ] Assign trade to playbook dropdown
-- [ ] Rule adherence checkboxes
-- [ ] Compliance percentage display
+- [x] Playbook tab on trade detail page
+- [x] Assign trade to playbook dropdown
+- [x] Rule adherence checkboxes
+- [x] Compliance percentage display
 - [ ] Quick playbook assignment in trade log
 
 #### 2.4 Playbook Analytics
@@ -269,6 +269,15 @@ Build 50+ specialized reports like TradeZella.
 Match TradeZella's comprehensive trade tracking page.
 
 ### Tasks
+
+#### 5.0 TradeZella-Style Layout (NEW)
+- [x] Two-panel resizable layout (react-resizable-panels v2 + shadcn)
+- [x] Left panel: Stats, Strategy, Executions, Attachments tabs
+- [x] Right panel: Chart, Notes, Running P&L tabs
+- [x] Panel sizes persist to localStorage
+- [x] Risk Management section (TP/SL/Trailing Stop/Exit Reason)
+- [x] Trade Context section (Setup Type, Emotional State)
+- [x] Calculated stats: Points, Ticks, R-Multiple, ROI, Duration
 
 #### 5.1 Daily Trades Sidebar
 - [ ] Collapsible sidebar component
@@ -555,10 +564,10 @@ ALTER TABLE user_settings ADD COLUMN dashboard_layout_id INTEGER;
 | Phase | Name | Duration | Status |
 |-------|------|----------|--------|
 | 1 | Enhanced Trade Log | 2-3 weeks | ✅ Complete |
-| 2 | Playbook System | 2 weeks | ⏳ Pending |
+| 2 | Playbook System | 2 weeks | 🔄 In Progress (Analytics pending) |
 | 3 | Dashboard Customization | 2-3 weeks | ⏳ Pending |
 | 4 | Advanced Analytics | 3-4 weeks | ⏳ Pending |
-| 5 | Trade Detail Enhancements | 2 weeks | ⏳ Pending |
+| 5 | Trade Detail Enhancements | 2 weeks | 🔄 In Progress (Layout done, Screenshot/Chart pending) |
 | 6 | Notebook System | 2 weeks | ⏳ Pending |
 | 9.1 | CSV Parsers | 1-2 weeks | ⏳ Pending |
 | 7 | Trade Replay | 3-4 weeks | ⏳ Pending |

@@ -9,6 +9,324 @@ export interface SymbolInfo {
 }
 
 // ============================================
+// FUTURES CONTRACT SPECIFICATIONS
+// Tick size, tick value, and point value per contract
+// ============================================
+
+export interface FuturesSpec {
+	tickSize: number; // Minimum price increment
+	tickValue: number; // USD value per tick per contract
+	pointValue: number; // USD value per full point per contract
+}
+
+export const FUTURES_SPECS: Record<string, FuturesSpec> = {
+	// Equities - E-mini
+	ES: { tickSize: 0.25, tickValue: 12.5, pointValue: 50 },
+	NQ: { tickSize: 0.25, tickValue: 5.0, pointValue: 20 },
+	YM: { tickSize: 1, tickValue: 5.0, pointValue: 5 },
+	RTY: { tickSize: 0.1, tickValue: 5.0, pointValue: 50 },
+	// Equities - Micro
+	MES: { tickSize: 0.25, tickValue: 1.25, pointValue: 5 },
+	MNQ: { tickSize: 0.25, tickValue: 0.5, pointValue: 2 },
+	MYM: { tickSize: 1, tickValue: 0.5, pointValue: 0.5 },
+	M2K: { tickSize: 0.1, tickValue: 0.5, pointValue: 5 },
+	// International
+	NKD: { tickSize: 5, tickValue: 25, pointValue: 5 },
+	// Energy
+	CL: { tickSize: 0.01, tickValue: 10.0, pointValue: 1000 },
+	MCL: { tickSize: 0.01, tickValue: 1.0, pointValue: 100 },
+	NG: { tickSize: 0.001, tickValue: 10.0, pointValue: 10000 },
+	MNG: { tickSize: 0.001, tickValue: 1.0, pointValue: 1000 },
+	// Metals
+	GC: { tickSize: 0.1, tickValue: 10.0, pointValue: 100 },
+	MGC: { tickSize: 0.1, tickValue: 1.0, pointValue: 10 },
+	SI: { tickSize: 0.005, tickValue: 25.0, pointValue: 5000 },
+	SIL: { tickSize: 0.005, tickValue: 2.5, pointValue: 500 },
+	// Currencies - Standard
+	"6A": { tickSize: 0.0001, tickValue: 10.0, pointValue: 100000 },
+	"6B": { tickSize: 0.0001, tickValue: 6.25, pointValue: 62500 },
+	"6C": { tickSize: 0.00005, tickValue: 5.0, pointValue: 100000 },
+	"6E": { tickSize: 0.00005, tickValue: 6.25, pointValue: 125000 },
+	"6J": { tickSize: 0.0000005, tickValue: 6.25, pointValue: 12500000 },
+	"6M": { tickSize: 0.000005, tickValue: 2.5, pointValue: 500000 },
+	"6N": { tickSize: 0.0001, tickValue: 10.0, pointValue: 100000 },
+	"6S": { tickSize: 0.0001, tickValue: 12.5, pointValue: 125000 },
+	// Currencies - Micro
+	M6A: { tickSize: 0.0001, tickValue: 1.0, pointValue: 10000 },
+	M6B: { tickSize: 0.0001, tickValue: 0.625, pointValue: 6250 },
+	M6E: { tickSize: 0.0001, tickValue: 1.25, pointValue: 12500 },
+	MCD: { tickSize: 0.0001, tickValue: 1.0, pointValue: 10000 },
+	MSF: { tickSize: 0.0001, tickValue: 1.25, pointValue: 12500 },
+	MBT: { tickSize: 5, tickValue: 0.5, pointValue: 0.1 },
+	// Interest Rates
+	ZB: { tickSize: 0.03125, tickValue: 31.25, pointValue: 1000 },
+	ZN: { tickSize: 0.015625, tickValue: 15.625, pointValue: 1000 },
+	ZF: { tickSize: 0.0078125, tickValue: 7.8125, pointValue: 1000 },
+	ZT: { tickSize: 0.0078125, tickValue: 15.625, pointValue: 2000 },
+	TN: { tickSize: 0.015625, tickValue: 15.625, pointValue: 1000 },
+	UB: { tickSize: 0.03125, tickValue: 31.25, pointValue: 1000 },
+	// Agriculture - Grains
+	ZC: { tickSize: 0.25, tickValue: 12.5, pointValue: 50 },
+	XC: { tickSize: 0.125, tickValue: 1.25, pointValue: 10 },
+	ZW: { tickSize: 0.25, tickValue: 12.5, pointValue: 50 },
+	ZO: { tickSize: 0.25, tickValue: 12.5, pointValue: 50 },
+	ZR: { tickSize: 0.005, tickValue: 10.0, pointValue: 2000 },
+	// Agriculture - Soy
+	ZS: { tickSize: 0.25, tickValue: 12.5, pointValue: 50 },
+	ZL: { tickSize: 0.01, tickValue: 6.0, pointValue: 600 },
+	ZM: { tickSize: 0.1, tickValue: 10.0, pointValue: 100 },
+	// Livestock
+	LE: { tickSize: 0.025, tickValue: 10.0, pointValue: 400 },
+	GF: { tickSize: 0.025, tickValue: 12.5, pointValue: 500 },
+	HE: { tickSize: 0.025, tickValue: 10.0, pointValue: 400 },
+};
+
+/**
+ * Get futures spec for a symbol (handles month codes like MNQ, MNQH24, MNQH2024)
+ */
+export function getFuturesSpec(symbol: string): FuturesSpec | null {
+	// Try exact match first
+	if (FUTURES_SPECS[symbol]) return FUTURES_SPECS[symbol];
+
+	// Strip month/year codes (e.g., MNQH24 -> MNQ, ESZ2024 -> ES)
+	const baseSymbol = symbol.replace(/[FGHJKMNQUVXZ]\d{2,4}$/, "");
+	return FUTURES_SPECS[baseSymbol] ?? null;
+}
+
+// ============================================
+// FOREX SPECIFICATIONS
+// Pip sizes and values per standard lot
+// ============================================
+
+export interface ForexSpec {
+	symbol: string;
+	pipSize: number; // Size of 1 pip (0.0001 for most, 0.01 for JPY pairs)
+	pipValuePerLot: number; // USD value of 1 pip per standard lot (approximate, varies with rates)
+	baseCurrency: string;
+	quoteCurrency: string;
+}
+
+export const FOREX_SPECS: Record<string, ForexSpec> = {
+	// Major pairs (USD quote = fixed pip value)
+	"EUR/USD": {
+		symbol: "EUR/USD",
+		pipSize: 0.0001,
+		pipValuePerLot: 10,
+		baseCurrency: "EUR",
+		quoteCurrency: "USD",
+	},
+	"GBP/USD": {
+		symbol: "GBP/USD",
+		pipSize: 0.0001,
+		pipValuePerLot: 10,
+		baseCurrency: "GBP",
+		quoteCurrency: "USD",
+	},
+	"AUD/USD": {
+		symbol: "AUD/USD",
+		pipSize: 0.0001,
+		pipValuePerLot: 10,
+		baseCurrency: "AUD",
+		quoteCurrency: "USD",
+	},
+	"NZD/USD": {
+		symbol: "NZD/USD",
+		pipSize: 0.0001,
+		pipValuePerLot: 10,
+		baseCurrency: "NZD",
+		quoteCurrency: "USD",
+	},
+	// USD base pairs (pip value varies with exchange rate)
+	"USD/JPY": {
+		symbol: "USD/JPY",
+		pipSize: 0.01,
+		pipValuePerLot: 9.1,
+		baseCurrency: "USD",
+		quoteCurrency: "JPY",
+	},
+	"USD/CHF": {
+		symbol: "USD/CHF",
+		pipSize: 0.0001,
+		pipValuePerLot: 11.2,
+		baseCurrency: "USD",
+		quoteCurrency: "CHF",
+	},
+	"USD/CAD": {
+		symbol: "USD/CAD",
+		pipSize: 0.0001,
+		pipValuePerLot: 7.4,
+		baseCurrency: "USD",
+		quoteCurrency: "CAD",
+	},
+	// Cross pairs
+	"EUR/JPY": {
+		symbol: "EUR/JPY",
+		pipSize: 0.01,
+		pipValuePerLot: 9.1,
+		baseCurrency: "EUR",
+		quoteCurrency: "JPY",
+	},
+	"GBP/JPY": {
+		symbol: "GBP/JPY",
+		pipSize: 0.01,
+		pipValuePerLot: 9.1,
+		baseCurrency: "GBP",
+		quoteCurrency: "JPY",
+	},
+	"AUD/JPY": {
+		symbol: "AUD/JPY",
+		pipSize: 0.01,
+		pipValuePerLot: 9.1,
+		baseCurrency: "AUD",
+		quoteCurrency: "JPY",
+	},
+	"NZD/JPY": {
+		symbol: "NZD/JPY",
+		pipSize: 0.01,
+		pipValuePerLot: 9.1,
+		baseCurrency: "NZD",
+		quoteCurrency: "JPY",
+	},
+	"CAD/JPY": {
+		symbol: "CAD/JPY",
+		pipSize: 0.01,
+		pipValuePerLot: 9.1,
+		baseCurrency: "CAD",
+		quoteCurrency: "JPY",
+	},
+	"CHF/JPY": {
+		symbol: "CHF/JPY",
+		pipSize: 0.01,
+		pipValuePerLot: 9.1,
+		baseCurrency: "CHF",
+		quoteCurrency: "JPY",
+	},
+	"EUR/GBP": {
+		symbol: "EUR/GBP",
+		pipSize: 0.0001,
+		pipValuePerLot: 12.5,
+		baseCurrency: "EUR",
+		quoteCurrency: "GBP",
+	},
+	"EUR/AUD": {
+		symbol: "EUR/AUD",
+		pipSize: 0.0001,
+		pipValuePerLot: 6.5,
+		baseCurrency: "EUR",
+		quoteCurrency: "AUD",
+	},
+	"EUR/CAD": {
+		symbol: "EUR/CAD",
+		pipSize: 0.0001,
+		pipValuePerLot: 7.4,
+		baseCurrency: "EUR",
+		quoteCurrency: "CAD",
+	},
+	"EUR/CHF": {
+		symbol: "EUR/CHF",
+		pipSize: 0.0001,
+		pipValuePerLot: 11.2,
+		baseCurrency: "EUR",
+		quoteCurrency: "CHF",
+	},
+	"EUR/NZD": {
+		symbol: "EUR/NZD",
+		pipSize: 0.0001,
+		pipValuePerLot: 5.9,
+		baseCurrency: "EUR",
+		quoteCurrency: "NZD",
+	},
+	"GBP/AUD": {
+		symbol: "GBP/AUD",
+		pipSize: 0.0001,
+		pipValuePerLot: 6.5,
+		baseCurrency: "GBP",
+		quoteCurrency: "AUD",
+	},
+	"GBP/CAD": {
+		symbol: "GBP/CAD",
+		pipSize: 0.0001,
+		pipValuePerLot: 7.4,
+		baseCurrency: "GBP",
+		quoteCurrency: "CAD",
+	},
+	"GBP/CHF": {
+		symbol: "GBP/CHF",
+		pipSize: 0.0001,
+		pipValuePerLot: 11.2,
+		baseCurrency: "GBP",
+		quoteCurrency: "CHF",
+	},
+	"GBP/NZD": {
+		symbol: "GBP/NZD",
+		pipSize: 0.0001,
+		pipValuePerLot: 5.9,
+		baseCurrency: "GBP",
+		quoteCurrency: "NZD",
+	},
+	"AUD/CAD": {
+		symbol: "AUD/CAD",
+		pipSize: 0.0001,
+		pipValuePerLot: 7.4,
+		baseCurrency: "AUD",
+		quoteCurrency: "CAD",
+	},
+	"AUD/CHF": {
+		symbol: "AUD/CHF",
+		pipSize: 0.0001,
+		pipValuePerLot: 11.2,
+		baseCurrency: "AUD",
+		quoteCurrency: "CHF",
+	},
+	"AUD/NZD": {
+		symbol: "AUD/NZD",
+		pipSize: 0.0001,
+		pipValuePerLot: 5.9,
+		baseCurrency: "AUD",
+		quoteCurrency: "NZD",
+	},
+	"NZD/CAD": {
+		symbol: "NZD/CAD",
+		pipSize: 0.0001,
+		pipValuePerLot: 7.4,
+		baseCurrency: "NZD",
+		quoteCurrency: "CAD",
+	},
+	"NZD/CHF": {
+		symbol: "NZD/CHF",
+		pipSize: 0.0001,
+		pipValuePerLot: 11.2,
+		baseCurrency: "NZD",
+		quoteCurrency: "CHF",
+	},
+	"CAD/CHF": {
+		symbol: "CAD/CHF",
+		pipSize: 0.0001,
+		pipValuePerLot: 11.2,
+		baseCurrency: "CAD",
+		quoteCurrency: "CHF",
+	},
+};
+
+/**
+ * Get forex spec for a symbol
+ */
+export function getForexSpec(symbol: string): ForexSpec | null {
+	return FOREX_SPECS[symbol] ?? null;
+}
+
+/**
+ * Get pip size for forex pair
+ */
+export function getForexPipSize(symbol: string): number {
+	const spec = FOREX_SPECS[symbol];
+	if (spec) return spec.pipSize;
+	// Fallback: JPY pairs have 2 decimal places
+	if (symbol.includes("JPY")) return 0.01;
+	return 0.0001;
+}
+
+// ============================================
 // FUTURES SYMBOLS
 // ============================================
 
@@ -214,4 +532,118 @@ export function isValidSymbol(symbol: string): boolean {
 
 export function getSymbolCategory(symbol: string): string | undefined {
 	return getSymbolInfo(symbol)?.category;
+}
+
+// ============================================
+// P&L CALCULATION FUNCTIONS
+// ============================================
+
+/**
+ * Calculate P&L for a futures trade
+ * @param symbol - The futures symbol (e.g., "ES", "NQ")
+ * @param entryPrice - Entry price
+ * @param exitPrice - Exit price
+ * @param contracts - Number of contracts
+ * @param direction - "long" or "short"
+ * @returns P&L in USD
+ */
+export function calculateFuturesPnL(
+	symbol: string,
+	entryPrice: number,
+	exitPrice: number,
+	contracts: number,
+	direction: "long" | "short",
+): number {
+	const spec = getFuturesSpec(symbol);
+	if (!spec) {
+		console.warn(`No contract spec found for ${symbol}, using raw calculation`);
+		// Fallback: assume point value of 1
+		const priceDiff =
+			direction === "long" ? exitPrice - entryPrice : entryPrice - exitPrice;
+		return priceDiff * contracts;
+	}
+
+	const priceDiff =
+		direction === "long" ? exitPrice - entryPrice : entryPrice - exitPrice;
+	return priceDiff * spec.pointValue * contracts;
+}
+
+/**
+ * Calculate P&L for a forex/CFD trade
+ * @param symbol - The forex pair (e.g., "EUR/USD")
+ * @param entryPrice - Entry price
+ * @param exitPrice - Exit price
+ * @param lotSize - Lot size (1 = standard lot, 0.1 = mini, 0.01 = micro)
+ * @param direction - "long" or "short"
+ * @returns P&L in USD (approximate, uses static pip values)
+ */
+export function calculateForexPnL(
+	symbol: string,
+	entryPrice: number,
+	exitPrice: number,
+	lotSize: number,
+	direction: "long" | "short",
+): number {
+	const spec = FOREX_SPECS[symbol];
+	if (!spec) {
+		console.warn(`No forex spec found for ${symbol}, using raw calculation`);
+		const priceDiff =
+			direction === "long" ? exitPrice - entryPrice : entryPrice - exitPrice;
+		return priceDiff * lotSize * 100000; // Assume standard lot size
+	}
+
+	const priceDiff =
+		direction === "long" ? exitPrice - entryPrice : entryPrice - exitPrice;
+	const pips = priceDiff / spec.pipSize;
+	// lotSize of 1 = standard lot (100k units), pip value is per standard lot
+	return pips * spec.pipValuePerLot * lotSize;
+}
+
+/**
+ * Calculate P&L for any trade based on instrument type
+ */
+export function calculatePnL(
+	symbol: string,
+	instrumentType: "futures" | "forex",
+	entryPrice: number,
+	exitPrice: number,
+	quantity: number, // contracts for futures, lots for forex
+	direction: "long" | "short",
+): number {
+	if (instrumentType === "futures") {
+		return calculateFuturesPnL(
+			symbol,
+			entryPrice,
+			exitPrice,
+			quantity,
+			direction,
+		);
+	}
+	return calculateForexPnL(symbol, entryPrice, exitPrice, quantity, direction);
+}
+
+/**
+ * Get the point/pip value for a symbol
+ */
+export function getPointValue(
+	symbol: string,
+	instrumentType: "futures" | "forex",
+): number {
+	if (instrumentType === "futures") {
+		return getFuturesSpec(symbol)?.pointValue ?? 1;
+	}
+	return FOREX_SPECS[symbol]?.pipValuePerLot ?? 10;
+}
+
+/**
+ * Get tick/pip size for a symbol
+ */
+export function getTickSize(
+	symbol: string,
+	instrumentType: "futures" | "forex",
+): number {
+	if (instrumentType === "futures") {
+		return getFuturesSpec(symbol)?.tickSize ?? 0.01;
+	}
+	return FOREX_SPECS[symbol]?.pipSize ?? 0.0001;
 }

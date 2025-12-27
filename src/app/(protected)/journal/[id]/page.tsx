@@ -2,39 +2,27 @@
 
 import {
 	AlertTriangle,
-	ArrowLeft,
-	BookMarked,
-	Camera,
-	CandlestickChart,
 	Check,
 	CheckCircle2,
 	ChevronLeft,
 	ChevronRight,
 	Clock,
-	ExternalLink,
 	Import,
 	Loader2,
-	Lock,
+	Menu,
+	Settings,
+	Share2,
 	Trash2,
 	TrendingDown,
 	TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ComplianceBadge, RuleChecklist } from "@/components/playbook";
-import { TradeTags } from "@/components/tags/tag-selector";
-import {
-	EditableField,
-	EditableSelect,
-	EditableTextarea,
-	ExecutionTimeline,
-	TradeSummaryCard,
-} from "@/components/trade-detail";
+import { ContentPanel, StatsPanel } from "@/components/trade-detail";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Dialog,
 	DialogContent,
@@ -45,224 +33,45 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
+	ResizableHandle,
+	ResizablePanel,
+	ResizablePanelGroup,
+} from "@/components/ui/resizable";
 import { Skeleton } from "@/components/ui/skeleton";
-import { StarRating } from "@/components/ui/star-rating";
 import { useDebouncedMutation } from "@/hooks/use-debounced-mutation";
+import { calculateAllStats } from "@/lib/trade-calculations";
 import { cn } from "@/lib/utils";
 import { api } from "@/trpc/react";
 
 // =============================================================================
-// CONSTANTS
+// LOCAL STORAGE KEY
 // =============================================================================
 
-const SETUP_TYPES = [
-	{ value: "Breakout", label: "Breakout" },
-	{ value: "Reversal", label: "Reversal" },
-	{ value: "Trend Continuation", label: "Trend Continuation" },
-	{ value: "Range Trade", label: "Range Trade" },
-	{ value: "News Trade", label: "News Trade" },
-	{ value: "Scalp", label: "Scalp" },
-	{ value: "Swing", label: "Swing" },
-	{ value: "Gap Fill", label: "Gap Fill" },
-	{ value: "Support/Resistance", label: "Support/Resistance" },
-	{ value: "Moving Average", label: "Moving Average" },
-	{ value: "Other", label: "Other" },
-];
+const PANEL_SIZE_KEY = "trade-detail-panel-sizes";
 
-const EMOTIONAL_STATES = [
-	{ value: "confident", label: "Confident", color: "text-profit" },
-	{ value: "fearful", label: "Fearful", color: "text-loss" },
-	{ value: "greedy", label: "Greedy", color: "text-breakeven" },
-	{ value: "neutral", label: "Neutral", color: "text-muted-foreground" },
-	{ value: "frustrated", label: "Frustrated", color: "text-loss" },
-	{ value: "excited", label: "Excited", color: "text-accent" },
-	{ value: "anxious", label: "Anxious", color: "text-breakeven" },
-];
-
-const EXIT_REASONS = [
-	{ value: "manual", label: "Manual" },
-	{ value: "stop_loss", label: "Stop Loss" },
-	{ value: "trailing_stop", label: "Trailing Stop" },
-	{ value: "take_profit", label: "Take Profit" },
-	{ value: "time_based", label: "Time-Based" },
-	{ value: "breakeven", label: "Breakeven" },
-];
-
-// =============================================================================
-// SECTION COMPONENT
-// =============================================================================
-
-function Section({
-	label,
-	children,
-	className,
-	locked,
-}: {
-	label: string;
-	children: React.ReactNode;
-	className?: string;
-	locked?: boolean;
-}) {
-	return (
-		<div className={className}>
-			<h2 className="mb-3 flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider">
-				<span className="h-px w-3 bg-primary/40" />
-				<span className="text-primary/80">{label}</span>
-				{locked && (
-					<span className="flex items-center gap-1 text-muted-foreground/60">
-						<Lock className="h-3 w-3" />
-						<span className="text-[9px]">Imported</span>
-					</span>
-				)}
-			</h2>
-			<div className="rounded border-y border-y-white/5 border-r border-r-white/5 border-l-2 border-l-primary/20 bg-white/[0.01] p-5">
-				{children}
-			</div>
-		</div>
-	);
+function getStoredSizes(): number[] {
+	if (typeof window === "undefined") return [30, 70];
+	try {
+		const stored = localStorage.getItem(PANEL_SIZE_KEY);
+		if (stored) {
+			const parsed = JSON.parse(stored);
+			if (Array.isArray(parsed) && parsed.length === 2) {
+				return parsed as number[];
+			}
+		}
+	} catch {
+		// Ignore parsing errors
+	}
+	return [30, 70];
 }
 
-// =============================================================================
-// PLAYBOOK SECTION COMPONENT
-// =============================================================================
-
-function PlaybookSection({
-	tradeId,
-	playbookId,
-	onPlaybookChange,
-}: {
-	tradeId: number;
-	playbookId: number | null;
-	onPlaybookChange: (playbookId: number | null) => void;
-}) {
-	const utils = api.useUtils();
-
-	// Fetch all playbooks for selector
-	const { data: playbooks } = api.playbooks.getAll.useQuery();
-
-	// Fetch rule checks for this trade
-	const { data: ruleChecksData } = api.playbooks.getTradeRuleChecks.useQuery(
-		{ tradeId },
-		{ enabled: !!playbookId },
-	);
-
-	const updateTradeMutation = api.trades.update.useMutation({
-		onSuccess: () => {
-			utils.trades.getById.invalidate({ id: tradeId });
-			utils.playbooks.getTradeRuleChecks.invalidate({ tradeId });
-		},
-		onError: () => {
-			toast.error("Failed to update playbook");
-		},
-	});
-
-	const handlePlaybookChange = (value: string) => {
-		const newPlaybookId = value === "none" ? null : parseInt(value, 10);
-		onPlaybookChange(newPlaybookId);
-		updateTradeMutation.mutate({
-			id: tradeId,
-			playbookId: newPlaybookId,
-		} as Parameters<typeof updateTradeMutation.mutate>[0]);
-	};
-
-	return (
-		<Section label="Playbook">
-			<div className="space-y-4">
-				{/* Playbook Selector */}
-				<div className="flex items-center gap-4">
-					<div className="flex-1">
-						<Select
-							onValueChange={handlePlaybookChange}
-							value={playbookId?.toString() ?? "none"}
-						>
-							<SelectTrigger className="font-mono">
-								<SelectValue placeholder="Select playbook..." />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="none">No playbook</SelectItem>
-								{playbooks?.map((pb) => (
-									<SelectItem key={pb.id} value={pb.id.toString()}>
-										<div className="flex items-center gap-2">
-											<div
-												className="h-2 w-2 rounded-full"
-												style={{ backgroundColor: pb.color ?? "#d4ff00" }}
-											/>
-											{pb.name}
-										</div>
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</div>
-
-					{playbookId && ruleChecksData?.playbook && (
-						<div className="flex items-center gap-3">
-							<ComplianceBadge
-								compliance={ruleChecksData.compliance}
-								size="md"
-							/>
-							<Button asChild size="sm" variant="ghost">
-								<Link href={`/playbooks/${playbookId}`}>
-									<ExternalLink className="h-3 w-3" />
-								</Link>
-							</Button>
-						</div>
-					)}
-				</div>
-
-				{/* Rule Checklist */}
-				{playbookId && ruleChecksData && ruleChecksData.rules.length > 0 && (
-					<RuleChecklist
-						checks={ruleChecksData.checks}
-						onUpdate={() =>
-							utils.playbooks.getTradeRuleChecks.invalidate({ tradeId })
-						}
-						rules={ruleChecksData.rules}
-						tradeId={tradeId}
-					/>
-				)}
-
-				{/* Empty state when no playbook */}
-				{!playbookId && (
-					<div className="flex items-center gap-3 rounded border border-white/5 bg-white/[0.01] p-4">
-						<BookMarked className="h-5 w-5 text-muted-foreground/50" />
-						<div>
-							<p className="font-mono text-muted-foreground text-sm">
-								No playbook assigned
-							</p>
-							<p className="font-mono text-[10px] text-muted-foreground/70">
-								Assign a playbook to track rule compliance for this trade
-							</p>
-						</div>
-					</div>
-				)}
-
-				{/* State when playbook has no rules */}
-				{playbookId && ruleChecksData && ruleChecksData.rules.length === 0 && (
-					<div className="flex items-center gap-3 rounded border border-white/5 bg-white/[0.01] p-4">
-						<BookMarked className="h-5 w-5 text-primary/50" />
-						<div>
-							<p className="font-mono text-muted-foreground text-sm">
-								Playbook has no rules defined
-							</p>
-							<Link
-								className="font-mono text-[10px] text-primary hover:underline"
-								href={`/playbooks/${playbookId}`}
-							>
-								Add rules to this playbook
-							</Link>
-						</div>
-					</div>
-				)}
-			</div>
-		</Section>
-	);
+function saveSizes(sizes: number[]) {
+	if (typeof window === "undefined") return;
+	try {
+		localStorage.setItem(PANEL_SIZE_KEY, JSON.stringify(sizes));
+	} catch {
+		// Ignore storage errors
+	}
 }
 
 // =============================================================================
@@ -283,6 +92,18 @@ export default function TradeDetailPage() {
 		fees: "",
 		realizedPnl: "",
 	});
+
+	// Panel sizes from localStorage [left, right]
+	const [panelSizes, setPanelSizes] = useState<number[]>([30, 70]);
+
+	useEffect(() => {
+		setPanelSizes(getStoredSizes());
+	}, []);
+
+	const handleLayoutChange = (sizes: number[]) => {
+		setPanelSizes(sizes);
+		saveSizes(sizes);
+	};
 
 	const utils = api.useUtils();
 
@@ -420,70 +241,40 @@ export default function TradeDetailPage() {
 		});
 	};
 
-	// Calculate stats
-	const stats = (() => {
-		if (!trade) return null;
-		const entry = parseFloat(trade.entryPrice);
-		const exit = trade.exitPrice ? parseFloat(trade.exitPrice) : null;
-		const sl = trade.stopLoss ? parseFloat(trade.stopLoss) : null;
-		const tp = trade.takeProfit ? parseFloat(trade.takeProfit) : null;
-		const isLong = trade.direction === "long";
-
-		const riskPips = sl ? Math.abs(entry - sl) : null;
-		const rewardPips = tp ? Math.abs(tp - entry) : null;
-		const rrRatio = riskPips && rewardPips ? rewardPips / riskPips : null;
-
-		let rMultiple: number | null = null;
-		if (exit && riskPips) {
-			const pnlPips = isLong ? exit - entry : entry - exit;
-			rMultiple = pnlPips / riskPips;
-		}
-
-		// Calculate target hit percentage
-		let targetHitPercent: number | null = null;
-		if (exit && tp && sl) {
-			const maxReward = Math.abs(tp - entry);
-			const actualReward = isLong ? exit - entry : entry - exit;
-			if (maxReward > 0) {
-				targetHitPercent = (actualReward / maxReward) * 100;
-			}
-		}
-
-		let duration: string | null = null;
-		if (trade.exitTime && trade.entryTime) {
-			const ms =
-				new Date(trade.exitTime).getTime() -
-				new Date(trade.entryTime).getTime();
-			const hours = Math.floor(ms / (1000 * 60 * 60));
-			const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
-			if (hours > 24) {
-				const days = Math.floor(hours / 24);
-				duration = `${days}d ${hours % 24}h`;
-			} else if (hours > 0) {
-				duration = `${hours}h ${minutes}m`;
-			} else {
-				duration = `${minutes}m`;
-			}
-		}
-
-		return {
-			riskPips,
-			rewardPips,
-			rrRatio,
-			rMultiple,
-			targetHitPercent,
-			duration,
-		};
-	})();
+	// Calculate stats using the new helper
+	const stats = trade
+		? calculateAllStats({
+				entryPrice: trade.entryPrice,
+				exitPrice: trade.exitPrice,
+				direction: trade.direction,
+				quantity: trade.quantity,
+				netPnl: trade.netPnl,
+				fees: trade.fees,
+				stopLoss: trade.stopLoss,
+				takeProfit: trade.takeProfit,
+				entryTime: trade.entryTime,
+				exitTime: trade.exitTime,
+				symbol: trade.symbol,
+				instrumentType: trade.instrumentType,
+			})
+		: null;
 
 	// Loading state
 	if (isLoading) {
 		return (
-			<div className="mx-auto w-[95%] max-w-none space-y-6 py-6">
-				<Skeleton className="h-10 w-64" />
-				<Skeleton className="h-24" />
-				<Skeleton className="h-32" />
-				<Skeleton className="h-32" />
+			<div className="flex h-[calc(100vh-4rem)] flex-col">
+				<div className="flex items-center justify-between border-border border-b px-4 py-3">
+					<Skeleton className="h-8 w-48" />
+					<Skeleton className="h-8 w-32" />
+				</div>
+				<div className="flex flex-1">
+					<div className="w-[30%] border-border border-r p-4">
+						<Skeleton className="h-full" />
+					</div>
+					<div className="flex-1 p-4">
+						<Skeleton className="h-full" />
+					</div>
+				</div>
 			</div>
 		);
 	}
@@ -491,7 +282,7 @@ export default function TradeDetailPage() {
 	// Not found
 	if (!trade) {
 		return (
-			<div className="flex flex-col items-center justify-center py-24">
+			<div className="flex h-[calc(100vh-4rem)] flex-col items-center justify-center">
 				<AlertTriangle className="mb-4 h-12 w-12 text-muted-foreground" />
 				<h2 className="font-semibold text-xl">Trade not found</h2>
 				<p className="mb-4 text-muted-foreground">
@@ -504,59 +295,24 @@ export default function TradeDetailPage() {
 		);
 	}
 
-	const sizeLabel = trade.instrumentType === "futures" ? "cts" : "lots";
 	const isImported = trade.importSource === "csv";
 
 	return (
-		<div className="mx-auto w-[95%] max-w-none space-y-8 py-6">
+		<div className="flex h-[calc(100vh-4rem)] flex-col overflow-hidden">
 			{/* ================================================================
-			    STICKY HEADER
+			    HEADER BAR
 			    ================================================================ */}
-			<div className="sticky top-0 z-10 flex items-center justify-between border-border border-b bg-background/95 py-3 backdrop-blur">
+			<div className="flex shrink-0 items-center justify-between border-border border-b bg-background px-4 py-2">
+				{/* Left: Menu + Nav + Symbol */}
 				<div className="flex items-center gap-3">
+					{/* Menu button */}
 					<Button asChild className="h-8 w-8" size="icon" variant="ghost">
 						<Link href="/journal">
-							<ArrowLeft className="h-4 w-4" />
+							<Menu className="h-4 w-4" />
 						</Link>
 					</Button>
-					<span className="font-mono text-muted-foreground text-xs">
-						Back to Journal
-					</span>
-				</div>
 
-				<div className="flex items-center gap-4">
-					{/* Rating */}
-					<StarRating
-						onChange={(rating) => updateRating(rating ?? 0)}
-						size="sm"
-						value={pendingRating ?? trade.rating ?? 0}
-					/>
-
-					{/* Reviewed toggle */}
-					<button
-						className={cn(
-							"flex items-center gap-1.5 rounded px-2 py-1 font-mono text-[10px] uppercase tracking-wider transition-colors",
-							trade.isReviewed
-								? "bg-profit/10 text-profit"
-								: "text-muted-foreground hover:bg-white/5",
-						)}
-						onClick={() =>
-							markReviewed.mutate({
-								id: tradeId,
-								isReviewed: !trade.isReviewed,
-							})
-						}
-						type="button"
-					>
-						{trade.isReviewed ? (
-							<CheckCircle2 className="h-3 w-3" />
-						) : (
-							<Clock className="h-3 w-3" />
-						)}
-						{trade.isReviewed ? "Reviewed" : "Review"}
-					</button>
-
-					{/* Navigation */}
+					{/* Prev/Next navigation */}
 					<div className="flex items-center gap-1">
 						{prevTrade ? (
 							<Button asChild className="h-7 w-7" size="icon" variant="ghost">
@@ -581,539 +337,374 @@ export default function TradeDetailPage() {
 							</Button>
 						)}
 					</div>
-				</div>
-			</div>
 
-			{/* ================================================================
-			    TRADE IDENTITY
-			    ================================================================ */}
-			<div>
-				<div className="flex items-center gap-3">
-					{/* Direction icon */}
-					<div
-						className={cn(
-							"flex h-10 w-10 items-center justify-center rounded",
-							trade.direction === "long"
-								? "bg-profit/10 text-profit"
-								: "bg-loss/10 text-loss",
-						)}
-					>
-						{trade.direction === "long" ? (
-							<TrendingUp className="h-5 w-5" />
-						) : (
-							<TrendingDown className="h-5 w-5" />
-						)}
-					</div>
+					{/* Symbol & Date */}
+					<div className="flex items-center gap-3">
+						{/* Direction icon */}
+						<div
+							className={cn(
+								"flex h-8 w-8 items-center justify-center rounded",
+								trade.direction === "long"
+									? "bg-profit/10 text-profit"
+									: "bg-loss/10 text-loss",
+							)}
+						>
+							{trade.direction === "long" ? (
+								<TrendingUp className="h-4 w-4" />
+							) : (
+								<TrendingDown className="h-4 w-4" />
+							)}
+						</div>
 
-					{/* Symbol & badges */}
-					<div>
-						<div className="flex items-center gap-2">
-							<h1 className="font-bold font-mono text-2xl tracking-tight">
-								{trade.symbol}
-							</h1>
-							<Badge
-								className={cn(
-									"font-mono text-[10px] uppercase",
-									trade.direction === "long"
-										? "border-profit/30 text-profit"
-										: "border-loss/30 text-loss",
-								)}
-								variant="outline"
-							>
-								{trade.direction}
-							</Badge>
-							<Badge
-								className="font-mono text-[10px] uppercase"
-								variant={trade.status === "open" ? "secondary" : "outline"}
-							>
-								{trade.status === "open" ? (
-									<Clock className="mr-1 h-3 w-3" />
-								) : (
-									<Check className="mr-1 h-3 w-3" />
-								)}
-								{trade.status}
-							</Badge>
-							{isImported && (
+						<div>
+							<div className="flex items-center gap-2">
+								<span className="font-bold font-mono text-lg tracking-tight">
+									{trade.symbol}
+								</span>
 								<Badge
-									className="border-accent/30 font-mono text-[10px] text-accent uppercase"
+									className={cn(
+										"font-mono text-[9px] uppercase",
+										trade.direction === "long"
+											? "border-profit/30 text-profit"
+											: "border-loss/30 text-loss",
+									)}
 									variant="outline"
 								>
-									<Import className="mr-1 h-3 w-3" />
-									Imported
+									{trade.direction}
 								</Badge>
-							)}
-						</div>
-						<p className="mt-0.5 font-mono text-muted-foreground text-xs">
-							{new Date(trade.entryTime).toLocaleDateString("en-US", {
-								weekday: "short",
-								month: "short",
-								day: "numeric",
-								year: "numeric",
-							})}
-							{stats?.duration && (
-								<span className="text-muted-foreground/50">
-									{" "}
-									· {stats.duration}
-								</span>
-							)}
-							{trade.account?.name && (
-								<span className="text-muted-foreground/50">
-									{" "}
-									· {trade.account.name}
-								</span>
-							)}
-						</p>
-					</div>
-				</div>
-			</div>
-
-			{/* ================================================================
-			    SUMMARY CARD
-			    ================================================================ */}
-			<TradeSummaryCard
-				netPnl={trade.netPnl}
-				rMultiple={stats?.rMultiple ?? null}
-				rrRatio={stats?.rrRatio ?? null}
-				status={trade.status}
-				targetHitPercent={stats?.targetHitPercent ?? null}
-			/>
-
-			{/* ================================================================
-			    CHART
-			    ================================================================ */}
-			<Section label="Chart">
-				<div className="relative aspect-[21/9] w-full overflow-hidden rounded bg-secondary">
-					{/* Placeholder grid background */}
-					<div
-						className="absolute inset-0 opacity-20"
-						style={{
-							backgroundImage: `
-								linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
-								linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)
-							`,
-							backgroundSize: "40px 20px",
-						}}
-					/>
-
-					{/* Entry/Exit markers placeholder */}
-					<div className="absolute inset-0 flex items-center justify-center">
-						<div className="relative flex w-full items-center px-12">
-							{/* Simulated price line */}
-							<div className="absolute top-1/2 right-12 left-12 h-px bg-gradient-to-r from-profit/50 via-white/30 to-loss/50" />
-
-							{/* Entry marker */}
-							<div className="absolute left-[20%] flex flex-col items-center">
-								<div className="mb-1 font-mono text-[10px] text-profit">
-									ENTRY
-								</div>
-								<div className="flex h-6 w-6 items-center justify-center rounded-full border border-profit bg-profit/20">
-									<TrendingUp className="h-3 w-3 text-profit" />
-								</div>
-								<div className="mt-1 font-mono text-[10px] text-muted-foreground">
-									{trade.entryPrice}
-								</div>
+								<Badge
+									className="font-mono text-[9px] uppercase"
+									variant={trade.status === "open" ? "secondary" : "outline"}
+								>
+									{trade.status === "open" ? (
+										<Clock className="mr-1 h-2.5 w-2.5" />
+									) : (
+										<Check className="mr-1 h-2.5 w-2.5" />
+									)}
+									{trade.status}
+								</Badge>
+								{isImported && (
+									<Badge
+										className="border-accent/30 font-mono text-[9px] text-accent uppercase"
+										variant="outline"
+									>
+										<Import className="mr-1 h-2.5 w-2.5" />
+										Imported
+									</Badge>
+								)}
 							</div>
-
-							{/* Exit marker (if closed) */}
-							{trade.status === "closed" && trade.exitPrice && (
-								<div className="absolute left-[80%] flex flex-col items-center">
-									<div className="mb-1 font-mono text-[10px] text-loss">
-										EXIT
-									</div>
-									<div className="flex h-6 w-6 items-center justify-center rounded-full border border-loss bg-loss/20">
-										<TrendingDown className="h-3 w-3 text-loss" />
-									</div>
-									<div className="mt-1 font-mono text-[10px] text-muted-foreground">
-										{trade.exitPrice}
-									</div>
-								</div>
-							)}
-
-							{/* Stop loss line */}
-							{trade.stopLoss && (
-								<div className="absolute top-[70%] right-12 flex items-center gap-2">
-									<div className="h-px w-full border-loss/50 border-t border-dashed" />
-									<span className="whitespace-nowrap font-mono text-[9px] text-loss/70">
-										SL {trade.stopLoss}
+							<p className="font-mono text-[10px] text-muted-foreground">
+								{new Date(trade.entryTime).toLocaleDateString("en-US", {
+									weekday: "short",
+									month: "short",
+									day: "numeric",
+									year: "numeric",
+								})}
+								{stats?.duration && (
+									<span className="text-muted-foreground/50">
+										{" "}
+										· {stats.duration}
 									</span>
-								</div>
-							)}
-
-							{/* Take profit line */}
-							{trade.takeProfit && (
-								<div className="absolute top-[30%] right-12 flex items-center gap-2">
-									<div className="h-px w-full border-profit/50 border-t border-dashed" />
-									<span className="whitespace-nowrap font-mono text-[9px] text-profit/70">
-										TP {trade.takeProfit}
+								)}
+								{trade.account?.name && (
+									<span className="text-muted-foreground/50">
+										{" "}
+										· {trade.account.name}
 									</span>
-								</div>
-							)}
-						</div>
-					</div>
-
-					{/* Coming soon overlay */}
-					<div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 backdrop-blur-[2px]">
-						<CandlestickChart className="mb-3 h-10 w-10 text-primary/60" />
-						<p className="font-mono text-sm text-white/80">Interactive Chart</p>
-						<p className="font-mono text-[10px] text-muted-foreground">
-							TradingView integration coming soon
-						</p>
-					</div>
-				</div>
-			</Section>
-
-			{/* ================================================================
-			    POSITION
-			    ================================================================ */}
-			<Section label="Position" locked={isImported}>
-				<div className="grid grid-cols-3 gap-4">
-					<EditableField
-						align="right"
-						disabled={isImported}
-						label="Entry Price"
-						onChange={(v) => updateField("entryPrice", v)}
-						type="number"
-						value={trade.entryPrice}
-					/>
-					<EditableField
-						align="right"
-						disabled={isImported}
-						label="Exit Price"
-						onChange={(v) => updateField("exitPrice", v)}
-						placeholder={trade.status === "open" ? "Open" : "—"}
-						type="number"
-						value={trade.exitPrice}
-					/>
-					<EditableField
-						align="right"
-						disabled={isImported}
-						label="Size"
-						onChange={(v) => updateField("quantity", v)}
-						suffix={` ${sizeLabel}`}
-						type="number"
-						value={trade.quantity}
-					/>
-				</div>
-			</Section>
-
-			{/* ================================================================
-			    RISK MANAGEMENT
-			    ================================================================ */}
-			<Section label="Risk Management">
-				<div className="space-y-4">
-					<div className="grid grid-cols-3 gap-4">
-						<EditableField
-							align="right"
-							label="Stop Loss"
-							onChange={(v) => updateField("stopLoss", v)}
-							type="number"
-							value={trade.stopLoss}
-						/>
-						<EditableField
-							align="right"
-							label="Take Profit"
-							onChange={(v) => updateField("takeProfit", v)}
-							type="number"
-							value={trade.takeProfit}
-						/>
-						<EditableField
-							align="right"
-							disabled={isImported}
-							label="Fees"
-							onChange={(v) => updateField("fees", v)}
-							prefix="$"
-							type="number"
-							value={trade.fees}
-						/>
-					</div>
-
-					{/* Trailing Stop Toggle */}
-					<div className="border-border border-t pt-4">
-						<div className="flex items-center gap-3">
-							<Checkbox
-								checked={trade.wasTrailed ?? false}
-								id="was-trailed"
-								onCheckedChange={(checked) => {
-									updateField("wasTrailed", checked === true);
-									if (!checked) {
-										updateField("trailedStopLoss", null);
-									}
-								}}
-							/>
-							<label
-								className="font-mono text-muted-foreground text-sm"
-								htmlFor="was-trailed"
-							>
-								Stop was trailed
-							</label>
-							{trade.wasTrailed && (
-								<EditableField
-									align="right"
-									className="ml-auto w-32"
-									onChange={(v) => updateField("trailedStopLoss", v)}
-									placeholder="Trailed to..."
-									type="number"
-									value={trade.trailedStopLoss}
-								/>
-							)}
+								)}
+							</p>
 						</div>
 					</div>
 				</div>
-			</Section>
 
-			{/* ================================================================
-			    EXECUTIONS
-			    ================================================================ */}
-			<Section label="Executions">
-				<ExecutionTimeline
-					executions={
-						trade.executions?.map((e) => ({
-							id: e.id,
-							// Map old types: scale_in → entry, scale_out → exit
-							executionType:
-								e.executionType === "scale_in" || e.executionType === "entry"
-									? ("entry" as const)
-									: ("exit" as const),
-							price: e.price,
-							quantity: e.quantity,
-							executedAt: e.executedAt,
-							fees: e.fees,
-							realizedPnl: e.realizedPnl,
-							notes: e.notes,
-						})) ?? []
-					}
-					instrumentType={trade.instrumentType}
-					onAddExecution={(execution) => {
-						// TODO: Implement add execution mutation
-						console.log("Add execution:", execution);
-						toast.info("Add execution coming soon");
-					}}
-				/>
-			</Section>
-
-			{/* ================================================================
-			    CONTEXT
-			    ================================================================ */}
-			<Section label="Context">
-				<div className="grid grid-cols-3 gap-4">
-					<EditableSelect
-						label="Setup Type"
-						onChange={(v) => updateField("setupType", v)}
-						options={SETUP_TYPES}
-						placeholder="Select setup..."
-						value={trade.setupType}
-					/>
-					<EditableSelect
-						label="Emotional State"
-						onChange={(v) => updateField("emotionalState", v)}
-						options={EMOTIONAL_STATES}
-						placeholder="Select state..."
-						value={trade.emotionalState}
-					/>
-					<EditableSelect
-						label="Exit Reason"
-						onChange={(v) => updateField("exitReason", v)}
-						options={EXIT_REASONS}
-						placeholder="Select reason..."
-						value={trade.exitReason}
-					/>
-				</div>
-			</Section>
-
-			{/* ================================================================
-			    PLAYBOOK
-			    ================================================================ */}
-			<PlaybookSection
-				onPlaybookChange={(playbookId) => updateField("playbookId", playbookId)}
-				playbookId={trade.playbookId}
-				tradeId={tradeId}
-			/>
-
-			{/* ================================================================
-			    TAGS
-			    ================================================================ */}
-			<Section label="Tags">
-				<TradeTags
-					maxDisplay={10}
-					onUpdate={() => utils.trades.getById.invalidate({ id: tradeId })}
-					tags={trade.tradeTags}
-					tradeId={tradeId}
-				/>
-			</Section>
-
-			{/* ================================================================
-			    NOTES
-			    ================================================================ */}
-			<Section label="Notes">
-				<EditableTextarea
-					onChange={(v) => updateField("notes", v)}
-					placeholder="Add notes about this trade..."
-					rows={6}
-					value={trade.notes}
-				/>
-			</Section>
-
-			{/* ================================================================
-			    SCREENSHOTS (Placeholder)
-			    ================================================================ */}
-			<Section label="Screenshots">
-				<div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-					<Camera className="mb-2 h-8 w-8 opacity-50" />
-					<p className="font-mono text-xs">Drop images or click to upload</p>
-					<p className="font-mono text-[10px] opacity-50">Coming soon</p>
-				</div>
-			</Section>
-
-			{/* ================================================================
-			    ACTIONS
-			    ================================================================ */}
-			<div className="flex items-center justify-between border-border border-t pt-6">
-				{trade.status === "open" && (
-					<Button
-						className="font-mono text-xs uppercase tracking-wider"
-						onClick={() => setIsClosing(true)}
+				{/* Right: Actions */}
+				<div className="flex items-center gap-2">
+					{/* Mark as reviewed */}
+					<button
+						className={cn(
+							"flex items-center gap-1.5 rounded px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider transition-colors",
+							trade.isReviewed
+								? "bg-profit/10 text-profit"
+								: "text-muted-foreground hover:bg-white/5",
+						)}
+						onClick={() =>
+							markReviewed.mutate({
+								id: tradeId,
+								isReviewed: !trade.isReviewed,
+							})
+						}
+						type="button"
 					>
-						Close Trade
-					</Button>
-				)}
-				<div className={cn(trade.status === "closed" && "ml-auto")}>
+						{trade.isReviewed ? (
+							<CheckCircle2 className="h-3.5 w-3.5" />
+						) : (
+							<Clock className="h-3.5 w-3.5" />
+						)}
+						{trade.isReviewed ? "Reviewed" : "Mark as reviewed"}
+					</button>
+
+					{/* Replay button (placeholder) */}
 					<Button
-						className="font-mono text-muted-foreground text-xs uppercase tracking-wider hover:text-loss"
+						className="font-mono text-[10px] uppercase tracking-wider"
+						disabled
+						size="sm"
+						variant="default"
+					>
+						Replay
+					</Button>
+
+					{/* Share button (placeholder) */}
+					<Button className="h-8 w-8" disabled size="icon" variant="ghost">
+						<Share2 className="h-4 w-4" />
+					</Button>
+
+					{/* Settings/Actions menu */}
+					<Button
+						className="h-8 w-8"
 						onClick={() => setIsDeleting(true)}
+						size="icon"
 						variant="ghost"
 					>
-						<Trash2 className="mr-2 h-4 w-4" />
-						Delete Trade
+						<Settings className="h-4 w-4" />
 					</Button>
 				</div>
 			</div>
+
+			{/* ================================================================
+			    RESIZABLE PANELS
+			    ================================================================ */}
+			<ResizablePanelGroup
+				className="h-full min-h-0 flex-1"
+				direction="horizontal"
+				onLayout={handleLayoutChange}
+			>
+				{/* LEFT PANEL - Stats */}
+				<ResizablePanel
+					className="min-w-0 overflow-hidden border-border border-r"
+					defaultSize={panelSizes[0]}
+					maxSize={70}
+					minSize={10}
+				>
+					<StatsPanel
+						onUpdateField={updateField}
+						onUpdateRating={(rating) => updateRating(rating)}
+						pendingRating={pendingRating}
+						stats={
+							stats ?? {
+								points: null,
+								ticks: null,
+								pips: null,
+								ticksPerContract: null,
+								grossPnl: null,
+								roi: null,
+								duration: null,
+								rMultiple: null,
+								plannedRR: null,
+							}
+						}
+						trade={{
+							id: trade.id,
+							symbol: trade.symbol,
+							direction: trade.direction,
+							status: trade.status,
+							instrumentType: trade.instrumentType,
+							quantity: trade.quantity,
+							entryPrice: trade.entryPrice,
+							exitPrice: trade.exitPrice,
+							entryTime: trade.entryTime,
+							exitTime: trade.exitTime,
+							stopLoss: trade.stopLoss,
+							takeProfit: trade.takeProfit,
+							fees: trade.fees,
+							netPnl: trade.netPnl,
+							rating: trade.rating,
+							playbookId: trade.playbookId,
+							// Risk management
+							wasTrailed: trade.wasTrailed,
+							trailedStopLoss: trade.trailedStopLoss,
+							// Context
+							setupType: trade.setupType,
+							emotionalState: trade.emotionalState,
+							exitReason: trade.exitReason,
+							executions: trade.executions?.map((e) => ({
+								id: e.id,
+								executionType: e.executionType as
+									| "entry"
+									| "exit"
+									| "scale_in"
+									| "scale_out",
+								price: e.price,
+								quantity: e.quantity,
+								executedAt: e.executedAt,
+								fees: e.fees,
+								realizedPnl: e.realizedPnl,
+								notes: e.notes,
+							})),
+						}}
+					/>
+				</ResizablePanel>
+
+				<ResizableHandle withHandle />
+
+				{/* RIGHT PANEL - Content */}
+				<ResizablePanel
+					className="min-w-0 overflow-hidden"
+					defaultSize={panelSizes[1]}
+					minSize={20}
+				>
+					<ContentPanel
+						onUpdateField={updateField}
+						trade={{
+							id: trade.id,
+							symbol: trade.symbol,
+							direction: trade.direction,
+							status: trade.status,
+							entryPrice: trade.entryPrice,
+							exitPrice: trade.exitPrice,
+							stopLoss: trade.stopLoss,
+							takeProfit: trade.takeProfit,
+							notes: trade.notes,
+							tradeTags: trade.tradeTags,
+						}}
+					/>
+				</ResizablePanel>
+			</ResizablePanelGroup>
 
 			{/* ================================================================
 			    DIALOGS
 			    ================================================================ */}
 
 			{/* Close Trade Dialog */}
-			<Dialog onOpenChange={setIsClosing} open={isClosing}>
-				<DialogContent className="border-border bg-background">
-					<DialogHeader>
-						<DialogTitle className="font-mono uppercase tracking-wider">
-							Close Trade
-						</DialogTitle>
-						<DialogDescription className="font-mono text-xs">
-							Enter exit details for {trade.symbol} {trade.direction}
-						</DialogDescription>
-					</DialogHeader>
-					<div className="space-y-4 py-4">
-						<div className="space-y-1">
-							<label
-								className="font-mono text-[11px] text-muted-foreground uppercase"
-								htmlFor="close-exit-price"
-							>
-								Exit Price
-							</label>
-							<Input
-								className="font-mono"
-								id="close-exit-price"
-								onChange={(e) =>
-									setCloseData({ ...closeData, exitPrice: e.target.value })
-								}
-								placeholder="0.00"
-								step="any"
-								type="number"
-								value={closeData.exitPrice}
-							/>
-						</div>
-						<div className="grid grid-cols-2 gap-4">
+			{trade.status === "open" && (
+				<Dialog onOpenChange={setIsClosing} open={isClosing}>
+					<DialogContent className="border-border bg-background">
+						<DialogHeader>
+							<DialogTitle className="font-mono uppercase tracking-wider">
+								Close Trade
+							</DialogTitle>
+							<DialogDescription className="font-mono text-xs">
+								Enter exit details for {trade.symbol} {trade.direction}
+							</DialogDescription>
+						</DialogHeader>
+						<div className="space-y-4 py-4">
 							<div className="space-y-1">
 								<label
 									className="font-mono text-[11px] text-muted-foreground uppercase"
-									htmlFor="close-exit-date"
+									htmlFor="close-exit-price"
 								>
-									Date
-								</label>
-								<Input
-									id="close-exit-date"
-									onChange={(e) =>
-										setCloseData({ ...closeData, exitDate: e.target.value })
-									}
-									type="date"
-									value={closeData.exitDate}
-								/>
-							</div>
-							<div className="space-y-1">
-								<label
-									className="font-mono text-[11px] text-muted-foreground uppercase"
-									htmlFor="close-exit-time"
-								>
-									Time
-								</label>
-								<Input
-									id="close-exit-time"
-									onChange={(e) =>
-										setCloseData({ ...closeData, exitTime: e.target.value })
-									}
-									type="time"
-									value={closeData.exitTime}
-								/>
-							</div>
-						</div>
-						<div className="grid grid-cols-2 gap-4">
-							<div className="space-y-1">
-								<label
-									className="font-mono text-[11px] text-muted-foreground uppercase"
-									htmlFor="close-pnl"
-								>
-									Realized P&L
+									Exit Price
 								</label>
 								<Input
 									className="font-mono"
-									id="close-pnl"
+									id="close-exit-price"
 									onChange={(e) =>
-										setCloseData({ ...closeData, realizedPnl: e.target.value })
-									}
-									placeholder="e.g. 150.00 or -75.50"
-									step="any"
-									type="number"
-									value={closeData.realizedPnl}
-								/>
-							</div>
-							<div className="space-y-1">
-								<label
-									className="font-mono text-[11px] text-muted-foreground uppercase"
-									htmlFor="close-fees"
-								>
-									Fees (optional)
-								</label>
-								<Input
-									className="font-mono"
-									id="close-fees"
-									onChange={(e) =>
-										setCloseData({ ...closeData, fees: e.target.value })
+										setCloseData({ ...closeData, exitPrice: e.target.value })
 									}
 									placeholder="0.00"
 									step="any"
 									type="number"
-									value={closeData.fees}
+									value={closeData.exitPrice}
 								/>
 							</div>
+							<div className="grid grid-cols-2 gap-4">
+								<div className="space-y-1">
+									<label
+										className="font-mono text-[11px] text-muted-foreground uppercase"
+										htmlFor="close-exit-date"
+									>
+										Date
+									</label>
+									<Input
+										id="close-exit-date"
+										onChange={(e) =>
+											setCloseData({ ...closeData, exitDate: e.target.value })
+										}
+										type="date"
+										value={closeData.exitDate}
+									/>
+								</div>
+								<div className="space-y-1">
+									<label
+										className="font-mono text-[11px] text-muted-foreground uppercase"
+										htmlFor="close-exit-time"
+									>
+										Time
+									</label>
+									<Input
+										id="close-exit-time"
+										onChange={(e) =>
+											setCloseData({ ...closeData, exitTime: e.target.value })
+										}
+										type="time"
+										value={closeData.exitTime}
+									/>
+								</div>
+							</div>
+							<div className="grid grid-cols-2 gap-4">
+								<div className="space-y-1">
+									<label
+										className="font-mono text-[11px] text-muted-foreground uppercase"
+										htmlFor="close-pnl"
+									>
+										Realized P&L
+									</label>
+									<Input
+										className="font-mono"
+										id="close-pnl"
+										onChange={(e) =>
+											setCloseData({
+												...closeData,
+												realizedPnl: e.target.value,
+											})
+										}
+										placeholder="e.g. 150.00 or -75.50"
+										step="any"
+										type="number"
+										value={closeData.realizedPnl}
+									/>
+								</div>
+								<div className="space-y-1">
+									<label
+										className="font-mono text-[11px] text-muted-foreground uppercase"
+										htmlFor="close-fees"
+									>
+										Fees (optional)
+									</label>
+									<Input
+										className="font-mono"
+										id="close-fees"
+										onChange={(e) =>
+											setCloseData({ ...closeData, fees: e.target.value })
+										}
+										placeholder="0.00"
+										step="any"
+										type="number"
+										value={closeData.fees}
+									/>
+								</div>
+							</div>
 						</div>
-					</div>
-					<DialogFooter>
-						<Button onClick={() => setIsClosing(false)} variant="ghost">
-							Cancel
-						</Button>
-						<Button
-							disabled={!closeData.exitPrice || !closeData.realizedPnl || closeTrade.isPending}
-							onClick={handleCloseTrade}
-						>
-							{closeTrade.isPending && (
-								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-							)}
-							Close Trade
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+						<DialogFooter>
+							<Button onClick={() => setIsClosing(false)} variant="ghost">
+								Cancel
+							</Button>
+							<Button
+								disabled={
+									!closeData.exitPrice ||
+									!closeData.realizedPnl ||
+									closeTrade.isPending
+								}
+								onClick={handleCloseTrade}
+							>
+								{closeTrade.isPending && (
+									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								)}
+								Close Trade
+							</Button>
+						</DialogFooter>
+					</DialogContent>
+				</Dialog>
+			)}
 
 			{/* Delete Dialog */}
 			<Dialog onOpenChange={setIsDeleting} open={isDeleting}>
@@ -1126,6 +717,19 @@ export default function TradeDetailPage() {
 							This will move the trade to trash. You can restore it later.
 						</DialogDescription>
 					</DialogHeader>
+					<div className="flex items-center justify-between rounded border border-white/10 bg-white/[0.02] p-4">
+						<div className="flex items-center gap-3">
+							<Trash2 className="h-5 w-5 text-loss" />
+							<div>
+								<p className="font-mono text-sm">
+									{trade.symbol} {trade.direction.toUpperCase()}
+								</p>
+								<p className="font-mono text-[10px] text-muted-foreground">
+									{new Date(trade.entryTime).toLocaleDateString()}
+								</p>
+							</div>
+						</div>
+					</div>
 					<DialogFooter>
 						<Button onClick={() => setIsDeleting(false)} variant="ghost">
 							Cancel

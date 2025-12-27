@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 
 export interface Execution {
 	id: number;
-	executionType: "entry" | "exit";
+	executionType: "entry" | "exit" | "scale_in" | "scale_out";
 	price: string;
 	quantity: string;
 	executedAt: string | Date;
@@ -64,11 +64,22 @@ export function ExecutionTimeline({
 	);
 
 	function getExecutionLabel(type: Execution["executionType"]) {
-		return type === "entry" ? "Entry" : "Exit";
+		switch (type) {
+			case "entry":
+				return "Entry";
+			case "scale_in":
+				return "Scale In";
+			case "scale_out":
+				return "Scale Out";
+			case "exit":
+				return "Exit";
+			default:
+				return type;
+		}
 	}
 
 	function isAddType(type: Execution["executionType"]) {
-		return type === "entry";
+		return type === "entry" || type === "scale_in";
 	}
 
 	function formatTime(date: string | Date) {
@@ -94,7 +105,7 @@ export function ExecutionTimeline({
 
 		setIsAddingExecution(false);
 		setNewExecution({
-			executionType: "scale_in",
+			executionType: "entry",
 			price: "",
 			quantity: "",
 			executedAt: new Date().toISOString().slice(0, 16),
@@ -211,7 +222,7 @@ export function ExecutionTimeline({
 							Add Execution
 						</DialogTitle>
 						<DialogDescription className="font-mono text-xs">
-							Record an entry (scale in) or exit (scale out)
+							Record an entry, exit, or scaling execution
 						</DialogDescription>
 					</DialogHeader>
 
@@ -235,8 +246,10 @@ export function ExecutionTimeline({
 								}
 								value={newExecution.executionType}
 							>
-								<option value="entry">Entry (Scale In)</option>
-								<option value="exit">Exit (Scale Out)</option>
+								<option value="entry">Entry</option>
+								<option value="scale_in">Scale In</option>
+								<option value="scale_out">Scale Out</option>
+								<option value="exit">Exit</option>
 							</select>
 						</div>
 
