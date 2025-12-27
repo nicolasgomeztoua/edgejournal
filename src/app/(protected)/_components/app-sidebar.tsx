@@ -15,6 +15,7 @@ import {
 	PlusCircle,
 	Settings,
 	Wallet,
+	Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -74,10 +75,10 @@ const mainNavItems = [
 
 // Updated account type colors for new types
 const ACCOUNT_TYPE_COLORS: Record<string, string> = {
-	prop_challenge: "bg-amber-500",
-	prop_funded: "bg-purple-500",
-	live: "bg-profit",
-	demo: "bg-accent",
+	prop_challenge: "bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.5)]",
+	prop_funded: "bg-purple-500 shadow-[0_0_6px_rgba(168,85,247,0.5)]",
+	live: "bg-profit shadow-[0_0_6px_rgba(0,255,136,0.5)]",
+	demo: "bg-accent shadow-[0_0_6px_rgba(0,212,255,0.5)]",
 };
 
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
@@ -109,25 +110,28 @@ export function AppSidebar() {
 	);
 
 	return (
-		<Sidebar className="border-border">
-			<SidebarHeader className="border-border border-b bg-sidebar">
+		<Sidebar className="border-white/10">
+			<SidebarHeader className="border-b border-white/10 bg-gradient-to-b from-white/[0.03] to-transparent">
 				{/* Logo */}
-				<Link className="flex items-center gap-3 px-2 py-3" href="/dashboard">
-					<svg
-						aria-labelledby="sidebar-logo-title"
-						className="h-8 w-8"
-						fill="none"
-						role="img"
-						viewBox="0 0 32 32"
-						xmlns="http://www.w3.org/2000/svg"
-					>
-						<title id="sidebar-logo-title">EdgeJournal Logo</title>
-						<rect className="fill-primary" height="32" rx="2" width="32" />
-						<path
-							className="fill-primary-foreground"
-							d="M8 8h16v3H11v5h11v3H11v5h13v3H8V8z"
-						/>
-					</svg>
+				<Link className="flex items-center gap-3 px-2 py-3 group" href="/dashboard">
+					<div className="relative">
+						<svg
+							aria-labelledby="sidebar-logo-title"
+							className="h-9 w-9 transition-transform group-hover:scale-105"
+							fill="none"
+							role="img"
+							viewBox="0 0 32 32"
+							xmlns="http://www.w3.org/2000/svg"
+						>
+							<title id="sidebar-logo-title">EdgeJournal Logo</title>
+							<rect className="fill-primary" height="32" rx="4" width="32" />
+							<path
+								className="fill-primary-foreground"
+								d="M8 8h16v3H11v5h11v3H11v5h13v3H8V8z"
+							/>
+						</svg>
+						<div className="absolute -inset-1 rounded-lg bg-primary/20 blur-md opacity-0 transition-opacity group-hover:opacity-100" />
+					</div>
 					<span className="font-medium font-mono text-sm uppercase tracking-tight">
 						Edge<span className="text-primary">Journal</span>
 					</span>
@@ -137,12 +141,12 @@ export function AppSidebar() {
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
 						<button
-							className="flex w-full items-center gap-2 rounded border border-border bg-secondary/50 px-3 py-2 text-left font-mono text-xs transition-colors hover:border-border hover:bg-secondary"
+							className="flex w-full items-center gap-2.5 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-left font-mono text-xs transition-all hover:border-white/20 hover:bg-white/[0.05]"
 							type="button"
 						>
 							{isLoading ? (
 								<div className="flex items-center gap-2">
-									<div className="h-2 w-2 animate-pulse rounded-full bg-muted-foreground/50" />
+									<div className="h-2.5 w-2.5 animate-pulse rounded-full bg-muted-foreground/50" />
 									<span className="text-muted-foreground uppercase tracking-wider">
 										Loading...
 									</span>
@@ -151,7 +155,7 @@ export function AppSidebar() {
 								<>
 									<div
 										className={cn(
-											"h-2 w-2 rounded-full",
+											"h-2.5 w-2.5 rounded-full",
 											ACCOUNT_TYPE_COLORS[selectedAccount.accountType],
 										)}
 									/>
@@ -160,25 +164,25 @@ export function AppSidebar() {
 											{selectedAccount.name}
 										</span>
 										{selectedAccount.accountType.startsWith("prop_") && (
-											<span className="ml-1 text-muted-foreground">
+											<span className="ml-1.5 text-muted-foreground/70">
 												({ACCOUNT_TYPE_LABELS[selectedAccount.accountType]})
 											</span>
 										)}
 									</div>
-									<ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
+									<ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground" />
 								</>
 							) : (
 								<>
-									<Wallet className="h-3 w-3 text-muted-foreground" />
+									<Wallet className="h-3.5 w-3.5 text-muted-foreground" />
 									<span className="text-muted-foreground uppercase tracking-wider">
 										No account
 									</span>
-									<ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
+									<ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground" />
 								</>
 							)}
 						</button>
 					</DropdownMenuTrigger>
-					<DropdownMenuContent align="start" className="w-[240px]">
+					<DropdownMenuContent align="start" className="w-[260px]">
 						{accounts.length === 0 ? (
 							<DropdownMenuItem asChild>
 								<Link
@@ -204,13 +208,13 @@ export function AppSidebar() {
 											</DropdownMenuLabel>
 											{groupAccounts.map((account) => (
 												<DropdownMenuItem
-													className="flex items-center gap-2 pl-6 font-mono text-xs"
+													className="flex items-center gap-2.5 pl-6 font-mono text-xs"
 													key={account.id}
 													onClick={() => setSelectedAccountId(account.id)}
 												>
 													<div
 														className={cn(
-															"h-2 w-2 rounded-full",
+															"h-2.5 w-2.5 rounded-full",
 															ACCOUNT_TYPE_COLORS[account.accountType],
 														)}
 													/>
@@ -220,11 +224,11 @@ export function AppSidebar() {
 															account.challengeStatus && (
 																<span
 																	className={cn(
-																		"ml-1 text-[10px]",
+																		"ml-1.5 text-[10px]",
 																		account.challengeStatus === "passed" &&
-																			"text-green-500",
+																			"text-profit",
 																		account.challengeStatus === "failed" &&
-																			"text-red-500",
+																			"text-loss",
 																		account.challengeStatus === "active" &&
 																			"text-amber-500",
 																	)}
@@ -255,7 +259,7 @@ export function AppSidebar() {
 											{groupedAccounts.ungrouped.map((account) => (
 												<DropdownMenuItem
 													className={cn(
-														"flex items-center gap-2 font-mono text-xs",
+														"flex items-center gap-2.5 font-mono text-xs",
 														groups.length > 0 && "pl-6",
 													)}
 													key={account.id}
@@ -263,7 +267,7 @@ export function AppSidebar() {
 												>
 													<div
 														className={cn(
-															"h-2 w-2 rounded-full",
+															"h-2.5 w-2.5 rounded-full",
 															ACCOUNT_TYPE_COLORS[account.accountType],
 														)}
 													/>
@@ -273,11 +277,11 @@ export function AppSidebar() {
 															account.challengeStatus && (
 																<span
 																	className={cn(
-																		"ml-1 text-[10px]",
+																		"ml-1.5 text-[10px]",
 																		account.challengeStatus === "passed" &&
-																			"text-green-500",
+																			"text-profit",
 																		account.challengeStatus === "failed" &&
-																			"text-red-500",
+																			"text-loss",
 																		account.challengeStatus === "active" &&
 																			"text-amber-500",
 																	)}
@@ -313,11 +317,13 @@ export function AppSidebar() {
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
 						<Button
-							className="mt-3 w-full font-mono text-xs uppercase tracking-wider"
+							className="mt-3 w-full font-mono text-xs uppercase tracking-wider group relative overflow-hidden"
 							size="sm"
 						>
-							<Plus className="mr-2 h-4 w-4" />
-							Add Trade
+							<span className="relative z-10 flex items-center">
+								<Zap className="mr-2 h-4 w-4" />
+								Add Trade
+							</span>
 						</Button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="start" className="w-[200px]">
@@ -344,59 +350,69 @@ export function AppSidebar() {
 			</SidebarHeader>
 
 			<SidebarContent className="bg-sidebar">
-				<SidebarGroup>
-					<SidebarGroupLabel className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
+				<SidebarGroup className="py-4">
+					<SidebarGroupLabel className="px-3 font-mono text-[10px] text-muted-foreground/70 uppercase tracking-wider mb-2">
 						Navigation
 					</SidebarGroupLabel>
 					<SidebarGroupContent>
-						<SidebarMenu>
-							{mainNavItems.map((item) => (
-								<SidebarMenuItem key={item.href}>
-									<SidebarMenuButton
-										asChild
-										className="font-mono text-xs uppercase tracking-wider"
-										isActive={pathname === item.href}
-									>
-										<Link href={item.href}>
-											<item.icon className="h-4 w-4" />
-											<span>{item.title}</span>
-										</Link>
-									</SidebarMenuButton>
-								</SidebarMenuItem>
-							))}
+						<SidebarMenu className="gap-1 px-2">
+							{mainNavItems.map((item) => {
+								const isActive = pathname === item.href;
+								return (
+									<SidebarMenuItem key={item.href}>
+										<SidebarMenuButton
+											asChild
+											className={cn(
+												"font-mono text-xs uppercase tracking-wider rounded-lg transition-all",
+												isActive && "bg-primary/10 text-primary border border-primary/20",
+												!isActive && "hover:bg-white/[0.05]",
+											)}
+											isActive={isActive}
+										>
+											<Link href={item.href} className="flex items-center gap-3 px-3 py-2">
+												<item.icon className={cn("h-4 w-4", isActive && "text-primary")} />
+												<span>{item.title}</span>
+											</Link>
+										</SidebarMenuButton>
+									</SidebarMenuItem>
+								);
+							})}
 						</SidebarMenu>
 					</SidebarGroupContent>
 				</SidebarGroup>
 			</SidebarContent>
 
-			<SidebarFooter className="border-border border-t bg-sidebar">
-				<SidebarMenu>
+			<SidebarFooter className="border-t border-white/10 bg-gradient-to-t from-white/[0.02] to-transparent">
+				<SidebarMenu className="gap-1 p-2">
 					<SidebarMenuItem>
 						<ThemeSelector />
 					</SidebarMenuItem>
 					<SidebarMenuItem>
 						<SidebarMenuButton
 							asChild
-							className="font-mono text-xs uppercase tracking-wider"
+							className={cn(
+								"font-mono text-xs uppercase tracking-wider rounded-lg",
+								pathname === "/settings" && "bg-primary/10 text-primary border border-primary/20",
+							)}
 							isActive={pathname === "/settings"}
 						>
-							<Link href="/settings">
-								<Settings className="h-4 w-4" />
+							<Link href="/settings" className="flex items-center gap-3 px-3 py-2">
+								<Settings className={cn("h-4 w-4", pathname === "/settings" && "text-primary")} />
 								<span>Settings</span>
 							</Link>
 						</SidebarMenuButton>
 					</SidebarMenuItem>
 					<SidebarMenuItem>
-						<div className="flex items-center gap-3 px-2 py-2">
+						<div className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-white/5 bg-white/[0.02]">
 							<UserButton
 								afterSignOutUrl="/"
 								appearance={{
 									elements: {
-										avatarBox: "h-8 w-8",
+										avatarBox: "h-8 w-8 ring-2 ring-white/10",
 									},
 								}}
 							/>
-							<span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
+							<span className="font-mono text-[10px] text-muted-foreground/70 uppercase tracking-wider">
 								Account
 							</span>
 						</div>

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+	BookOpen,
 	CheckCircle2,
 	Circle,
 	Loader2,
@@ -584,19 +585,24 @@ export default function JournalPage() {
 	};
 
 	return (
-		<div className="space-y-6">
+		<div className="space-y-8">
 			{/* Header */}
-			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+			<div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
 				<div>
-					<span className="mb-2 block font-mono text-primary text-xs uppercase tracking-wider">
-						Trading Journal
-					</span>
-					<h1 className="font-bold text-3xl tracking-tight">Trades</h1>
-					<p className="mt-1 font-mono text-muted-foreground text-sm">
+					<div className="flex items-center gap-3 mb-2">
+						<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+							<BookOpen className="h-5 w-5 text-primary" />
+						</div>
+						<span className="font-mono text-primary text-xs font-medium uppercase tracking-wider">
+							Trading Journal
+						</span>
+					</div>
+					<h1 className="font-bold text-4xl tracking-tight">Trades</h1>
+					<p className="mt-2 font-mono text-muted-foreground text-sm">
 						{selectedAccount ? (
 							<>
 								Viewing{" "}
-								<span className="text-foreground">{selectedAccount.name}</span>
+								<span className="text-foreground/80 font-medium">{selectedAccount.name}</span>
 							</>
 						) : (
 							"All accounts"
@@ -613,23 +619,23 @@ export default function JournalPage() {
 			</div>
 
 			<Tabs onValueChange={(v) => setTab(v as "trades" | "trash")} value={tab}>
-				<TabsList className="border border-border bg-secondary">
+				<TabsList className="border border-white/10 bg-white/[0.03] p-1 rounded-lg">
 					<TabsTrigger
-						className="font-mono text-xs uppercase tracking-wider data-[state=active]:bg-white/10"
+						className="font-mono text-xs uppercase tracking-wider rounded-md data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-primary/20"
 						value="trades"
 					>
 						All Trades
 					</TabsTrigger>
 					<TabsTrigger
-						className="gap-2 font-mono text-xs uppercase tracking-wider data-[state=active]:bg-white/10"
+						className="gap-2 font-mono text-xs uppercase tracking-wider rounded-md data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-primary/20"
 						value="trash"
 					>
 						<Trash2 className="h-3.5 w-3.5" />
 						Trash
 						{deletedTrades && deletedTrades.length > 0 && (
 							<Badge
-								className="ml-1 h-4 px-1 font-mono text-[10px]"
-								variant="secondary"
+								className="ml-1 h-4 px-1.5 font-mono text-[10px] bg-loss/20 text-loss border-loss/30"
+								variant="outline"
 							>
 								{deletedTrades.length}
 							</Badge>
@@ -637,12 +643,12 @@ export default function JournalPage() {
 					</TabsTrigger>
 				</TabsList>
 
-				<TabsContent className="space-y-4" value="trades">
+				<TabsContent className="space-y-5 mt-5" value="trades">
 					{/* Search */}
 					<div className="relative">
-						<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+						<Search className="-translate-y-1/2 absolute top-1/2 left-3.5 h-4 w-4 text-muted-foreground" />
 						<Input
-							className="pl-9 font-mono text-xs"
+							className="pl-10 font-mono text-xs h-11 border-white/10 bg-white/[0.03] focus:border-primary/30 focus:ring-primary/20"
 							onChange={(e) => setSearch(e.target.value)}
 							placeholder="Search symbol, setup, notes..."
 							value={search}
@@ -658,7 +664,7 @@ export default function JournalPage() {
 
 					{/* Bulk Actions */}
 					{selectedTrades.size > 0 && (
-						<div className="flex items-center gap-3 rounded border border-border bg-card px-4 py-3">
+						<div className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/[0.03] px-5 py-3.5">
 							<span className="font-mono text-muted-foreground text-xs">
 								{selectedTrades.size} selected
 							</span>
@@ -735,7 +741,7 @@ export default function JournalPage() {
 					)}
 
 					{/* Trades Table */}
-					<div className="overflow-hidden rounded border border-border bg-card">
+					<div className="overflow-hidden rounded-lg border border-white/10 bg-gradient-to-br from-white/[0.03] to-transparent">
 						{isLoading || columnsLoading ? (
 							<div className="space-y-3 p-6">
 								{[...Array(5)].map((_, i) => (
@@ -746,19 +752,19 @@ export default function JournalPage() {
 								))}
 							</div>
 						) : allTrades.length === 0 ? (
-							<div className="flex flex-col items-center justify-center py-16 text-center">
-								<div className="mb-4 flex h-16 w-16 items-center justify-center rounded border border-border bg-card">
-									<Plus className="h-6 w-6 text-muted-foreground/50" />
+							<div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+								<div className="mb-5 flex h-16 w-16 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03]">
+									<Plus className="h-7 w-7 text-muted-foreground/40" />
 								</div>
-								<h3 className="mb-1 font-medium">No trades found</h3>
-								<p className="mb-4 font-mono text-muted-foreground text-xs">
+								<h3 className="mb-2 font-semibold text-lg">No trades found</h3>
+								<p className="mb-5 font-mono text-muted-foreground text-xs max-w-[300px]">
 									{Object.values(filters).some(
 										(v) =>
 											(typeof v === "string" && v !== "" && v !== "all") ||
 											(Array.isArray(v) && v.length > 0),
 									)
-										? "Try adjusting your filters"
-										: "Start logging your trades to build your journal"}
+										? "Try adjusting your filters to see more results"
+										: "Start logging your trades to build your trading journal"}
 								</p>
 								{!Object.values(filters).some(
 									(v) =>
@@ -855,9 +861,9 @@ export default function JournalPage() {
 					</div>
 				</TabsContent>
 
-				<TabsContent className="space-y-4" value="trash">
+				<TabsContent className="space-y-5 mt-5" value="trash">
 					<div className="flex items-center justify-between">
-						<p className="font-mono text-muted-foreground text-xs">
+						<p className="font-mono text-muted-foreground/80 text-xs">
 							Trades in trash can be restored or permanently deleted.
 						</p>
 						{deletedTrades && deletedTrades.length > 0 && (
@@ -882,22 +888,22 @@ export default function JournalPage() {
 							</Button>
 						)}
 					</div>
-					<div className="overflow-hidden rounded border border-border bg-card">
+					<div className="overflow-hidden rounded-lg border border-white/10 bg-gradient-to-br from-white/[0.03] to-transparent">
 						{loadingDeleted ? (
 							<div className="space-y-3 p-6">
 								{[...Array(3)].map((_, i) => (
 									<Skeleton
-										className="h-12 w-full"
+										className="h-12 w-full rounded-md"
 										key={`skeleton-${i.toString()}`}
 									/>
 								))}
 							</div>
 						) : !deletedTrades || deletedTrades.length === 0 ? (
-							<div className="flex flex-col items-center justify-center py-12 text-center">
-								<div className="mb-3 flex h-12 w-12 items-center justify-center rounded border border-border bg-card">
-									<Trash2 className="h-5 w-5 text-muted-foreground/30" />
+							<div className="flex flex-col items-center justify-center py-16 text-center">
+								<div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03]">
+									<Trash2 className="h-6 w-6 text-muted-foreground/40" />
 								</div>
-								<h3 className="mb-1 font-medium">Trash is empty</h3>
+								<h3 className="mb-2 font-semibold">Trash is empty</h3>
 								<p className="font-mono text-muted-foreground text-xs">
 									Deleted trades will appear here
 								</p>

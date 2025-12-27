@@ -226,13 +226,18 @@ export default function AIInsightsPage() {
 	return (
 		<div className="flex h-[calc(100vh-8rem)] flex-col space-y-6">
 			{/* Header */}
-			<div className="flex items-center justify-between">
+			<div className="flex items-start justify-between">
 				<div>
-					<span className="mb-2 block font-mono text-primary text-xs uppercase tracking-wider">
-						Analysis
-					</span>
-					<h1 className="font-bold text-3xl tracking-tight">AI Insights</h1>
-					<p className="mt-1 font-mono text-muted-foreground text-sm">
+					<div className="flex items-center gap-3 mb-2">
+						<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
+							<Brain className="h-5 w-5 text-accent" />
+						</div>
+						<span className="font-mono text-accent text-xs font-medium uppercase tracking-wider">
+							Analysis
+						</span>
+					</div>
+					<h1 className="font-bold text-4xl tracking-tight">AI Insights</h1>
+					<p className="mt-2 font-mono text-muted-foreground text-sm">
 						Ask questions about your trading performance
 					</p>
 				</div>
@@ -250,14 +255,16 @@ export default function AIInsightsPage() {
 
 			{/* API Key Notice */}
 			{hasApiKey === false && (
-				<div className="flex items-center justify-between rounded border border-primary/30 bg-primary/5 p-4">
+				<div className="flex items-center justify-between rounded-lg border border-accent/20 bg-accent/[0.05] p-4">
 					<div className="flex items-center gap-3">
-						<Sparkles className="h-5 w-5 text-primary" />
+						<div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/10">
+							<Sparkles className="h-4 w-4 text-accent" />
+						</div>
 						<div>
 							<p className="font-medium font-mono text-xs uppercase tracking-wider">
 								Using Local Analysis
 							</p>
-							<p className="font-mono text-[10px] text-muted-foreground">
+							<p className="font-mono text-[10px] text-muted-foreground/80">
 								Add your AI API key in settings for more advanced insights
 							</p>
 						</div>
@@ -277,26 +284,26 @@ export default function AIInsightsPage() {
 			)}
 
 			{/* Terminal Chat Container */}
-			<div className="flex flex-1 flex-col overflow-hidden rounded border border-border bg-card">
+			<div className="flex flex-1 flex-col overflow-hidden rounded-lg border border-white/10 bg-gradient-to-br from-white/[0.03] to-transparent">
 				{/* Terminal header */}
-				<div className="flex items-center justify-between border-border border-b bg-secondary px-4 py-2">
-					<div className="flex items-center gap-2">
-						<div className="h-2.5 w-2.5 rounded-full bg-loss/60" />
-						<div className="h-2.5 w-2.5 rounded-full bg-breakeven/60" />
-						<div className="h-2.5 w-2.5 rounded-full bg-profit/60" />
+				<div className="flex items-center justify-between border-b border-white/10 bg-white/[0.02] px-4 py-2.5">
+					<div className="flex items-center gap-1.5">
+						<div className="h-2.5 w-2.5 rounded-full bg-loss/50 shadow-[0_0_6px_rgba(255,59,59,0.5)]" />
+						<div className="h-2.5 w-2.5 rounded-full bg-breakeven/50 shadow-[0_0_6px_rgba(255,215,0,0.5)]" />
+						<div className="h-2.5 w-2.5 rounded-full bg-profit/50 shadow-[0_0_6px_rgba(0,255,136,0.5)]" />
 					</div>
-					<span className="font-mono text-[10px] text-muted-foreground">
+					<span className="font-mono text-[10px] text-muted-foreground/70">
 						ai-insights-terminal
 					</span>
 					<div className="w-14" />
 				</div>
 
 				{/* Chat Content */}
-				<ScrollArea className="flex-1 p-4" ref={scrollRef}>
+				<ScrollArea className="flex-1 p-5" ref={scrollRef}>
 					{messages.length === 0 ? (
-						<div className="flex h-full flex-col items-center justify-center text-center">
-							<div className="mb-4 flex h-16 w-16 items-center justify-center rounded border border-border bg-secondary">
-								<Brain className="h-8 w-8 text-primary" />
+						<div className="flex h-full flex-col items-center justify-center text-center py-8">
+							<div className="mb-5 flex h-16 w-16 items-center justify-center rounded-xl border border-accent/20 bg-accent/[0.05]">
+								<Brain className="h-7 w-7 text-accent" />
 							</div>
 							<h2 className="mb-2 font-semibold text-xl">
 								Query your trading data
@@ -308,7 +315,7 @@ export default function AIInsightsPage() {
 							<div className="flex flex-wrap justify-center gap-2">
 								{EXAMPLE_QUERIES.map((query) => (
 									<button
-										className="rounded border border-border bg-secondary px-3 py-1.5 font-mono text-[10px] text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
+										className="rounded-lg border border-white/10 bg-white/[0.03] px-3.5 py-2 font-mono text-[10px] text-muted-foreground transition-all hover:border-accent/30 hover:bg-accent/[0.05] hover:text-accent"
 										key={query}
 										onClick={() => setInput(query)}
 										type="button"
@@ -379,9 +386,9 @@ export default function AIInsightsPage() {
 										→
 									</span>
 									<div className="flex items-center gap-2">
-										<Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+										<Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
 										<span className="font-mono text-muted-foreground text-sm">
-											Analyzing trades<span className="animate-blink">_</span>
+											Analyzing trades<span className="animate-pulse text-accent">_</span>
 										</span>
 									</div>
 								</div>
@@ -391,7 +398,7 @@ export default function AIInsightsPage() {
 				</ScrollArea>
 
 				{/* Input */}
-				<div className="border-border border-t bg-secondary p-4">
+				<div className="border-t border-white/10 bg-white/[0.02] p-4">
 					<form
 						className="flex gap-3"
 						onSubmit={(e) => {
@@ -399,11 +406,11 @@ export default function AIInsightsPage() {
 							handleSend();
 						}}
 					>
-						<span className="mt-2 font-mono text-muted-foreground text-sm">
+						<span className="mt-2 font-mono text-accent text-sm">
 							$
 						</span>
 						<Input
-							className="flex-1 border-border bg-transparent font-mono text-sm"
+							className="flex-1 border-white/10 bg-transparent font-mono text-sm focus:border-accent/30 focus:ring-accent/20"
 							disabled={isLoading}
 							onChange={(e) => setInput(e.target.value)}
 							placeholder="Enter query..."
