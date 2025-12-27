@@ -312,6 +312,7 @@ export default function ImportPage() {
 				fees?: string;
 				notes?: string;
 				externalId?: string;
+				profit?: string; // Broker-reported P&L
 			}>;
 
 			if (parsedTrades.length > 0) {
@@ -332,6 +333,7 @@ export default function ImportPage() {
 					fees: trade.fees || undefined,
 					notes: trade.comment || undefined,
 					externalId: trade.externalId || undefined,
+					profit: trade.profit || undefined, // Broker-reported P&L
 				}));
 			} else {
 				// Using manual mapping

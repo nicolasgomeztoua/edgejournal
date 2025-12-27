@@ -11,7 +11,6 @@ import {
 	sql,
 } from "drizzle-orm";
 import { z } from "zod";
-import { calculatePnL } from "@/lib/symbols";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import {
 	tradeExecutions,
@@ -28,9 +27,11 @@ const createTradeSchema = z.object({
 	entryPrice: z.string(),
 	entryTime: z.string().datetime(),
 	quantity: z.string(),
-	// Exit fields (for closed trades / imports)
+	// Exit fields (for closed trades)
 	exitPrice: z.string().optional(),
 	exitTime: z.string().datetime().optional(),
+	// P&L (user-provided for closed trades)
+	realizedPnl: z.string().optional(), // User provides PnL directly
 	// Risk management
 	stopLoss: z.string().optional(),
 	takeProfit: z.string().optional(),
@@ -116,6 +117,7 @@ const addExecutionSchema = z.object({
 	executedAt: z.string().datetime(),
 	fees: z.string().optional(),
 	notes: z.string().optional(),
+	realizedPnl: z.string().optional(), // User provides PnL for exit/scale_out
 });
 
 // Batch import schema for CSV imports
@@ -135,6 +137,7 @@ const batchImportTradeSchema = z.object({
 	fees: z.string().optional(),
 	notes: z.string().optional(),
 	externalId: z.string().optional(),
+	profit: z.string().optional(), // Broker-reported profit (use this instead of calculating)
 });
 
 const batchImportSchema = z.object({
@@ -344,35 +347,28 @@ export const tradesRouter = createTRPCRouter({
 		}),
 
 	// Create a new trade
+	// User provides PnL directly for closed trades (we don't calculate it)
 	create: protectedProcedure
 		.input(createTradeSchema)
 		.mutation(async ({ ctx, input }) => {
-			const { tagIds, externalId, ...tradeData } = input;
+			const { tagIds, externalId, realizedPnl: inputPnl, ...tradeData } = input;
 
 			// Determine if trade is closed (has exit price)
 			const isClosed = !!input.exitPrice && !!input.exitTime;
 
-			// Calculate P&L if trade is closed
-			let realizedPnl: string | undefined;
-			let netPnl: string | undefined;
+			// Use user-provided PnL
+			const fees = parseFloat(input.fees || "0");
+			const realizedPnl = inputPnl || null;
+			const netPnl =
+				realizedPnl !== null
+					? (parseFloat(realizedPnl) - fees).toFixed(2)
+					: null;
+
+			// Check if SL/TP was hit based on exit price
 			let stopLossHit = false;
 			let takeProfitHit = false;
 
 			if (isClosed && input.exitPrice) {
-				const pnl = calculatePnL(
-					input.symbol,
-					input.instrumentType,
-					parseFloat(input.entryPrice),
-					parseFloat(input.exitPrice),
-					parseFloat(input.quantity),
-					input.direction,
-				);
-				realizedPnl = pnl.toFixed(2);
-
-				const fees = parseFloat(input.fees || "0");
-				netPnl = (pnl - fees).toFixed(2);
-
-				// Check if SL/TP was hit
 				if (input.stopLoss) {
 					const sl = parseFloat(input.stopLoss);
 					const exit = parseFloat(input.exitPrice);
@@ -424,37 +420,30 @@ export const tradesRouter = createTRPCRouter({
 		}),
 
 	// Batch import trades (much faster for CSV imports)
+	// Uses broker-reported profit instead of calculating PnL ourselves
 	batchImport: protectedProcedure
 		.input(batchImportSchema)
 		.mutation(async ({ ctx, input }) => {
 			const { accountId, trades: tradesToImport } = input;
 
-			// Prepare all trade records with P&L calculations
+			// Prepare all trade records using broker-provided profit
 			const tradeRecords = tradesToImport.map((trade) => {
 				const isClosed = !!trade.exitPrice && !!trade.exitTime;
 
-				let realizedPnl: string | undefined;
-				let netPnl: string | undefined;
+				// Use broker-reported profit directly
+				const fees = parseFloat(trade.fees || "0");
+				const realizedPnl = trade.profit || null;
+				const netPnl =
+					realizedPnl !== null
+						? (parseFloat(realizedPnl) - fees).toFixed(2)
+						: null;
 
-				// Use provided SL/TP hit values if available (from Orders CSV), otherwise calculate
+				// Use provided SL/TP hit values if available (from Orders CSV), otherwise determine from exit price
 				let stopLossHit = trade.stopLossHit ?? false;
 				let takeProfitHit = trade.takeProfitHit ?? false;
 
 				if (isClosed && trade.exitPrice) {
-					const pnl = calculatePnL(
-						trade.symbol,
-						trade.instrumentType,
-						parseFloat(trade.entryPrice),
-						parseFloat(trade.exitPrice),
-						parseFloat(trade.quantity),
-						trade.direction,
-					);
-					realizedPnl = pnl.toFixed(2);
-
-					const fees = parseFloat(trade.fees || "0");
-					netPnl = (pnl - fees).toFixed(2);
-
-					// Only calculate SL/TP hit if not already provided
+					// Only determine SL/TP hit if not already provided
 					if (trade.stopLossHit === undefined && trade.stopLoss) {
 						const sl = parseFloat(trade.stopLoss);
 						const exit = parseFloat(trade.exitPrice);
@@ -513,6 +502,9 @@ export const tradesRouter = createTRPCRouter({
 		}),
 
 	// Update a trade
+	// Note: For imported trades, core fields (price, quantity, PnL) should be locked on the frontend.
+	// PnL is NOT recalculated - we trust the broker's reported PnL for imports,
+	// and for manual trades, users provide PnL directly.
 	update: protectedProcedure
 		.input(updateTradeSchema)
 		.mutation(async ({ ctx, input }) => {
@@ -527,74 +519,10 @@ export const tradesRouter = createTRPCRouter({
 				throw new Error("Trade not found");
 			}
 
-			// Determine final values (use input if provided, otherwise use existing)
-			const finalDirection = updateData.direction ?? existingTrade.direction;
-			const finalEntryPrice = updateData.entryPrice ?? existingTrade.entryPrice;
-			const finalQuantity = updateData.quantity ?? existingTrade.quantity;
-			const finalExitPrice = updateData.exitPrice ?? existingTrade.exitPrice;
-			const finalFees = updateData.fees ?? existingTrade.fees;
-			const finalStopLoss = updateData.stopLoss ?? existingTrade.stopLoss;
-			const finalTakeProfit = updateData.takeProfit ?? existingTrade.takeProfit;
-
-			// Recalculate P&L if trade is closed and has exit price
-			let recalculatedPnl: {
-				realizedPnl?: string;
-				netPnl?: string;
-				stopLossHit?: boolean;
-				takeProfitHit?: boolean;
-			} = {};
-
-			// Get symbol and instrument type (use updated values if provided)
-			const finalSymbol = updateData.symbol ?? existingTrade.symbol;
-			const finalInstrumentType =
-				updateData.instrumentType ?? existingTrade.instrumentType;
-
-			if (existingTrade.status === "closed" && finalExitPrice) {
-				const entryPrice = parseFloat(finalEntryPrice);
-				const exitPrice = parseFloat(finalExitPrice);
-				const quantity = parseFloat(finalQuantity);
-				const fees = parseFloat(finalFees ?? "0");
-
-				// Use proper contract/lot size calculation
-				const realizedPnl = calculatePnL(
-					finalSymbol,
-					finalInstrumentType,
-					entryPrice,
-					exitPrice,
-					quantity,
-					finalDirection,
-				);
-
-				const netPnl = realizedPnl - fees;
-
-				// Check if SL/TP was hit
-				const stopLossHit =
-					finalStopLoss &&
-					((finalDirection === "long" &&
-						exitPrice <= parseFloat(finalStopLoss)) ||
-						(finalDirection === "short" &&
-							exitPrice >= parseFloat(finalStopLoss)));
-
-				const takeProfitHit =
-					finalTakeProfit &&
-					((finalDirection === "long" &&
-						exitPrice >= parseFloat(finalTakeProfit)) ||
-						(finalDirection === "short" &&
-							exitPrice <= parseFloat(finalTakeProfit)));
-
-				recalculatedPnl = {
-					realizedPnl: realizedPnl.toString(),
-					netPnl: netPnl.toString(),
-					stopLossHit: Boolean(stopLossHit),
-					takeProfitHit: Boolean(takeProfitHit),
-				};
-			}
-
 			const [updated] = await ctx.db
 				.update(trades)
 				.set({
 					...updateData,
-					...recalculatedPnl,
 					exitTime: updateData.exitTime
 						? new Date(updateData.exitTime)
 						: undefined,
@@ -606,6 +534,7 @@ export const tradesRouter = createTRPCRouter({
 		}),
 
 	// Close a trade
+	// User provides the realized PnL directly (we don't calculate it)
 	close: protectedProcedure
 		.input(
 			z.object({
@@ -613,6 +542,7 @@ export const tradesRouter = createTRPCRouter({
 				exitPrice: z.string(),
 				exitTime: z.string().datetime(),
 				fees: z.string().optional(),
+				realizedPnl: z.string(), // User provides PnL directly
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
@@ -624,24 +554,12 @@ export const tradesRouter = createTRPCRouter({
 				throw new Error("Trade not found");
 			}
 
-			// Calculate P&L with proper contract/lot sizing
-			const entryPrice = parseFloat(existingTrade.entryPrice);
-			const exitPrice = parseFloat(input.exitPrice);
-			const quantity = parseFloat(existingTrade.quantity);
 			const fees = parseFloat(input.fees ?? "0");
-
-			const realizedPnl = calculatePnL(
-				existingTrade.symbol,
-				existingTrade.instrumentType,
-				entryPrice,
-				exitPrice,
-				quantity,
-				existingTrade.direction,
-			);
-
+			const realizedPnl = parseFloat(input.realizedPnl);
 			const netPnl = realizedPnl - fees;
+			const exitPrice = parseFloat(input.exitPrice);
 
-			// Check if SL/TP was hit
+			// Check if SL/TP was hit based on exit price
 			const stopLossHit =
 				existingTrade.stopLoss &&
 				((existingTrade.direction === "long" &&
@@ -951,6 +869,7 @@ export const tradesRouter = createTRPCRouter({
 		}),
 
 	// Add a new execution (partial exit, scale in/out)
+	// User provides PnL directly for exit/scale_out (we don't calculate it)
 	addExecution: protectedProcedure
 		.input(addExecutionSchema)
 		.mutation(async ({ ctx, input }) => {
@@ -966,22 +885,13 @@ export const tradesRouter = createTRPCRouter({
 				throw new Error("Trade not found");
 			}
 
-			// Calculate P&L for this execution if it's an exit
-			let realizedPnl: string | undefined;
-			if (
-				input.executionType === "exit" ||
-				input.executionType === "scale_out"
-			) {
-				const pnl = calculatePnL(
-					trade.symbol,
-					trade.instrumentType,
-					parseFloat(trade.entryPrice),
-					parseFloat(input.price),
-					parseFloat(input.quantity),
-					trade.direction,
-				);
-				realizedPnl = pnl.toFixed(2);
-			}
+			// Use user-provided PnL for exits
+			const realizedPnl =
+				(input.executionType === "exit" ||
+					input.executionType === "scale_out") &&
+				input.realizedPnl
+					? input.realizedPnl
+					: undefined;
 
 			const [execution] = await ctx.db
 				.insert(tradeExecutions)

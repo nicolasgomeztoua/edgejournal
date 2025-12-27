@@ -12,7 +12,9 @@ import {
 	ChevronRight,
 	Clock,
 	ExternalLink,
+	Import,
 	Loader2,
+	Lock,
 	Trash2,
 	TrendingDown,
 	TrendingUp,
@@ -100,16 +102,24 @@ function Section({
 	label,
 	children,
 	className,
+	locked,
 }: {
 	label: string;
 	children: React.ReactNode;
 	className?: string;
+	locked?: boolean;
 }) {
 	return (
 		<div className={className}>
 			<h2 className="mb-3 flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider">
 				<span className="h-px w-3 bg-primary/40" />
 				<span className="text-primary/80">{label}</span>
+				{locked && (
+					<span className="flex items-center gap-1 text-muted-foreground/60">
+						<Lock className="h-3 w-3" />
+						<span className="text-[9px]">Imported</span>
+					</span>
+				)}
 			</h2>
 			<div className="rounded border-y border-y-white/5 border-r border-r-white/5 border-l-2 border-l-primary/20 bg-white/[0.01] p-5">
 				{children}
@@ -271,6 +281,7 @@ export default function TradeDetailPage() {
 		exitDate: new Date().toISOString().split("T")[0],
 		exitTime: new Date().toTimeString().slice(0, 5),
 		fees: "",
+		realizedPnl: "",
 	});
 
 	const utils = api.useUtils();
@@ -393,6 +404,10 @@ export default function TradeDetailPage() {
 	);
 
 	const handleCloseTrade = () => {
+		if (!closeData.realizedPnl) {
+			toast.error("Please enter the realized P&L");
+			return;
+		}
 		const exitTime = new Date(
 			`${closeData.exitDate}T${closeData.exitTime}`,
 		).toISOString();
@@ -401,6 +416,7 @@ export default function TradeDetailPage() {
 			exitPrice: closeData.exitPrice,
 			exitTime,
 			fees: closeData.fees || undefined,
+			realizedPnl: closeData.realizedPnl,
 		});
 	};
 
@@ -489,6 +505,7 @@ export default function TradeDetailPage() {
 	}
 
 	const sizeLabel = trade.instrumentType === "futures" ? "cts" : "lots";
+	const isImported = trade.importSource === "csv";
 
 	return (
 		<div className="mx-auto w-[95%] max-w-none space-y-8 py-6">
@@ -616,6 +633,15 @@ export default function TradeDetailPage() {
 								)}
 								{trade.status}
 							</Badge>
+							{isImported && (
+								<Badge
+									className="border-accent/30 font-mono text-[10px] text-accent uppercase"
+									variant="outline"
+								>
+									<Import className="mr-1 h-3 w-3" />
+									Imported
+								</Badge>
+							)}
 						</div>
 						<p className="mt-0.5 font-mono text-muted-foreground text-xs">
 							{new Date(trade.entryTime).toLocaleDateString("en-US", {
@@ -739,10 +765,11 @@ export default function TradeDetailPage() {
 			{/* ================================================================
 			    POSITION
 			    ================================================================ */}
-			<Section label="Position">
+			<Section label="Position" locked={isImported}>
 				<div className="grid grid-cols-3 gap-4">
 					<EditableField
 						align="right"
+						disabled={isImported}
 						label="Entry Price"
 						onChange={(v) => updateField("entryPrice", v)}
 						type="number"
@@ -750,6 +777,7 @@ export default function TradeDetailPage() {
 					/>
 					<EditableField
 						align="right"
+						disabled={isImported}
 						label="Exit Price"
 						onChange={(v) => updateField("exitPrice", v)}
 						placeholder={trade.status === "open" ? "Open" : "—"}
@@ -758,6 +786,7 @@ export default function TradeDetailPage() {
 					/>
 					<EditableField
 						align="right"
+						disabled={isImported}
 						label="Size"
 						onChange={(v) => updateField("quantity", v)}
 						suffix={` ${sizeLabel}`}
@@ -789,6 +818,7 @@ export default function TradeDetailPage() {
 						/>
 						<EditableField
 							align="right"
+							disabled={isImported}
 							label="Fees"
 							onChange={(v) => updateField("fees", v)}
 							prefix="$"
@@ -1027,24 +1057,45 @@ export default function TradeDetailPage() {
 								/>
 							</div>
 						</div>
-						<div className="space-y-1">
-							<label
-								className="font-mono text-[11px] text-muted-foreground uppercase"
-								htmlFor="close-fees"
-							>
-								Fees (optional)
-							</label>
-							<Input
-								className="font-mono"
-								id="close-fees"
-								onChange={(e) =>
-									setCloseData({ ...closeData, fees: e.target.value })
-								}
-								placeholder="0.00"
-								step="any"
-								type="number"
-								value={closeData.fees}
-							/>
+						<div className="grid grid-cols-2 gap-4">
+							<div className="space-y-1">
+								<label
+									className="font-mono text-[11px] text-muted-foreground uppercase"
+									htmlFor="close-pnl"
+								>
+									Realized P&L
+								</label>
+								<Input
+									className="font-mono"
+									id="close-pnl"
+									onChange={(e) =>
+										setCloseData({ ...closeData, realizedPnl: e.target.value })
+									}
+									placeholder="e.g. 150.00 or -75.50"
+									step="any"
+									type="number"
+									value={closeData.realizedPnl}
+								/>
+							</div>
+							<div className="space-y-1">
+								<label
+									className="font-mono text-[11px] text-muted-foreground uppercase"
+									htmlFor="close-fees"
+								>
+									Fees (optional)
+								</label>
+								<Input
+									className="font-mono"
+									id="close-fees"
+									onChange={(e) =>
+										setCloseData({ ...closeData, fees: e.target.value })
+									}
+									placeholder="0.00"
+									step="any"
+									type="number"
+									value={closeData.fees}
+								/>
+							</div>
 						</div>
 					</div>
 					<DialogFooter>
@@ -1052,7 +1103,7 @@ export default function TradeDetailPage() {
 							Cancel
 						</Button>
 						<Button
-							disabled={!closeData.exitPrice || closeTrade.isPending}
+							disabled={!closeData.exitPrice || !closeData.realizedPnl || closeTrade.isPending}
 							onClick={handleCloseTrade}
 						>
 							{closeTrade.isPending && (

@@ -71,6 +71,7 @@ export default function NewTradePage() {
 	const [stopLoss, setStopLoss] = useState("");
 	const [takeProfit, setTakeProfit] = useState("");
 	const [fees, setFees] = useState("");
+	const [realizedPnl, setRealizedPnl] = useState("");
 	const [setupType, setSetupType] = useState("");
 	const [emotionalState, setEmotionalState] = useState<
 		| "confident"
@@ -87,31 +88,12 @@ export default function NewTradePage() {
 	);
 
 	const createTrade = api.trades.create.useMutation({
-		onSuccess: (trade) => {
-			if (!isStillOpen && exitPrice && trade) {
-				closeTrade.mutate({
-					id: trade.id,
-					exitPrice,
-					exitTime: new Date(`${exitDate}T${exitTime}`).toISOString(),
-					fees: fees || undefined,
-				});
-			} else {
-				toast.success("Trade logged successfully");
-				router.push("/journal");
-			}
-		},
-		onError: (error) => {
-			toast.error(error.message || "Failed to create trade");
-		},
-	});
-
-	const closeTrade = api.trades.close.useMutation({
 		onSuccess: () => {
 			toast.success("Trade logged successfully");
 			router.push("/journal");
 		},
 		onError: (error) => {
-			toast.error(error.message || "Failed to close trade");
+			toast.error(error.message || "Failed to create trade");
 		},
 	});
 
@@ -133,6 +115,11 @@ export default function NewTradePage() {
 			return;
 		}
 
+		if (!isStillOpen && !realizedPnl) {
+			toast.error("Please enter the realized P&L for this trade");
+			return;
+		}
+
 		const entryDateTime = new Date(`${entryDate}T${entryTime}`).toISOString();
 		const exitDateTime =
 			!isStillOpen && exitDate && exitTime
@@ -150,6 +137,8 @@ export default function NewTradePage() {
 			quantity,
 			stopLoss: stopLoss || undefined,
 			takeProfit: takeProfit || undefined,
+			fees: !isStillOpen && fees ? fees : undefined,
+			realizedPnl: !isStillOpen && realizedPnl ? realizedPnl : undefined,
 			setupType: setupType || undefined,
 			emotionalState,
 			notes: notes || undefined,
@@ -159,7 +148,7 @@ export default function NewTradePage() {
 
 	const symbols =
 		instrumentType === "futures" ? FUTURES_SYMBOLS : FOREX_SYMBOLS;
-	const isPending = createTrade.isPending || closeTrade.isPending;
+	const isPending = createTrade.isPending;
 
 	return (
 		<div className="mx-auto max-w-2xl space-y-6">
@@ -402,6 +391,22 @@ export default function NewTradePage() {
 
 								<div className="space-y-2">
 									<Label className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
+										Realized P&L <span className="text-loss">*</span>
+									</Label>
+									<Input
+										className="font-mono text-sm"
+										onChange={(e) => setRealizedPnl(e.target.value)}
+										placeholder="e.g. 150.00 or -75.50"
+										step="any"
+										type="number"
+										value={realizedPnl}
+									/>
+								</div>
+							</div>
+
+							<div className="grid gap-4 sm:grid-cols-2">
+								<div className="space-y-2">
+									<Label className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 										Fees / Commission
 									</Label>
 									<Input
@@ -413,9 +418,7 @@ export default function NewTradePage() {
 										value={fees}
 									/>
 								</div>
-							</div>
 
-							<div className="grid gap-4 sm:grid-cols-2">
 								<div className="space-y-2">
 									<Label className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 										Exit Date <span className="text-loss">*</span>
@@ -427,18 +430,18 @@ export default function NewTradePage() {
 										value={exitDate}
 									/>
 								</div>
+							</div>
 
-								<div className="space-y-2">
-									<Label className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-										Exit Time <span className="text-loss">*</span>
-									</Label>
-									<Input
-										className="font-mono text-sm"
-										onChange={(e) => setExitTime(e.target.value)}
-										type="time"
-										value={exitTime}
-									/>
-								</div>
+							<div className="space-y-2">
+								<Label className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
+									Exit Time <span className="text-loss">*</span>
+								</Label>
+								<Input
+									className="w-full font-mono text-sm sm:w-1/2"
+									onChange={(e) => setExitTime(e.target.value)}
+									type="time"
+									value={exitTime}
+								/>
 							</div>
 						</div>
 					)}
