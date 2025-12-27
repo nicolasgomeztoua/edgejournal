@@ -184,7 +184,7 @@ export default function NewTradePage() {
 			<form className="space-y-6" onSubmit={handleSubmit}>
 				{/* Account Selection */}
 				{accounts.length > 0 && (
-					<div className="rounded border border-white/10 bg-white/[0.02] p-4">
+					<div className="rounded border border-border bg-card p-4">
 						<div className="mb-3 flex items-center gap-2">
 							<Wallet className="h-4 w-4 text-muted-foreground" />
 							<span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
@@ -216,7 +216,7 @@ export default function NewTradePage() {
 				)}
 
 				{/* Instrument Type */}
-				<div className="space-y-4 rounded border border-white/10 bg-white/[0.02] p-4">
+				<div className="space-y-4 rounded border border-border bg-card p-4">
 					<div className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 						Instrument
 					</div>
@@ -232,7 +232,7 @@ export default function NewTradePage() {
 								}}
 								value={instrumentType}
 							>
-								<TabsList className="grid w-full grid-cols-2 border border-white/5 bg-white/[0.02]">
+								<TabsList className="grid w-full grid-cols-2 border border-border bg-secondary">
 									<TabsTrigger
 										className="font-mono text-xs uppercase tracking-wider data-[state=active]:bg-white/10"
 										value="futures"
@@ -274,7 +274,7 @@ export default function NewTradePage() {
 				</div>
 
 				{/* Entry Details */}
-				<div className="space-y-4 rounded border border-white/10 bg-white/[0.02] p-4">
+				<div className="space-y-4 rounded border border-border bg-card p-4">
 					<div className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 						Entry
 					</div>
@@ -287,7 +287,7 @@ export default function NewTradePage() {
 								onValueChange={(v) => setDirection(v as "long" | "short")}
 								value={direction}
 							>
-								<TabsList className="grid w-full grid-cols-2 border border-white/5 bg-white/[0.02]">
+								<TabsList className="grid w-full grid-cols-2 border border-border bg-secondary">
 									<TabsTrigger
 										className="font-mono text-xs uppercase tracking-wider data-[state=active]:bg-profit/20 data-[state=active]:text-profit"
 										value="long"
@@ -364,7 +364,7 @@ export default function NewTradePage() {
 				</div>
 
 				{/* Exit Details */}
-				<div className="rounded border border-white/10 bg-white/[0.02] p-4">
+				<div className="rounded border border-border bg-card p-4">
 					<div className="flex items-center justify-between pb-4">
 						<div className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 							Exit
@@ -445,7 +445,7 @@ export default function NewTradePage() {
 				</div>
 
 				{/* Risk Management */}
-				<div className="space-y-4 rounded border border-white/10 bg-white/[0.02] p-4">
+				<div className="space-y-4 rounded border border-border bg-card p-4">
 					<div className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 						Risk Management
 					</div>
@@ -481,7 +481,7 @@ export default function NewTradePage() {
 				</div>
 
 				{/* Trade Context */}
-				<div className="space-y-4 rounded border border-white/10 bg-white/[0.02] p-4">
+				<div className="space-y-4 rounded border border-border bg-card p-4">
 					<div className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 						Trade Context
 					</div>

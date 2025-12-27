@@ -86,7 +86,7 @@ const updateTradeSchema = z.object({
 	notes: z.string().optional(),
 	status: z.enum(["open", "closed"]).optional(),
 	// Trailing stop fields
-	trailedStopLoss: z.string().optional(),
+	trailedStopLoss: z.string().nullish(),
 	wasTrailed: z.boolean().optional(),
 	// Exit reason
 	exitReason: z

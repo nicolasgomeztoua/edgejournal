@@ -417,7 +417,7 @@ export default function ImportPage() {
 														"complete",
 													].indexOf(step) > i
 												? "border-profit/50 bg-profit/20 text-profit"
-												: "border-white/10 bg-white/[0.02] text-muted-foreground"
+												: "border-border bg-secondary text-muted-foreground"
 									}`}
 								>
 									{[
@@ -452,8 +452,8 @@ export default function ImportPage() {
 
 			{/* Step: Select Account */}
 			{step === "select-account" && (
-				<div className="overflow-hidden rounded border border-white/10 bg-black/50">
-					<div className="flex items-center justify-between border-white/5 border-b bg-white/[0.02] px-4 py-2">
+				<div className="overflow-hidden rounded border border-border bg-card">
+					<div className="flex items-center justify-between border-border border-b bg-secondary px-4 py-2">
 						<div className="flex items-center gap-2">
 							<div className="h-2.5 w-2.5 rounded-full bg-loss/60" />
 							<div className="h-2.5 w-2.5 rounded-full bg-breakeven/60" />
@@ -464,7 +464,7 @@ export default function ImportPage() {
 						</span>
 						<div className="w-14" />
 					</div>
-					<div className="border-white/5 border-b px-6 py-4">
+					<div className="border-border border-b px-6 py-4">
 						<h3 className="font-medium">Select Account</h3>
 						<p className="font-mono text-[10px] text-muted-foreground">
 							Choose which trading account to import trades into
@@ -801,8 +801,8 @@ export default function ImportPage() {
 
 			{/* Step: Complete */}
 			{step === "complete" && (
-				<div className="overflow-hidden rounded border border-white/10 bg-black/50">
-					<div className="flex items-center justify-between border-white/5 border-b bg-white/[0.02] px-4 py-2">
+				<div className="overflow-hidden rounded border border-border bg-card">
+					<div className="flex items-center justify-between border-border border-b bg-secondary px-4 py-2">
 						<div className="flex items-center gap-2">
 							<div className="h-2.5 w-2.5 rounded-full bg-loss/60" />
 							<div className="h-2.5 w-2.5 rounded-full bg-breakeven/60" />

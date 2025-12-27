@@ -611,7 +611,7 @@ export default function JournalPage() {
 			</div>
 
 			<Tabs onValueChange={(v) => setTab(v as "trades" | "trash")} value={tab}>
-				<TabsList className="border border-white/5 bg-white/[0.02]">
+				<TabsList className="border border-border bg-secondary">
 					<TabsTrigger
 						className="font-mono text-xs uppercase tracking-wider data-[state=active]:bg-white/10"
 						value="trades"
@@ -656,7 +656,7 @@ export default function JournalPage() {
 
 					{/* Bulk Actions */}
 					{selectedTrades.size > 0 && (
-						<div className="flex items-center gap-3 rounded border border-white/10 bg-white/[0.02] px-4 py-3">
+						<div className="flex items-center gap-3 rounded border border-border bg-card px-4 py-3">
 							<span className="font-mono text-muted-foreground text-xs">
 								{selectedTrades.size} selected
 							</span>
@@ -733,7 +733,7 @@ export default function JournalPage() {
 					)}
 
 					{/* Trades Table */}
-					<div className="overflow-hidden rounded border border-white/5 bg-white/[0.01]">
+					<div className="overflow-hidden rounded border border-border bg-card">
 						{isLoading || columnsLoading ? (
 							<div className="space-y-3 p-6">
 								{[...Array(5)].map((_, i) => (
@@ -745,7 +745,7 @@ export default function JournalPage() {
 							</div>
 						) : allTrades.length === 0 ? (
 							<div className="flex flex-col items-center justify-center py-16 text-center">
-								<div className="mb-4 flex h-16 w-16 items-center justify-center rounded border border-white/10 bg-white/[0.02]">
+								<div className="mb-4 flex h-16 w-16 items-center justify-center rounded border border-border bg-card">
 									<Plus className="h-6 w-6 text-muted-foreground/50" />
 								</div>
 								<h3 className="mb-1 font-medium">No trades found</h3>
@@ -779,7 +779,7 @@ export default function JournalPage() {
 							<>
 								<Table>
 									<TableHeader>
-										<TableRow className="border-white/5 hover:bg-transparent">
+										<TableRow className="border-border hover:bg-transparent">
 											{visibleColumns.map((col) => (
 												<TableHead
 													className={cn(
@@ -808,8 +808,8 @@ export default function JournalPage() {
 										{allTrades.map((trade) => (
 											<TableRow
 												className={cn(
-													"cursor-pointer border-white/5 transition-colors hover:bg-white/[0.02]",
-													selectedTrades.has(trade.id) && "bg-white/[0.04]",
+													"cursor-pointer border-border transition-colors hover:bg-secondary",
+													selectedTrades.has(trade.id) && "bg-accent",
 												)}
 												key={trade.id}
 											>
@@ -836,7 +836,7 @@ export default function JournalPage() {
 								</Table>
 
 								{hasNextPage && (
-									<div className="flex justify-center border-white/5 border-t p-4">
+									<div className="flex justify-center border-border border-t p-4">
 										<Button
 											className="font-mono text-xs uppercase tracking-wider"
 											disabled={isFetchingNextPage}
@@ -880,7 +880,7 @@ export default function JournalPage() {
 							</Button>
 						)}
 					</div>
-					<div className="overflow-hidden rounded border border-white/5 bg-white/[0.01]">
+					<div className="overflow-hidden rounded border border-border bg-card">
 						{loadingDeleted ? (
 							<div className="space-y-3 p-6">
 								{[...Array(3)].map((_, i) => (
@@ -892,7 +892,7 @@ export default function JournalPage() {
 							</div>
 						) : !deletedTrades || deletedTrades.length === 0 ? (
 							<div className="flex flex-col items-center justify-center py-12 text-center">
-								<div className="mb-3 flex h-12 w-12 items-center justify-center rounded border border-white/10 bg-white/[0.02]">
+								<div className="mb-3 flex h-12 w-12 items-center justify-center rounded border border-border bg-card">
 									<Trash2 className="h-5 w-5 text-muted-foreground/30" />
 								</div>
 								<h3 className="mb-1 font-medium">Trash is empty</h3>
@@ -903,7 +903,7 @@ export default function JournalPage() {
 						) : (
 							<Table>
 								<TableHeader>
-									<TableRow className="border-white/5 hover:bg-transparent">
+									<TableRow className="border-border hover:bg-transparent">
 										<TableHead className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 											Symbol
 										</TableHead>
@@ -927,7 +927,7 @@ export default function JournalPage() {
 								<TableBody>
 									{deletedTrades.map((trade) => (
 										<TableRow
-											className="border-white/5 hover:bg-white/[0.02]"
+											className="border-border hover:bg-secondary"
 											key={trade.id}
 										>
 											<TableCell className="font-bold font-mono">
@@ -1017,7 +1017,7 @@ export default function JournalPage() {
 
 			{/* Delete Confirmation Dialog */}
 			<AlertDialog onOpenChange={setDeleteDialogOpen} open={deleteDialogOpen}>
-				<AlertDialogContent className="border-white/10 bg-background">
+				<AlertDialogContent className="border-border bg-background">
 					<AlertDialogHeader>
 						<AlertDialogTitle className="font-mono uppercase tracking-wider">
 							Delete Trade
@@ -1046,7 +1046,7 @@ export default function JournalPage() {
 				onOpenChange={setEmptyTrashDialogOpen}
 				open={emptyTrashDialogOpen}
 			>
-				<AlertDialogContent className="border-white/10 bg-background">
+				<AlertDialogContent className="border-border bg-background">
 					<AlertDialogHeader>
 						<AlertDialogTitle className="font-mono uppercase tracking-wider">
 							Empty Trash

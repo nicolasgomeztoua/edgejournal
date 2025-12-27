@@ -57,10 +57,10 @@ Make the trade log more powerful and customizable like TradeZella's.
 ### Tasks
 
 #### 1.1 Customizable Trade Log Columns
-- [ ] Column visibility toggle dropdown
-- [ ] User preferences stored in database
-- [ ] Drag-and-drop column reordering
-- [ ] Remember column widths
+- [x] Column visibility toggle dropdown
+- [x] User preferences stored in database
+- ~~Drag-and-drop column reordering~~ *(removed - not needed)*
+- ~~Remember column widths~~ *(removed - not needed)*
 
 **Files to modify:**
 - `src/app/(protected)/journal/page.tsx`
@@ -68,10 +68,10 @@ Make the trade log more powerful and customizable like TradeZella's.
 - `src/server/api/routers/settings.ts`
 
 #### 1.2 Trade Rating System
-- [ ] Add `rating` field to trades table (1-5 stars)
-- [ ] Star rating component on trade detail page
-- [ ] Inline rating in trade log
-- [ ] Filter by rating
+- [x] Add `rating` field to trades table (1-5 stars)
+- [x] Star rating component on trade detail page
+- [x] Inline rating in trade log
+- [x] Filter by rating
 
 **Files to modify:**
 - `src/server/db/schema.ts`
@@ -79,30 +79,30 @@ Make the trade log more powerful and customizable like TradeZella's.
 - `src/server/api/routers/trades.ts`
 
 #### 1.3 Trade Review Status
-- [ ] Add `isReviewed` boolean to trades
-- [ ] "Mark as reviewed" action button
-- [ ] Visual indicator for reviewed trades
-- [ ] Filter reviewed/unreviewed
+- [x] Add `isReviewed` boolean to trades
+- [x] "Mark as reviewed" action button
+- [x] Visual indicator for reviewed trades
+- [x] Filter reviewed/unreviewed
 
 #### 1.4 Advanced Filter Panel
-- [ ] Create filter drawer/modal component
-- [ ] Date range picker
-- [ ] Day of week filter
-- [ ] Time of day filter
-- [ ] Trade duration filter
-- [ ] Filter by month
-- [ ] Save filter presets
+- [x] Create filter drawer/modal component
+- [x] Date range picker
+- [x] Day of week filter
+- ~~Time of day filter~~ *(deferred)*
+- ~~Trade duration filter~~ *(deferred)*
+- [x] Filter by month
+- [x] Save filter presets
 
 **New files:**
 - `src/app/(protected)/journal/_components/filter-panel.tsx`
 - `src/app/(protected)/journal/_components/date-range-picker.tsx`
 
 #### 1.5 Tags System Enhancement
-- [ ] Tag management page/modal
-- [ ] Multi-tag assignment to trades
-- [ ] Tag colors and icons
-- [ ] Filter by tags
-- [ ] Tag suggestions/autocomplete
+- [x] Tag management page/modal
+- [x] Multi-tag assignment to trades
+- [x] Tag colors
+- [x] Filter by tags
+- ~~Tag suggestions/autocomplete~~ *(deferred)*
 
 ---
 
@@ -554,7 +554,7 @@ ALTER TABLE user_settings ADD COLUMN dashboard_layout_id INTEGER;
 
 | Phase | Name | Duration | Status |
 |-------|------|----------|--------|
-| 1 | Enhanced Trade Log | 2-3 weeks | ⏳ Pending |
+| 1 | Enhanced Trade Log | 2-3 weeks | ✅ Complete |
 | 2 | Playbook System | 2 weeks | ⏳ Pending |
 | 3 | Dashboard Customization | 2-3 weeks | ⏳ Pending |
 | 4 | Advanced Analytics | 3-4 weeks | ⏳ Pending |

@@ -60,55 +60,44 @@
 	--color-breakeven: var(--breakeven);
 }
 
-/* THE TERMINAL - Dark First Theme
-   Obsidian Black + Electric Chartreuse + Ice Blue */
+/* ============================================
+   THEME SYSTEM - Base & Defaults
+   ============================================ */
 :root {
 	--radius: 4px;
+}
 
-	/* Obsidian Black Background */
-	--background: #050505;
+/* ============================================
+   DARK THEMES - Top Rated IDE Themes
+   ============================================ */
+
+/* EDGEJOURNAL (Default) - Signature Dark Theme
+   Obsidian Black + Electric Chartreuse + Ice Blue */
+:root,
+.theme-edgejournal {
+	--background: #121212;
 	--foreground: #fafafa;
-
-	/* Cards - subtle lift */
 	--card: #0a0a0a;
 	--card-foreground: #fafafa;
-
-	/* Popover */
 	--popover: #0a0a0a;
 	--popover-foreground: #fafafa;
-
-	/* Primary - Electric Chartreuse */
 	--primary: #d4ff00;
 	--primary-foreground: #050505;
-
-	/* Secondary - Muted surface */
 	--secondary: #141414;
 	--secondary-foreground: #e5e5e5;
-
-	/* Muted - For subtle text */
 	--muted: #1a1a1a;
 	--muted-foreground: #737373;
-
-	/* Accent - Ice Blue */
 	--accent: #00d4ff;
 	--accent-foreground: #050505;
-
-	/* Destructive - Signal Red */
 	--destructive: #ff3b3b;
-
-	/* Borders - Very subtle */
 	--border: #1f1f1f;
 	--input: #141414;
 	--ring: #d4ff00;
-
-	/* Chart colors - Terminal palette */
 	--chart-1: #d4ff00;
 	--chart-2: #00d4ff;
 	--chart-3: #ff6b00;
 	--chart-4: #a855f7;
 	--chart-5: #ff3b3b;
-
-	/* Sidebar */
 	--sidebar: #0a0a0a;
 	--sidebar-foreground: #e5e5e5;
 	--sidebar-primary: #d4ff00;
@@ -117,36 +106,325 @@
 	--sidebar-accent-foreground: #e5e5e5;
 	--sidebar-border: #1f1f1f;
 	--sidebar-ring: #d4ff00;
-
-	/* Trading specific */
 	--profit: #00ff88;
 	--loss: #ff3b3b;
 	--breakeven: #ffd700;
 }
 
-/* Light mode - Clean inversion */
-.light {
+/* ONE DARK PRO - #1 Most Popular VS Code Theme
+   Inspired by Atom's iconic One Dark theme */
+.theme-one-dark {
+	--background: #282c34;
+	--foreground: #abb2bf;
+	--card: #21252b;
+	--card-foreground: #abb2bf;
+	--popover: #21252b;
+	--popover-foreground: #abb2bf;
+	--primary: #61afef;
+	--primary-foreground: #282c34;
+	--secondary: #3e4451;
+	--secondary-foreground: #abb2bf;
+	--muted: #3e4451;
+	--muted-foreground: #5c6370;
+	--accent: #98c379;
+	--accent-foreground: #282c34;
+	--destructive: #e06c75;
+	--border: #3e4451;
+	--input: #3e4451;
+	--ring: #61afef;
+	--chart-1: #61afef;
+	--chart-2: #98c379;
+	--chart-3: #e5c07b;
+	--chart-4: #c678dd;
+	--chart-5: #e06c75;
+	--sidebar: #21252b;
+	--sidebar-foreground: #abb2bf;
+	--sidebar-primary: #61afef;
+	--sidebar-primary-foreground: #282c34;
+	--sidebar-accent: #3e4451;
+	--sidebar-accent-foreground: #abb2bf;
+	--sidebar-border: #3e4451;
+	--sidebar-ring: #61afef;
+	--profit: #98c379;
+	--loss: #e06c75;
+	--breakeven: #e5c07b;
+}
+
+/* DRACULA - Iconic Purple/Pink Vampire Theme
+   One of the most beloved themes across all platforms */
+.theme-dracula {
+	--background: #282a36;
+	--foreground: #f8f8f2;
+	--card: #21222c;
+	--card-foreground: #f8f8f2;
+	--popover: #21222c;
+	--popover-foreground: #f8f8f2;
+	--primary: #bd93f9;
+	--primary-foreground: #282a36;
+	--secondary: #44475a;
+	--secondary-foreground: #f8f8f2;
+	--muted: #44475a;
+	--muted-foreground: #6272a4;
+	--accent: #ff79c6;
+	--accent-foreground: #282a36;
+	--destructive: #ff5555;
+	--border: #44475a;
+	--input: #44475a;
+	--ring: #bd93f9;
+	--chart-1: #bd93f9;
+	--chart-2: #ff79c6;
+	--chart-3: #ffb86c;
+	--chart-4: #8be9fd;
+	--chart-5: #ff5555;
+	--sidebar: #21222c;
+	--sidebar-foreground: #f8f8f2;
+	--sidebar-primary: #bd93f9;
+	--sidebar-primary-foreground: #282a36;
+	--sidebar-accent: #44475a;
+	--sidebar-accent-foreground: #f8f8f2;
+	--sidebar-border: #44475a;
+	--sidebar-ring: #bd93f9;
+	--profit: #50fa7b;
+	--loss: #ff5555;
+	--breakeven: #f1fa8c;
+}
+
+/* NIGHT OWL - Sarah Drasner's Accessibility-Focused Theme
+   Designed for night-time coding with reduced eye strain */
+.theme-night-owl {
+	--background: #011627;
+	--foreground: #d6deeb;
+	--card: #0b2942;
+	--card-foreground: #d6deeb;
+	--popover: #0b2942;
+	--popover-foreground: #d6deeb;
+	--primary: #7fdbca;
+	--primary-foreground: #011627;
+	--secondary: #1d3b53;
+	--secondary-foreground: #d6deeb;
+	--muted: #1d3b53;
+	--muted-foreground: #637777;
+	--accent: #c792ea;
+	--accent-foreground: #011627;
+	--destructive: #ef5350;
+	--border: #1d3b53;
+	--input: #1d3b53;
+	--ring: #7fdbca;
+	--chart-1: #7fdbca;
+	--chart-2: #c792ea;
+	--chart-3: #f78c6c;
+	--chart-4: #82aaff;
+	--chart-5: #ef5350;
+	--sidebar: #011627;
+	--sidebar-foreground: #d6deeb;
+	--sidebar-primary: #7fdbca;
+	--sidebar-primary-foreground: #011627;
+	--sidebar-accent: #1d3b53;
+	--sidebar-accent-foreground: #d6deeb;
+	--sidebar-border: #1d3b53;
+	--sidebar-ring: #7fdbca;
+	--profit: #addb67;
+	--loss: #ef5350;
+	--breakeven: #f78c6c;
+}
+
+/* MONOKAI PRO - The Legendary Classic Theme
+   Evolution of the beloved Monokai with modern refinements */
+.theme-monokai {
+	--background: #2d2a2e;
+	--foreground: #fcfcfa;
+	--card: #221f22;
+	--card-foreground: #fcfcfa;
+	--popover: #221f22;
+	--popover-foreground: #fcfcfa;
+	--primary: #ffd866;
+	--primary-foreground: #2d2a2e;
+	--secondary: #403e41;
+	--secondary-foreground: #fcfcfa;
+	--muted: #403e41;
+	--muted-foreground: #727072;
+	--accent: #78dce8;
+	--accent-foreground: #2d2a2e;
+	--destructive: #ff6188;
+	--border: #403e41;
+	--input: #403e41;
+	--ring: #ffd866;
+	--chart-1: #ffd866;
+	--chart-2: #78dce8;
+	--chart-3: #fc9867;
+	--chart-4: #ab9df2;
+	--chart-5: #ff6188;
+	--sidebar: #221f22;
+	--sidebar-foreground: #fcfcfa;
+	--sidebar-primary: #ffd866;
+	--sidebar-primary-foreground: #2d2a2e;
+	--sidebar-accent: #403e41;
+	--sidebar-accent-foreground: #fcfcfa;
+	--sidebar-border: #403e41;
+	--sidebar-ring: #ffd866;
+	--profit: #a9dc76;
+	--loss: #ff6188;
+	--breakeven: #ffd866;
+}
+
+/* ============================================
+   LIGHT THEMES - Top Rated Light Themes
+   ============================================ */
+
+/* EDGEJOURNAL LIGHT - Signature Theme for Daytime Trading
+   EdgeJournal aesthetic adapted for light mode with rich lime-green accents */
+.theme-edgejournal-light {
 	--background: #fafafa;
-	--foreground: #0a0a0a;
+	--foreground: #171717;
 	--card: #ffffff;
-	--card-foreground: #0a0a0a;
+	--card-foreground: #171717;
 	--popover: #ffffff;
-	--popover-foreground: #0a0a0a;
-	--primary: #0a0a0a;
-	--primary-foreground: #d4ff00;
+	--popover-foreground: #171717;
+	--primary: #4d7c0f;
+	--primary-foreground: #ffffff;
 	--secondary: #f5f5f5;
 	--secondary-foreground: #171717;
-	--muted: #f5f5f5;
+	--muted: #f0f0f0;
 	--muted-foreground: #737373;
-	--accent: #0a0a0a;
-	--accent-foreground: #00d4ff;
+	--accent: #ecfccb;
+	--accent-foreground: #3f6212;
 	--destructive: #dc2626;
 	--border: #e5e5e5;
-	--input: #e5e5e5;
-	--ring: #0a0a0a;
-	--profit: #16a34a;
+	--input: #f5f5f5;
+	--ring: #4d7c0f;
+	--chart-1: #4d7c0f;
+	--chart-2: #0891b2;
+	--chart-3: #ea580c;
+	--chart-4: #7c3aed;
+	--chart-5: #dc2626;
+	--sidebar: #f5f5f5;
+	--sidebar-foreground: #171717;
+	--sidebar-primary: #4d7c0f;
+	--sidebar-primary-foreground: #ffffff;
+	--sidebar-accent: #ecfccb;
+	--sidebar-accent-foreground: #3f6212;
+	--sidebar-border: #e5e5e5;
+	--sidebar-ring: #4d7c0f;
+	--profit: #15803d;
 	--loss: #dc2626;
 	--breakeven: #ca8a04;
+}
+
+/* GITHUB LIGHT - Clean GitHub Interface Theme
+   Familiar, professional, and highly readable */
+.theme-github-light {
+	--background: #ffffff;
+	--foreground: #1f2328;
+	--card: #ffffff;
+	--card-foreground: #1f2328;
+	--popover: #ffffff;
+	--popover-foreground: #1f2328;
+	--primary: #0969da;
+	--primary-foreground: #ffffff;
+	--secondary: #f6f8fa;
+	--secondary-foreground: #1f2328;
+	--muted: #f6f8fa;
+	--muted-foreground: #656d76;
+	--accent: #ddf4ff;
+	--accent-foreground: #0969da;
+	--destructive: #cf222e;
+	--border: #d0d7de;
+	--input: #f6f8fa;
+	--ring: #0969da;
+	--chart-1: #0969da;
+	--chart-2: #8250df;
+	--chart-3: #bf8700;
+	--chart-4: #1a7f37;
+	--chart-5: #cf222e;
+	--sidebar: #f6f8fa;
+	--sidebar-foreground: #1f2328;
+	--sidebar-primary: #0969da;
+	--sidebar-primary-foreground: #ffffff;
+	--sidebar-accent: #ddf4ff;
+	--sidebar-accent-foreground: #0969da;
+	--sidebar-border: #d0d7de;
+	--sidebar-ring: #0969da;
+	--profit: #1a7f37;
+	--loss: #cf222e;
+	--breakeven: #bf8700;
+}
+
+/* AYU LIGHT - Minimalist Warmth Theme
+   Clean, elegant with soft balanced colors */
+.theme-ayu-light {
+	--background: #fcfcfc;
+	--foreground: #5c6166;
+	--card: #ffffff;
+	--card-foreground: #5c6166;
+	--popover: #ffffff;
+	--popover-foreground: #5c6166;
+	--primary: #ff9940;
+	--primary-foreground: #ffffff;
+	--secondary: #f8f8f8;
+	--secondary-foreground: #5c6166;
+	--muted: #f3f4f5;
+	--muted-foreground: #8a9199;
+	--accent: #fff4e6;
+	--accent-foreground: #e67e22;
+	--destructive: #f51818;
+	--border: #e8e8e8;
+	--input: #f3f4f5;
+	--ring: #ff9940;
+	--chart-1: #ff9940;
+	--chart-2: #a37acc;
+	--chart-3: #55b4d4;
+	--chart-4: #86b300;
+	--chart-5: #f51818;
+	--sidebar: #f8f8f8;
+	--sidebar-foreground: #5c6166;
+	--sidebar-primary: #ff9940;
+	--sidebar-primary-foreground: #ffffff;
+	--sidebar-accent: #fff4e6;
+	--sidebar-accent-foreground: #e67e22;
+	--sidebar-border: #e8e8e8;
+	--sidebar-ring: #ff9940;
+	--profit: #86b300;
+	--loss: #f51818;
+	--breakeven: #ff9940;
+}
+
+/* SOLARIZED LIGHT - The Legendary Low-Contrast Theme
+   Precision colors designed for long coding sessions */
+.theme-solarized-light {
+	--background: #fdf6e3;
+	--foreground: #586e75;
+	--card: #fdf6e3;
+	--card-foreground: #586e75;
+	--popover: #fdf6e3;
+	--popover-foreground: #586e75;
+	--primary: #268bd2;
+	--primary-foreground: #fdf6e3;
+	--secondary: #eee8d5;
+	--secondary-foreground: #586e75;
+	--muted: #eee8d5;
+	--muted-foreground: #839496;
+	--accent: #e8e2d0;
+	--accent-foreground: #268bd2;
+	--destructive: #dc322f;
+	--border: #d3cbb7;
+	--input: #eee8d5;
+	--ring: #268bd2;
+	--chart-1: #268bd2;
+	--chart-2: #859900;
+	--chart-3: #cb4b16;
+	--chart-4: #6c71c4;
+	--chart-5: #dc322f;
+	--sidebar: #eee8d5;
+	--sidebar-foreground: #586e75;
+	--sidebar-primary: #268bd2;
+	--sidebar-primary-foreground: #fdf6e3;
+	--sidebar-accent: #fdf6e3;
+	--sidebar-accent-foreground: #268bd2;
+	--sidebar-border: #d3cbb7;
+	--sidebar-ring: #268bd2;
+	--profit: #859900;
+	--loss: #dc322f;
+	--breakeven: #b58900;
 }
 
 @layer base {

@@ -420,6 +420,7 @@ export const userSettings = createTable("user_settings", {
 
 	// Display preferences
 	currency: text("currency").default("USD"),
+	theme: text("theme").default("terminal"), // Theme ID (e.g., "terminal", "midnight", "paper")
 
 	// Trade log column preferences (JSON array of column configs)
 	tradeLogColumns: text("trade_log_columns"), // JSON string of column visibility/order

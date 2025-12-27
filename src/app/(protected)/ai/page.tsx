@@ -277,9 +277,9 @@ export default function AIInsightsPage() {
 			)}
 
 			{/* Terminal Chat Container */}
-			<div className="flex flex-1 flex-col overflow-hidden rounded border border-white/10 bg-black/50">
+			<div className="flex flex-1 flex-col overflow-hidden rounded border border-border bg-card">
 				{/* Terminal header */}
-				<div className="flex items-center justify-between border-white/5 border-b bg-white/[0.02] px-4 py-2">
+				<div className="flex items-center justify-between border-border border-b bg-secondary px-4 py-2">
 					<div className="flex items-center gap-2">
 						<div className="h-2.5 w-2.5 rounded-full bg-loss/60" />
 						<div className="h-2.5 w-2.5 rounded-full bg-breakeven/60" />
@@ -295,7 +295,7 @@ export default function AIInsightsPage() {
 				<ScrollArea className="flex-1 p-4" ref={scrollRef}>
 					{messages.length === 0 ? (
 						<div className="flex h-full flex-col items-center justify-center text-center">
-							<div className="mb-4 flex h-16 w-16 items-center justify-center rounded border border-white/10 bg-white/[0.02]">
+							<div className="mb-4 flex h-16 w-16 items-center justify-center rounded border border-border bg-secondary">
 								<Brain className="h-8 w-8 text-primary" />
 							</div>
 							<h2 className="mb-2 font-semibold text-xl">
@@ -308,7 +308,7 @@ export default function AIInsightsPage() {
 							<div className="flex flex-wrap justify-center gap-2">
 								{EXAMPLE_QUERIES.map((query) => (
 									<button
-										className="rounded border border-white/10 bg-white/[0.02] px-3 py-1.5 font-mono text-[10px] text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
+										className="rounded border border-border bg-secondary px-3 py-1.5 font-mono text-[10px] text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
 										key={query}
 										onClick={() => setInput(query)}
 										type="button"
@@ -391,7 +391,7 @@ export default function AIInsightsPage() {
 				</ScrollArea>
 
 				{/* Input */}
-				<div className="border-white/5 border-t bg-white/[0.02] p-4">
+				<div className="border-border border-t bg-secondary p-4">
 					<form
 						className="flex gap-3"
 						onSubmit={(e) => {
@@ -403,7 +403,7 @@ export default function AIInsightsPage() {
 							$
 						</span>
 						<Input
-							className="flex-1 border-white/10 bg-transparent font-mono text-sm"
+							className="flex-1 border-border bg-transparent font-mono text-sm"
 							disabled={isLoading}
 							onChange={(e) => setInput(e.target.value)}
 							placeholder="Enter query..."

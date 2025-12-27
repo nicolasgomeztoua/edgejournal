@@ -16,6 +16,22 @@ import {
 import { Input } from "@/components/ui/input";
 import { api } from "@/trpc/react";
 
+const PRESET_COLORS = [
+	"#d4ff00", // Electric Chartreuse (primary)
+	"#00d4ff", // Ice Blue (accent)
+	"#00ff88", // Profit green
+	"#f59e0b", // Amber
+	"#ec4899", // Pink
+	"#8b5cf6", // Violet
+	"#14b8a6", // Teal
+	"#f97316", // Orange
+	"#6366f1", // Indigo
+];
+
+function getRandomColor() {
+	return PRESET_COLORS[Math.floor(Math.random() * PRESET_COLORS.length)];
+}
+
 interface TagSelectorProps {
 	tradeId: number;
 	currentTagIds: number[];
@@ -73,7 +89,7 @@ export function TagSelector({
 
 	const handleCreateAndAdd = () => {
 		if (!newTagName.trim()) return;
-		createTag.mutate({ name: newTagName.trim() });
+		createTag.mutate({ name: newTagName.trim(), color: getRandomColor() });
 	};
 
 	return (
@@ -172,17 +188,41 @@ export function TradeTags({
 	onUpdate,
 	maxDisplay = 2,
 }: TradeTagsProps) {
+	// Optimistic state for removed tags
+	const [optimisticallyRemoved, setOptimisticallyRemoved] = useState<Set<number>>(new Set());
+
 	const removeTag = api.tags.removeFromTrade.useMutation({
 		onSuccess: () => {
 			onUpdate?.();
 		},
+		onError: (error, variables) => {
+			// Rollback on error
+			setOptimisticallyRemoved((prev) => {
+				const next = new Set(prev);
+				next.delete(variables.tagId);
+				return next;
+			});
+			toast.error(error.message || "Failed to remove tag");
+		},
+		onSettled: () => {
+			// Clear optimistic state after server responds
+			setOptimisticallyRemoved(new Set());
+		},
 	});
 
-	const currentTagIds = tags.map((t) => t.tagId);
+	const handleRemoveTag = (tagId: number) => {
+		// Optimistically remove from UI
+		setOptimisticallyRemoved((prev) => new Set(prev).add(tagId));
+		removeTag.mutate({ tradeId, tagId });
+	};
+
+	// Filter out optimistically removed tags
+	const displayTags = tags.filter((t) => !optimisticallyRemoved.has(t.tagId));
+	const currentTagIds = displayTags.map((t) => t.tagId);
 
 	return (
 		<div className="flex items-center gap-1">
-			{tags.slice(0, maxDisplay).map((tt) => (
+			{displayTags.slice(0, maxDisplay).map((tt) => (
 				<Badge
 					className="group gap-1 px-1 py-0 text-[10px]"
 					key={tt.tagId}
@@ -197,7 +237,7 @@ export function TradeTags({
 						className="opacity-0 transition-opacity group-hover:opacity-100"
 						onClick={(e) => {
 							e.stopPropagation();
-							removeTag.mutate({ tradeId, tagId: tt.tagId });
+							handleRemoveTag(tt.tagId);
 						}}
 						type="button"
 					>
@@ -205,9 +245,9 @@ export function TradeTags({
 					</button>
 				</Badge>
 			))}
-			{tags.length > maxDisplay && (
+			{displayTags.length > maxDisplay && (
 				<Badge className="px-1 py-0 text-[10px]" variant="secondary">
-					+{tags.length - maxDisplay}
+					+{displayTags.length - maxDisplay}
 				</Badge>
 			)}
 			<TagSelector

@@ -552,7 +552,7 @@ export function SettingsContent() {
 			</div>
 
 			<Tabs onValueChange={setActiveTab} value={activeTab}>
-				<TabsList className="grid w-full grid-cols-4 border border-white/5 bg-white/[0.02]">
+				<TabsList className="grid w-full grid-cols-4 border border-border bg-secondary">
 					<TabsTrigger
 						className="font-mono text-xs uppercase tracking-wider data-[state=active]:bg-white/10"
 						value="general"
@@ -582,7 +582,7 @@ export function SettingsContent() {
 				{/* General Tab */}
 				<TabsContent className="space-y-6" value="general">
 					{/* Account Info */}
-					<div className="rounded border border-white/10 bg-white/[0.02] p-4">
+					<div className="rounded border border-border bg-card p-4">
 						<div className="mb-4 flex items-center gap-2">
 							<Shield className="h-4 w-4 text-muted-foreground" />
 							<span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
@@ -594,7 +594,7 @@ export function SettingsContent() {
 								// biome-ignore lint/performance/noImgElement: External Clerk avatar URLs
 								<img
 									alt="Profile"
-									className="h-12 w-12 rounded border border-white/10"
+									className="h-12 w-12 rounded border border-border"
 									src={user.imageUrl}
 								/>
 							)}
@@ -852,7 +852,7 @@ export function SettingsContent() {
 								<div className="space-y-2">
 									{groups.map((group) => (
 										<div
-											className="flex items-center justify-between rounded border border-white/10 bg-white/[0.02] p-3"
+											className="flex items-center justify-between rounded border border-border bg-card p-3"
 											key={group.id}
 										>
 											<div>
@@ -1383,7 +1383,7 @@ export function SettingsContent() {
 								<div className="space-y-3">
 									{accounts.map((account) => (
 										<div
-											className="flex items-center justify-between rounded border border-white/10 bg-white/[0.02] p-4 transition-colors hover:border-white/20"
+											className="flex items-center justify-between rounded border border-border bg-card p-4 transition-colors hover:border-primary/30"
 											key={account.id}
 										>
 											<div className="flex items-center gap-3">

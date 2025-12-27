@@ -20,7 +20,7 @@ function StatsOverview() {
 			<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
 				{[...Array(4)].map((_, i) => (
 					<div
-						className="rounded border border-white/5 bg-white/[0.02] p-4"
+						className="rounded border border-border bg-secondary p-4"
 						key={`skeleton-stat-${i.toString()}`}
 					>
 						<Skeleton className="mb-3 h-3 w-16" />
@@ -74,7 +74,7 @@ function StatsOverview() {
 		<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
 			{cards.map((card) => (
 				<div
-					className="rounded border border-white/5 bg-white/[0.02] p-4 transition-all hover:border-white/10"
+					className="rounded border border-border bg-card p-4 transition-all hover:border-primary/30"
 					key={card.title}
 				>
 					<div className="flex items-center justify-between">
@@ -314,9 +314,9 @@ function ChartTerminal({
 	children: React.ReactNode;
 }) {
 	return (
-		<div className="overflow-hidden rounded border border-white/10 bg-black/50">
+		<div className="overflow-hidden rounded border border-border bg-card">
 			{/* Terminal header */}
-			<div className="flex items-center justify-between border-white/5 border-b bg-white/[0.02] px-4 py-2">
+			<div className="flex items-center justify-between border-border border-b bg-secondary px-4 py-2">
 				<div className="flex items-center gap-2">
 					<div className="h-2.5 w-2.5 rounded-full bg-loss/60" />
 					<div className="h-2.5 w-2.5 rounded-full bg-breakeven/60" />
@@ -330,7 +330,7 @@ function ChartTerminal({
 				<div className="w-14" />
 			</div>
 			{/* Chart header */}
-			<div className="border-white/5 border-b px-4 py-3">
+			<div className="border-border border-b px-4 py-3">
 				<h3 className="font-medium text-sm">{title}</h3>
 				<p className="font-mono text-[10px] text-muted-foreground">
 					{description}

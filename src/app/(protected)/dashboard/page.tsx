@@ -109,7 +109,7 @@ function StatCard({
 	trend?: "up" | "down" | "neutral";
 }) {
 	return (
-		<div className="rounded border border-white/5 bg-white/[0.02] p-4 transition-all hover:border-white/10">
+		<div className="rounded border border-border bg-card p-4 transition-all hover:border-primary/30">
 			<div className="flex items-center justify-between">
 				<span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 					{title}
@@ -165,7 +165,7 @@ function StatsGrid() {
 			<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
 				{[...Array(5)].map((_, i) => (
 					<div
-						className="rounded border border-white/5 bg-white/[0.02] p-4"
+						className="rounded border border-border bg-secondary p-4"
 						key={`skeleton-card-${i.toString()}`}
 					>
 						<Skeleton className="mb-3 h-3 w-16" />
@@ -237,9 +237,9 @@ function PerformanceSummary() {
 	if (!stats || stats.totalTrades === 0) return null;
 
 	return (
-		<div className="overflow-hidden rounded border border-white/10 bg-black/50">
+		<div className="overflow-hidden rounded border border-border bg-card">
 			{/* Terminal header */}
-			<div className="flex items-center justify-between border-white/5 border-b bg-white/[0.02] px-4 py-2">
+			<div className="flex items-center justify-between border-border border-b bg-secondary/50 px-4 py-2">
 				<div className="flex items-center gap-2">
 					<div className="h-2.5 w-2.5 rounded-full bg-loss/60" />
 					<div className="h-2.5 w-2.5 rounded-full bg-breakeven/60" />
@@ -302,7 +302,7 @@ function PerformanceSummary() {
 				</div>
 
 				{/* Expectancy */}
-				<div className="border-white/5 border-t pt-3">
+				<div className="border-border border-t pt-3">
 					<div className="flex items-center justify-between">
 						<span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
 							Expectancy

@@ -38,6 +38,7 @@ export const settingsRouter = createTRPCRouter({
 				currency: z.string().optional(),
 				breakevenThreshold: z.string().optional(), // Dollar amount for breakeven threshold
 				tradeLogColumns: z.string().optional(), // JSON string of column visibility/order
+				theme: z.string().optional(), // Theme ID (e.g., "terminal", "midnight", "paper")
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
