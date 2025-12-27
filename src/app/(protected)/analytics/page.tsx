@@ -1,7 +1,7 @@
 "use client";
 
 import { AgCharts } from "ag-charts-react";
-import { BarChart3, PieChart, Target, TrendingUp } from "lucide-react";
+import { Activity, BarChart3, PieChart, Target, TrendingUp } from "lucide-react";
 import { useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -12,20 +12,92 @@ import {
 } from "@/lib/utils";
 import { api } from "@/trpc/react";
 
+// Enhanced stat card matching dashboard design
+function StatCard({
+	title,
+	value,
+	description,
+	icon: Icon,
+	colorClass,
+	accentColor = "primary",
+}: {
+	title: string;
+	value: string;
+	description: string;
+	icon: React.ComponentType<{ className?: string }>;
+	colorClass: string;
+	accentColor?: "primary" | "profit" | "loss" | "accent";
+}) {
+	const accentClasses = {
+		primary: "from-primary/10 via-primary/5 to-transparent border-primary/20",
+		profit: "from-profit/10 via-profit/5 to-transparent border-profit/20",
+		loss: "from-loss/10 via-loss/5 to-transparent border-loss/20",
+		accent: "from-accent/10 via-accent/5 to-transparent border-accent/20",
+	};
+
+	const iconBgClasses = {
+		primary: "bg-primary/10 text-primary",
+		profit: "bg-profit/10 text-profit",
+		loss: "bg-loss/10 text-loss",
+		accent: "bg-accent/10 text-accent",
+	};
+
+	return (
+		<div
+			className={cn(
+				"group relative overflow-hidden rounded-lg border bg-gradient-to-br p-5 transition-all duration-300",
+				"hover:shadow-lg hover:shadow-black/20",
+				accentClasses[accentColor],
+			)}
+		>
+			{/* Subtle background glow on hover */}
+			<div
+				className={cn(
+					"pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full blur-3xl opacity-0 transition-opacity duration-500 group-hover:opacity-100",
+					accentColor === "primary" && "bg-primary/20",
+					accentColor === "profit" && "bg-profit/20",
+					accentColor === "loss" && "bg-loss/20",
+					accentColor === "accent" && "bg-accent/20",
+				)}
+			/>
+
+			<div className="relative">
+				<div className="flex items-center justify-between mb-3">
+					<span className="font-mono text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+						{title}
+					</span>
+					<div className={cn("flex h-7 w-7 items-center justify-center rounded-md", iconBgClasses[accentColor])}>
+						<Icon className="h-3.5 w-3.5" />
+					</div>
+				</div>
+				<div className={cn("font-bold font-mono text-2xl tracking-tight", colorClass)}>
+					{value}
+				</div>
+				<p className="mt-1.5 font-mono text-xs text-muted-foreground/80">
+					{description}
+				</p>
+			</div>
+		</div>
+	);
+}
+
 function StatsOverview() {
 	const { data: stats, isLoading } = api.trades.getStats.useQuery();
 
 	if (isLoading) {
 		return (
-			<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 				{[...Array(4)].map((_, i) => (
 					<div
-						className="rounded border border-border bg-secondary p-4"
+						className="rounded-lg border border-white/10 bg-white/[0.02] p-5"
 						key={`skeleton-stat-${i.toString()}`}
 					>
-						<Skeleton className="mb-3 h-3 w-16" />
-						<Skeleton className="mb-2 h-6 w-24" />
-						<Skeleton className="h-2 w-14" />
+						<div className="flex items-center justify-between mb-3">
+							<Skeleton className="h-3 w-16" />
+							<Skeleton className="h-7 w-7 rounded-md" />
+						</div>
+						<Skeleton className="mb-2 h-7 w-24" />
+						<Skeleton className="h-3 w-20" />
 					</div>
 				))}
 			</div>
@@ -41,6 +113,7 @@ function StatsOverview() {
 			description: `${stats.totalTrades} closed trades`,
 			icon: TrendingUp,
 			colorClass: getPnLColorClass(stats.totalPnl),
+			accentColor: (stats.totalPnl >= 0 ? "profit" : "loss") as "profit" | "loss",
 		},
 		{
 			title: "Win Rate",
@@ -48,6 +121,7 @@ function StatsOverview() {
 			description: `${stats.wins}W / ${stats.losses}L`,
 			icon: Target,
 			colorClass: stats.winRate >= 50 ? "text-profit" : "text-loss",
+			accentColor: (stats.winRate >= 50 ? "profit" : "loss") as "profit" | "loss",
 		},
 		{
 			title: "Profit Factor",
@@ -56,6 +130,7 @@ function StatsOverview() {
 			description: "Gross profit / loss",
 			icon: BarChart3,
 			colorClass: stats.profitFactor >= 1 ? "text-profit" : "text-loss",
+			accentColor: (stats.profitFactor >= 1 ? "profit" : "loss") as "profit" | "loss",
 		},
 		{
 			title: "Avg Trade",
@@ -67,31 +142,22 @@ function StatsOverview() {
 			colorClass: getPnLColorClass(
 				stats.totalPnl / Math.max(stats.totalTrades, 1),
 			),
+			accentColor: (stats.totalPnl / Math.max(stats.totalTrades, 1) >= 0 ? "profit" : "loss") as "profit" | "loss",
 		},
 	];
 
 	return (
-		<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+		<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 			{cards.map((card) => (
-				<div
-					className="rounded border border-border bg-card p-4 transition-all hover:border-primary/30"
+				<StatCard
+					accentColor={card.accentColor}
+					colorClass={card.colorClass}
+					description={card.description}
+					icon={card.icon}
 					key={card.title}
-				>
-					<div className="flex items-center justify-between">
-						<span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-							{card.title}
-						</span>
-						<card.icon className="h-3 w-3 text-muted-foreground" />
-					</div>
-					<div
-						className={cn("mt-2 font-bold font-mono text-xl", card.colorClass)}
-					>
-						{card.value}
-					</div>
-					<p className="mt-1 font-mono text-[10px] text-muted-foreground">
-						{card.description}
-					</p>
-				</div>
+					title={card.title}
+					value={card.value}
+				/>
 			))}
 		</div>
 	);
@@ -108,7 +174,7 @@ function WinLossChart() {
 			data: [
 				{ category: "Wins", value: stats.wins, color: "#00ff88" },
 				{ category: "Losses", value: stats.losses, color: "#ff3b3b" },
-				{ category: "Breakeven", value: stats.breakevens, color: "#f5a623" },
+				{ category: "Breakeven", value: stats.breakevens, color: "#ffd700" },
 			],
 			series: [
 				{
@@ -116,31 +182,43 @@ function WinLossChart() {
 					angleKey: "value",
 					calloutLabelKey: "category",
 					sectorLabelKey: "value",
-					fills: ["#00ff88", "#ff3b3b", "#f5a623"],
-					innerRadiusRatio: 0.6,
+					fills: ["#00ff88", "#ff3b3b", "#ffd700"],
+					innerRadiusRatio: 0.65,
+					strokeWidth: 0,
 				},
 			],
 			legend: {
 				position: "bottom" as const,
 				item: {
 					label: {
-						color: "#94a3b8",
+						color: "#737373",
 						fontFamily: "JetBrains Mono, monospace",
-						fontSize: 10,
+						fontSize: 11,
 					},
+					marker: {
+						shape: "circle",
+						size: 8,
+					},
+					paddingX: 16,
+					paddingY: 8,
 				},
 			},
 		};
 	}, [stats]);
 
 	if (isLoading) {
-		return <Skeleton className="h-[300px] w-full" />;
+		return <Skeleton className="h-[300px] w-full rounded-lg" />;
 	}
 
 	if (!stats || stats.totalTrades === 0) {
 		return (
-			<div className="flex h-[300px] items-center justify-center font-mono text-muted-foreground text-xs">
-				No trade data available
+			<div className="flex h-[300px] flex-col items-center justify-center text-center">
+				<div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03]">
+					<PieChart className="h-5 w-5 text-muted-foreground/40" />
+				</div>
+				<span className="font-mono text-muted-foreground text-xs">
+					No trade data available
+				</span>
 			</div>
 		);
 	}
@@ -175,7 +253,7 @@ function PnLDistributionChart() {
 					xKey: "trade",
 					yKey: "pnl",
 					fill: "#00ff88",
-					cornerRadius: 2,
+					cornerRadius: 3,
 					formatter: (params: { datum: { pnl: number } }) => ({
 						fill: params.datum.pnl >= 0 ? "#00ff88" : "#ff3b3b",
 					}),
@@ -186,22 +264,22 @@ function PnLDistributionChart() {
 					type: "category" as const,
 					position: "bottom" as const,
 					label: {
-						color: "#64748b",
+						color: "#525252",
 						fontFamily: "JetBrains Mono, monospace",
 						fontSize: 9,
 					},
-					line: { color: "#1e293b" },
+					line: { color: "#262626" },
 				},
 				{
 					type: "number" as const,
 					position: "left" as const,
 					label: {
-						color: "#64748b",
+						color: "#525252",
 						fontFamily: "JetBrains Mono, monospace",
 						fontSize: 9,
 						formatter: (params: { value: number }) => `$${params.value}`,
 					},
-					line: { color: "#1e293b" },
+					line: { color: "#262626" },
 					gridLine: { style: [{ stroke: "#ffffff08" }] },
 				},
 			],
@@ -209,13 +287,18 @@ function PnLDistributionChart() {
 	}, [data]);
 
 	if (isLoading) {
-		return <Skeleton className="h-[300px] w-full" />;
+		return <Skeleton className="h-[300px] w-full rounded-lg" />;
 	}
 
 	if (!data?.items || data.items.length === 0) {
 		return (
-			<div className="flex h-[300px] items-center justify-center font-mono text-muted-foreground text-xs">
-				No trade data available
+			<div className="flex h-[300px] flex-col items-center justify-center text-center">
+				<div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03]">
+					<BarChart3 className="h-5 w-5 text-muted-foreground/40" />
+				</div>
+				<span className="font-mono text-muted-foreground text-xs">
+					No trade data available
+				</span>
 			</div>
 		);
 	}
@@ -254,7 +337,7 @@ function CumulativePnLChart() {
 					type: "area" as const,
 					xKey: "trade",
 					yKey: "pnl",
-					fill: "#00ff8820",
+					fill: "#00ff8815",
 					stroke: "#00ff88",
 					strokeWidth: 2,
 					marker: { enabled: false },
@@ -265,22 +348,22 @@ function CumulativePnLChart() {
 					type: "category" as const,
 					position: "bottom" as const,
 					label: {
-						color: "#64748b",
+						color: "#525252",
 						fontFamily: "JetBrains Mono, monospace",
 						fontSize: 9,
 					},
-					line: { color: "#1e293b" },
+					line: { color: "#262626" },
 				},
 				{
 					type: "number" as const,
 					position: "left" as const,
 					label: {
-						color: "#64748b",
+						color: "#525252",
 						fontFamily: "JetBrains Mono, monospace",
 						fontSize: 9,
 						formatter: (params: { value: number }) => `$${params.value}`,
 					},
-					line: { color: "#1e293b" },
+					line: { color: "#262626" },
 					gridLine: { style: [{ stroke: "#ffffff08" }] },
 				},
 			],
@@ -288,13 +371,18 @@ function CumulativePnLChart() {
 	}, [data]);
 
 	if (isLoading) {
-		return <Skeleton className="h-[300px] w-full" />;
+		return <Skeleton className="h-[300px] w-full rounded-lg" />;
 	}
 
 	if (!data?.items || data.items.length === 0) {
 		return (
-			<div className="flex h-[300px] items-center justify-center font-mono text-muted-foreground text-xs">
-				No trade data available
+			<div className="flex h-[300px] flex-col items-center justify-center text-center">
+				<div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03]">
+					<Activity className="h-5 w-5 text-muted-foreground/40" />
+				</div>
+				<span className="font-mono text-muted-foreground text-xs">
+					No trade data available
+				</span>
 			</div>
 		);
 	}
@@ -303,7 +391,7 @@ function CumulativePnLChart() {
 	return <AgCharts options={chartOptions as any} style={{ height: 300 }} />;
 }
 
-// Terminal window wrapper for charts
+// Enhanced terminal window wrapper for charts
 function ChartTerminal({
 	title,
 	description,
@@ -314,45 +402,50 @@ function ChartTerminal({
 	children: React.ReactNode;
 }) {
 	return (
-		<div className="overflow-hidden rounded border border-border bg-card">
+		<div className="overflow-hidden rounded-lg border border-white/10 bg-gradient-to-br from-white/[0.03] to-transparent">
 			{/* Terminal header */}
-			<div className="flex items-center justify-between border-border border-b bg-secondary px-4 py-2">
-				<div className="flex items-center gap-2">
-					<div className="h-2.5 w-2.5 rounded-full bg-loss/60" />
-					<div className="h-2.5 w-2.5 rounded-full bg-breakeven/60" />
-					<div className="h-2.5 w-2.5 rounded-full bg-profit/60" />
+			<div className="flex items-center justify-between border-b border-white/10 bg-white/[0.02] px-4 py-2.5">
+				<div className="flex items-center gap-1.5">
+					<div className="h-2.5 w-2.5 rounded-full bg-loss/50 shadow-[0_0_6px_rgba(255,59,59,0.5)]" />
+					<div className="h-2.5 w-2.5 rounded-full bg-breakeven/50 shadow-[0_0_6px_rgba(255,215,0,0.5)]" />
+					<div className="h-2.5 w-2.5 rounded-full bg-profit/50 shadow-[0_0_6px_rgba(0,255,136,0.5)]" />
 				</div>
 				<div className="text-center">
-					<span className="font-mono text-[10px] text-muted-foreground">
+					<span className="font-mono text-[10px] text-muted-foreground/70">
 						{title.toLowerCase().replace(/\s+/g, "-")}
 					</span>
 				</div>
 				<div className="w-14" />
 			</div>
 			{/* Chart header */}
-			<div className="border-border border-b px-4 py-3">
-				<h3 className="font-medium text-sm">{title}</h3>
-				<p className="font-mono text-[10px] text-muted-foreground">
+			<div className="border-b border-white/10 px-5 py-4">
+				<h3 className="font-semibold text-sm">{title}</h3>
+				<p className="font-mono text-[11px] text-muted-foreground/80 mt-0.5">
 					{description}
 				</p>
 			</div>
 			{/* Chart content */}
-			<div className="p-4">{children}</div>
+			<div className="p-5">{children}</div>
 		</div>
 	);
 }
 
 export default function AnalyticsPage() {
 	return (
-		<div className="space-y-6">
+		<div className="space-y-8">
 			{/* Header */}
 			<div>
-				<span className="mb-2 block font-mono text-primary text-xs uppercase tracking-wider">
-					Performance
-				</span>
-				<h1 className="font-bold text-3xl tracking-tight">Analytics</h1>
-				<p className="mt-1 font-mono text-muted-foreground text-sm">
-					Visualize your trading performance
+				<div className="flex items-center gap-3 mb-2">
+					<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
+						<Activity className="h-5 w-5 text-accent" />
+					</div>
+					<span className="font-mono text-accent text-xs font-medium uppercase tracking-wider">
+						Performance
+					</span>
+				</div>
+				<h1 className="font-bold text-4xl tracking-tight">Analytics</h1>
+				<p className="mt-2 font-mono text-muted-foreground text-sm">
+					Visualize your trading performance and identify patterns
 				</p>
 			</div>
 
