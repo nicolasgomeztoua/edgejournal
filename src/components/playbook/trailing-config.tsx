@@ -75,7 +75,12 @@ export function TrailingConfig({ value, onChange }: TrailingConfigProps) {
 		fieldValue: number | string,
 	) => {
 		const newTrailStops = [...(trailingRules.trailStops ?? [])];
-		newTrailStops[idx] = { ...newTrailStops[idx], [field]: fieldValue };
+		const existing = newTrailStops[idx] ?? {
+			triggerR: 1,
+			method: "fixed_ticks" as const,
+			value: 10,
+		};
+		newTrailStops[idx] = { ...existing, [field]: fieldValue };
 		onChange({ ...trailingRules, trailStops: newTrailStops });
 	};
 
