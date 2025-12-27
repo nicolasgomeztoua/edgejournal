@@ -1,6 +1,6 @@
 {
-	"id": "476389f0-0db3-4c3f-8617-1f4cb8930c06",
-	"prevId": "cd90e6ad-1ec4-4eb4-8930-8cfb0bd47fe1",
+	"id": "ca01c9a0-1118-43df-af4a-92a2a1d25549",
+	"prevId": "476389f0-0db3-4c3f-8617-1f4cb8930c06",
 	"version": "7",
 	"dialect": "postgresql",
 	"tables": {
@@ -621,6 +621,255 @@
 			"checkConstraints": {},
 			"isRLSEnabled": false
 		},
+		"public.playbook_rule": {
+			"name": "playbook_rule",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "integer",
+					"primaryKey": true,
+					"notNull": true,
+					"identity": {
+						"type": "byDefault",
+						"name": "playbook_rule_id_seq",
+						"schema": "public",
+						"increment": "1",
+						"startWith": "1",
+						"minValue": "1",
+						"maxValue": "2147483647",
+						"cache": "1",
+						"cycle": false
+					}
+				},
+				"playbook_id": {
+					"name": "playbook_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"text": {
+					"name": "text",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"category": {
+					"name": "category",
+					"type": "playbook_rule_category",
+					"typeSchema": "public",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "'entry'"
+				},
+				"order": {
+					"name": "order",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"default": 0
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp with time zone",
+					"primaryKey": false,
+					"notNull": true
+				}
+			},
+			"indexes": {
+				"playbook_rule_playbook_id_idx": {
+					"name": "playbook_rule_playbook_id_idx",
+					"columns": [
+						{
+							"expression": "playbook_id",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": false,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				},
+				"playbook_rule_category_idx": {
+					"name": "playbook_rule_category_idx",
+					"columns": [
+						{
+							"expression": "category",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": false,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				}
+			},
+			"foreignKeys": {
+				"playbook_rule_playbook_id_playbook_id_fk": {
+					"name": "playbook_rule_playbook_id_playbook_id_fk",
+					"tableFrom": "playbook_rule",
+					"tableTo": "playbook",
+					"columnsFrom": ["playbook_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.playbook": {
+			"name": "playbook",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "integer",
+					"primaryKey": true,
+					"notNull": true,
+					"identity": {
+						"type": "byDefault",
+						"name": "playbook_id_seq",
+						"schema": "public",
+						"increment": "1",
+						"startWith": "1",
+						"minValue": "1",
+						"maxValue": "2147483647",
+						"cache": "1",
+						"cycle": false
+					}
+				},
+				"user_id": {
+					"name": "user_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"name": {
+					"name": "name",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"description": {
+					"name": "description",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"color": {
+					"name": "color",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"default": "'#d4ff00'"
+				},
+				"entry_criteria": {
+					"name": "entry_criteria",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"exit_rules": {
+					"name": "exit_rules",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"risk_parameters": {
+					"name": "risk_parameters",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"scaling_rules": {
+					"name": "scaling_rules",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"trailing_rules": {
+					"name": "trailing_rules",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"is_active": {
+					"name": "is_active",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": false,
+					"default": true
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp with time zone",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp with time zone",
+					"primaryKey": false,
+					"notNull": false
+				}
+			},
+			"indexes": {
+				"playbook_user_id_idx": {
+					"name": "playbook_user_id_idx",
+					"columns": [
+						{
+							"expression": "user_id",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": false,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				},
+				"playbook_is_active_idx": {
+					"name": "playbook_is_active_idx",
+					"columns": [
+						{
+							"expression": "is_active",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": false,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				}
+			},
+			"foreignKeys": {
+				"playbook_user_id_user_id_fk": {
+					"name": "playbook_user_id_user_id_fk",
+					"tableFrom": "playbook",
+					"tableTo": "user",
+					"columnsFrom": ["user_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
 		"public.tag": {
 			"name": "tag",
 			"schema": "",
@@ -809,6 +1058,99 @@
 				}
 			},
 			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.trade_rule_check": {
+			"name": "trade_rule_check",
+			"schema": "",
+			"columns": {
+				"trade_id": {
+					"name": "trade_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"rule_id": {
+					"name": "rule_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"checked": {
+					"name": "checked",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": true,
+					"default": false
+				},
+				"checked_at": {
+					"name": "checked_at",
+					"type": "timestamp with time zone",
+					"primaryKey": false,
+					"notNull": false
+				}
+			},
+			"indexes": {
+				"trade_rule_check_trade_id_idx": {
+					"name": "trade_rule_check_trade_id_idx",
+					"columns": [
+						{
+							"expression": "trade_id",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": false,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				},
+				"trade_rule_check_rule_id_idx": {
+					"name": "trade_rule_check_rule_id_idx",
+					"columns": [
+						{
+							"expression": "rule_id",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": false,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				}
+			},
+			"foreignKeys": {
+				"trade_rule_check_trade_id_trade_id_fk": {
+					"name": "trade_rule_check_trade_id_trade_id_fk",
+					"tableFrom": "trade_rule_check",
+					"tableTo": "trade",
+					"columnsFrom": ["trade_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				},
+				"trade_rule_check_rule_id_playbook_rule_id_fk": {
+					"name": "trade_rule_check_rule_id_playbook_rule_id_fk",
+					"tableFrom": "trade_rule_check",
+					"tableTo": "playbook_rule",
+					"columnsFrom": ["rule_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {
+				"trade_rule_check_trade_id_rule_id_pk": {
+					"name": "trade_rule_check_trade_id_rule_id_pk",
+					"columns": ["trade_id", "rule_id"]
+				}
+			},
 			"uniqueConstraints": {},
 			"policies": {},
 			"checkConstraints": {},
@@ -1003,6 +1345,12 @@
 				},
 				"account_id": {
 					"name": "account_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"playbook_id": {
+					"name": "playbook_id",
 					"type": "integer",
 					"primaryKey": false,
 					"notNull": false
@@ -1229,6 +1577,21 @@
 					"columns": [
 						{
 							"expression": "account_id",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": false,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				},
+				"trade_playbook_id_idx": {
+					"name": "trade_playbook_id_idx",
+					"columns": [
+						{
+							"expression": "playbook_id",
 							"isExpression": false,
 							"asc": true,
 							"nulls": "last"
@@ -1614,6 +1977,11 @@
 			"name": "payout_frequency",
 			"schema": "public",
 			"values": ["weekly", "bi_weekly", "monthly"]
+		},
+		"public.playbook_rule_category": {
+			"name": "playbook_rule_category",
+			"schema": "public",
+			"values": ["entry", "exit", "risk", "management"]
 		},
 		"public.trade_direction": {
 			"name": "trade_direction",

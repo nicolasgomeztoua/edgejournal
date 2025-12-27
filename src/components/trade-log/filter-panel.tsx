@@ -1,4 +1,5 @@
 import {
+	BookMarked,
 	Bookmark,
 	CalendarDays,
 	ChevronDown,
@@ -48,6 +49,7 @@ export interface FilterState {
 	endDate: string;
 	tagIds: number[];
 	exitReason: string;
+	playbookId: string;
 }
 
 export const DEFAULT_FILTERS: FilterState = {
@@ -67,6 +69,7 @@ export const DEFAULT_FILTERS: FilterState = {
 	endDate: "",
 	tagIds: [],
 	exitReason: "",
+	playbookId: "",
 };
 
 const DAYS_OF_WEEK = [
@@ -90,6 +93,7 @@ export function FilterPanel({ filters, onChange, onClear }: FilterPanelProps) {
 	const [presetName, setPresetName] = useState("");
 	const [showSaveDialog, setShowSaveDialog] = useState(false);
 
+	const { data: playbooks } = api.playbooks.getAll.useQuery();
 	const { data: presets, refetch: refetchPresets } =
 		api.filterPresets.getAll.useQuery();
 	const createPreset = api.filterPresets.create.useMutation({
@@ -241,6 +245,49 @@ export function FilterPanel({ filters, onChange, onClear }: FilterPanelProps) {
 						<SelectItem className="font-mono text-xs" value="unreviewed">
 							Unreviewed
 						</SelectItem>
+					</SelectContent>
+				</Select>
+
+				{/* Playbook Filter */}
+				<Select
+					onValueChange={(v) =>
+						onChange({ ...filters, playbookId: v === "all" ? "" : v })
+					}
+					value={filters.playbookId || "all"}
+				>
+					<SelectTrigger className="w-[160px] font-mono text-xs">
+						<SelectValue placeholder="Playbook">
+							{filters.playbookId ? (
+								<div className="flex items-center gap-1.5">
+									<BookMarked className="h-3 w-3" />
+									{playbooks?.find(
+										(p) => p.id.toString() === filters.playbookId,
+									)?.name ?? "Playbook"}
+								</div>
+							) : (
+								"All Playbooks"
+							)}
+						</SelectValue>
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem className="font-mono text-xs" value="all">
+							All Playbooks
+						</SelectItem>
+						{playbooks?.map((pb) => (
+							<SelectItem
+								className="font-mono text-xs"
+								key={pb.id}
+								value={pb.id.toString()}
+							>
+								<div className="flex items-center gap-2">
+									<div
+										className="h-2 w-2 rounded-full"
+										style={{ backgroundColor: pb.color ?? "#d4ff00" }}
+									/>
+									{pb.name}
+								</div>
+							</SelectItem>
+						))}
 					</SelectContent>
 				</Select>
 

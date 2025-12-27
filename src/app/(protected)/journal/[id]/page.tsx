@@ -3,6 +3,7 @@
 import {
 	AlertTriangle,
 	ArrowLeft,
+	BookMarked,
 	Camera,
 	CandlestickChart,
 	Check,
@@ -10,6 +11,7 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	Clock,
+	ExternalLink,
 	Loader2,
 	Trash2,
 	TrendingDown,
@@ -19,6 +21,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
+import { ComplianceBadge, RuleChecklist } from "@/components/playbook";
 import { TradeTags } from "@/components/tags/tag-selector";
 import {
 	EditableField,
@@ -39,6 +42,13 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StarRating } from "@/components/ui/star-rating";
 import { useDebouncedMutation } from "@/hooks/use-debounced-mutation";
@@ -105,6 +115,143 @@ function Section({
 				{children}
 			</div>
 		</div>
+	);
+}
+
+// =============================================================================
+// PLAYBOOK SECTION COMPONENT
+// =============================================================================
+
+function PlaybookSection({
+	tradeId,
+	playbookId,
+	onPlaybookChange,
+}: {
+	tradeId: number;
+	playbookId: number | null;
+	onPlaybookChange: (playbookId: number | null) => void;
+}) {
+	const utils = api.useUtils();
+
+	// Fetch all playbooks for selector
+	const { data: playbooks } = api.playbooks.getAll.useQuery();
+
+	// Fetch rule checks for this trade
+	const { data: ruleChecksData } = api.playbooks.getTradeRuleChecks.useQuery(
+		{ tradeId },
+		{ enabled: !!playbookId },
+	);
+
+	const updateTradeMutation = api.trades.update.useMutation({
+		onSuccess: () => {
+			utils.trades.getById.invalidate({ id: tradeId });
+			utils.playbooks.getTradeRuleChecks.invalidate({ tradeId });
+		},
+		onError: () => {
+			toast.error("Failed to update playbook");
+		},
+	});
+
+	const handlePlaybookChange = (value: string) => {
+		const newPlaybookId = value === "none" ? null : parseInt(value, 10);
+		onPlaybookChange(newPlaybookId);
+		updateTradeMutation.mutate({
+			id: tradeId,
+			playbookId: newPlaybookId,
+		} as Parameters<typeof updateTradeMutation.mutate>[0]);
+	};
+
+	return (
+		<Section label="Playbook">
+			<div className="space-y-4">
+				{/* Playbook Selector */}
+				<div className="flex items-center gap-4">
+					<div className="flex-1">
+						<Select
+							onValueChange={handlePlaybookChange}
+							value={playbookId?.toString() ?? "none"}
+						>
+							<SelectTrigger className="font-mono">
+								<SelectValue placeholder="Select playbook..." />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="none">No playbook</SelectItem>
+								{playbooks?.map((pb) => (
+									<SelectItem key={pb.id} value={pb.id.toString()}>
+										<div className="flex items-center gap-2">
+											<div
+												className="h-2 w-2 rounded-full"
+												style={{ backgroundColor: pb.color ?? "#d4ff00" }}
+											/>
+											{pb.name}
+										</div>
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+
+					{playbookId && ruleChecksData?.playbook && (
+						<div className="flex items-center gap-3">
+							<ComplianceBadge
+								compliance={ruleChecksData.compliance}
+								size="md"
+							/>
+							<Button asChild size="sm" variant="ghost">
+								<Link href={`/playbooks/${playbookId}`}>
+									<ExternalLink className="h-3 w-3" />
+								</Link>
+							</Button>
+						</div>
+					)}
+				</div>
+
+				{/* Rule Checklist */}
+				{playbookId && ruleChecksData && ruleChecksData.rules.length > 0 && (
+					<RuleChecklist
+						checks={ruleChecksData.checks}
+						onUpdate={() =>
+							utils.playbooks.getTradeRuleChecks.invalidate({ tradeId })
+						}
+						rules={ruleChecksData.rules}
+						tradeId={tradeId}
+					/>
+				)}
+
+				{/* Empty state when no playbook */}
+				{!playbookId && (
+					<div className="flex items-center gap-3 rounded border border-white/5 bg-white/[0.01] p-4">
+						<BookMarked className="h-5 w-5 text-muted-foreground/50" />
+						<div>
+							<p className="font-mono text-muted-foreground text-sm">
+								No playbook assigned
+							</p>
+							<p className="font-mono text-[10px] text-muted-foreground/70">
+								Assign a playbook to track rule compliance for this trade
+							</p>
+						</div>
+					</div>
+				)}
+
+				{/* State when playbook has no rules */}
+				{playbookId && ruleChecksData && ruleChecksData.rules.length === 0 && (
+					<div className="flex items-center gap-3 rounded border border-white/5 bg-white/[0.01] p-4">
+						<BookMarked className="h-5 w-5 text-primary/50" />
+						<div>
+							<p className="font-mono text-muted-foreground text-sm">
+								Playbook has no rules defined
+							</p>
+							<Link
+								className="font-mono text-[10px] text-primary hover:underline"
+								href={`/playbooks/${playbookId}`}
+							>
+								Add rules to this playbook
+							</Link>
+						</div>
+					</div>
+				)}
+			</div>
+		</Section>
 	);
 }
 
@@ -742,6 +889,15 @@ export default function TradeDetailPage() {
 					/>
 				</div>
 			</Section>
+
+			{/* ================================================================
+			    PLAYBOOK
+			    ================================================================ */}
+			<PlaybookSection
+				onPlaybookChange={(playbookId) => updateField("playbookId", playbookId)}
+				playbookId={trade.playbookId}
+				tradeId={tradeId}
+			/>
 
 			{/* ================================================================
 			    TAGS

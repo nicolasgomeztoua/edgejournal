@@ -123,6 +123,8 @@ export default function JournalPage() {
 		if (filters.dayOfWeek.length > 0) params.dayOfWeek = filters.dayOfWeek;
 		if (filters.exitReason) params.exitReason = filters.exitReason;
 		if (filters.tagIds.length > 0) params.tagIds = filters.tagIds;
+		if (filters.playbookId)
+			params.playbookId = parseInt(filters.playbookId, 10);
 
 		return params;
 	}, [filters, selectedAccountId, debouncedSearch]);

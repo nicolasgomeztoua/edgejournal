@@ -76,6 +76,12 @@ export const tradingPlatformEnum = pgEnum("trading_platform", [
 	"ninjatrader", // NinjaTrader (future)
 	"other", // Manual/Other
 ]);
+export const playbookRuleCategoryEnum = pgEnum("playbook_rule_category", [
+	"entry",
+	"exit",
+	"risk",
+	"management",
+]);
 
 // ============================================================================
 // USERS TABLE
@@ -216,6 +222,7 @@ export const trades = createTable(
 		accountId: integer("account_id").references(() => accounts.id, {
 			onDelete: "set null",
 		}),
+		playbookId: integer("playbook_id"), // FK added after playbooks table is defined
 
 		// Instrument info
 		symbol: text("symbol").notNull(), // e.g., "ES", "NQ", "EUR/USD"
@@ -290,6 +297,7 @@ export const trades = createTable(
 	(t) => [
 		index("trade_user_id_idx").on(t.userId),
 		index("trade_account_id_idx").on(t.accountId),
+		index("trade_playbook_id_idx").on(t.playbookId),
 		index("trade_symbol_idx").on(t.symbol),
 		index("trade_entry_time_idx").on(t.entryTime),
 		index("trade_status_idx").on(t.status),
@@ -496,6 +504,108 @@ export const aiMessages = createTable(
 );
 
 // ============================================================================
+// PLAYBOOKS TABLE
+// ============================================================================
+
+export const playbooks = createTable(
+	"playbook",
+	{
+		id: integer().primaryKey().generatedByDefaultAsIdentity(),
+		userId: integer("user_id")
+			.notNull()
+			.references(() => users.id, { onDelete: "cascade" }),
+
+		// Basic info
+		name: text("name").notNull(),
+		description: text("description"),
+		color: text("color").default("#d4ff00"), // Primary chartreuse
+
+		// Strategy documentation
+		entryCriteria: text("entry_criteria"), // Rich text for entry rules
+		exitRules: text("exit_rules"), // Rich text for exit rules
+
+		// Risk management (JSON)
+		// { positionSizing: { method, fixedSize, riskPercent, kellyFraction },
+		//   maxRiskPerTrade: { type, value }, dailyLossLimit: { type, value },
+		//   maxConcurrentPositions, minRRRatio, targetRMultiples }
+		riskParameters: text("risk_parameters"), // JSON string
+
+		// Scaling rules (JSON)
+		// { scaleIn: [{ trigger, sizePercent }], scaleOut: [{ trigger, sizePercent }] }
+		scalingRules: text("scaling_rules"), // JSON string
+
+		// Trailing stop rules (JSON)
+		// { moveToBreakeven: { triggerR, offsetTicks }, trailStops: [{ triggerR, method, value }] }
+		trailingRules: text("trailing_rules"), // JSON string
+
+		// Status
+		isActive: boolean("is_active").default(true),
+
+		// Timestamps
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.$defaultFn(() => new Date()),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+			() => new Date(),
+		),
+	},
+	(t) => [
+		index("playbook_user_id_idx").on(t.userId),
+		index("playbook_is_active_idx").on(t.isActive),
+	],
+);
+
+// ============================================================================
+// PLAYBOOK RULES TABLE (checklist items)
+// ============================================================================
+
+export const playbookRules = createTable(
+	"playbook_rule",
+	{
+		id: integer().primaryKey().generatedByDefaultAsIdentity(),
+		playbookId: integer("playbook_id")
+			.notNull()
+			.references(() => playbooks.id, { onDelete: "cascade" }),
+
+		text: text("text").notNull(), // The rule text
+		category: playbookRuleCategoryEnum("category").notNull().default("entry"),
+		order: integer("order").notNull().default(0), // For sorting
+
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.$defaultFn(() => new Date()),
+	},
+	(t) => [
+		index("playbook_rule_playbook_id_idx").on(t.playbookId),
+		index("playbook_rule_category_idx").on(t.category),
+	],
+);
+
+// ============================================================================
+// TRADE RULE CHECKS TABLE (junction: tracks which rules were checked per trade)
+// ============================================================================
+
+export const tradeRuleChecks = createTable(
+	"trade_rule_check",
+	{
+		tradeId: integer("trade_id")
+			.notNull()
+			.references(() => trades.id, { onDelete: "cascade" }),
+		ruleId: integer("rule_id")
+			.notNull()
+			.references(() => playbookRules.id, { onDelete: "cascade" }),
+
+		checked: boolean("checked").notNull().default(false),
+		checkedAt: timestamp("checked_at", { withTimezone: true }),
+	},
+	(t) => [
+		primaryKey({ columns: [t.tradeId, t.ruleId] }),
+		index("trade_rule_check_trade_id_idx").on(t.tradeId),
+		index("trade_rule_check_rule_id_idx").on(t.ruleId),
+	],
+);
+
+// ============================================================================
 // RELATIONS
 // ============================================================================
 
@@ -507,6 +617,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
 	settings: one(userSettings),
 	aiConversations: many(aiConversations),
 	filterPresets: many(filterPresets),
+	playbooks: many(playbooks),
 }));
 
 export const filterPresetsRelations = relations(filterPresets, ({ one }) => ({
@@ -556,9 +667,14 @@ export const tradesRelations = relations(trades, ({ one, many }) => ({
 		fields: [trades.accountId],
 		references: [accounts.id],
 	}),
+	playbook: one(playbooks, {
+		fields: [trades.playbookId],
+		references: [playbooks.id],
+	}),
 	executions: many(tradeExecutions),
 	tradeTags: many(tradeTags),
 	screenshots: many(tradeScreenshots),
+	ruleChecks: many(tradeRuleChecks),
 }));
 
 export const tradeExecutionsRelations = relations(
@@ -625,6 +741,40 @@ export const aiMessagesRelations = relations(aiMessages, ({ one }) => ({
 	}),
 }));
 
+export const playbooksRelations = relations(playbooks, ({ one, many }) => ({
+	user: one(users, {
+		fields: [playbooks.userId],
+		references: [users.id],
+	}),
+	rules: many(playbookRules),
+	trades: many(trades),
+}));
+
+export const playbookRulesRelations = relations(
+	playbookRules,
+	({ one, many }) => ({
+		playbook: one(playbooks, {
+			fields: [playbookRules.playbookId],
+			references: [playbooks.id],
+		}),
+		tradeChecks: many(tradeRuleChecks),
+	}),
+);
+
+export const tradeRuleChecksRelations = relations(
+	tradeRuleChecks,
+	({ one }) => ({
+		trade: one(trades, {
+			fields: [tradeRuleChecks.tradeId],
+			references: [trades.id],
+		}),
+		rule: one(playbookRules, {
+			fields: [tradeRuleChecks.ruleId],
+			references: [playbookRules.id],
+		}),
+	}),
+);
+
 // ============================================================================
 // TYPE EXPORTS
 // ============================================================================
@@ -647,3 +797,9 @@ export type AiConversation = typeof aiConversations.$inferSelect;
 export type AiMessage = typeof aiMessages.$inferSelect;
 export type FilterPreset = typeof filterPresets.$inferSelect;
 export type NewFilterPreset = typeof filterPresets.$inferInsert;
+export type Playbook = typeof playbooks.$inferSelect;
+export type NewPlaybook = typeof playbooks.$inferInsert;
+export type PlaybookRule = typeof playbookRules.$inferSelect;
+export type NewPlaybookRule = typeof playbookRules.$inferInsert;
+export type TradeRuleCheck = typeof tradeRuleChecks.$inferSelect;
+export type NewTradeRuleCheck = typeof tradeRuleChecks.$inferInsert;

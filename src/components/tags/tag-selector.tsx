@@ -189,7 +189,9 @@ export function TradeTags({
 	maxDisplay = 2,
 }: TradeTagsProps) {
 	// Optimistic state for removed tags
-	const [optimisticallyRemoved, setOptimisticallyRemoved] = useState<Set<number>>(new Set());
+	const [optimisticallyRemoved, setOptimisticallyRemoved] = useState<
+		Set<number>
+	>(new Set());
 
 	const removeTag = api.tags.removeFromTrade.useMutation({
 		onSuccess: () => {

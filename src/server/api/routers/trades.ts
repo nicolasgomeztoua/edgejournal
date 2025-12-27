@@ -53,6 +53,7 @@ const createTradeSchema = z.object({
 	tagIds: z.array(z.number()).optional(),
 	accountId: z.number(), // Required: Link to trading account
 	externalId: z.string().optional(), // For tracking imported trades
+	playbookId: z.number().optional(), // Link to playbook
 });
 
 const updateTradeSchema = z.object({
@@ -102,6 +103,8 @@ const updateTradeSchema = z.object({
 	// Rating and review
 	rating: z.number().min(1).max(5).optional().nullable(),
 	isReviewed: z.boolean().optional(),
+	// Playbook
+	playbookId: z.number().nullish(),
 });
 
 // Schema for adding a partial exit / execution
@@ -177,6 +180,7 @@ export const tradesRouter = createTRPCRouter({
 							"breakeven",
 						])
 						.nullish(),
+					playbookId: z.number().nullish(),
 				})
 				.optional(),
 		)
@@ -247,6 +251,9 @@ export const tradesRouter = createTRPCRouter({
 			if (input?.exitReason) {
 				conditions.push(eq(trades.exitReason, input.exitReason));
 			}
+			if (input?.playbookId) {
+				conditions.push(eq(trades.playbookId, input.playbookId));
+			}
 			if (input?.dayOfWeek && input.dayOfWeek.length > 0) {
 				// PostgreSQL EXTRACT(DOW FROM date) returns 0=Sunday, 6=Saturday
 				const dayConditions = input.dayOfWeek.map(
@@ -273,6 +280,7 @@ export const tradesRouter = createTRPCRouter({
 						},
 					},
 					account: true,
+					playbook: true,
 				},
 			});
 
@@ -322,7 +330,9 @@ export const tradesRouter = createTRPCRouter({
 						},
 					},
 					screenshots: true,
-					account: true, // Include account info
+					account: true,
+					playbook: true,
+					ruleChecks: true,
 				},
 			});
 

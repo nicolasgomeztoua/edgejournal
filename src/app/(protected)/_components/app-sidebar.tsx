@@ -3,6 +3,7 @@
 import { UserButton } from "@clerk/nextjs";
 import {
 	BarChart3,
+	BookMarked,
 	BookOpen,
 	Brain,
 	Check,
@@ -53,6 +54,11 @@ const mainNavItems = [
 		title: "Trades",
 		href: "/journal",
 		icon: BookOpen,
+	},
+	{
+		title: "Playbooks",
+		href: "/playbooks",
+		icon: BookMarked,
 	},
 	{
 		title: "Analytics",
@@ -363,23 +369,23 @@ export function AppSidebar() {
 				</SidebarGroup>
 			</SidebarContent>
 
-		<SidebarFooter className="border-border border-t bg-sidebar">
-			<SidebarMenu>
-				<SidebarMenuItem>
-					<ThemeSelector />
-				</SidebarMenuItem>
-				<SidebarMenuItem>
-					<SidebarMenuButton
-						asChild
-						className="font-mono text-xs uppercase tracking-wider"
-						isActive={pathname === "/settings"}
-					>
-						<Link href="/settings">
-							<Settings className="h-4 w-4" />
-							<span>Settings</span>
-						</Link>
-					</SidebarMenuButton>
-				</SidebarMenuItem>
+			<SidebarFooter className="border-border border-t bg-sidebar">
+				<SidebarMenu>
+					<SidebarMenuItem>
+						<ThemeSelector />
+					</SidebarMenuItem>
+					<SidebarMenuItem>
+						<SidebarMenuButton
+							asChild
+							className="font-mono text-xs uppercase tracking-wider"
+							isActive={pathname === "/settings"}
+						>
+							<Link href="/settings">
+								<Settings className="h-4 w-4" />
+								<span>Settings</span>
+							</Link>
+						</SidebarMenuButton>
+					</SidebarMenuItem>
 					<SidebarMenuItem>
 						<div className="flex items-center gap-3 px-2 py-2">
 							<UserButton

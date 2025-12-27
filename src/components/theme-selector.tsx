@@ -1,9 +1,6 @@
 "use client";
 
-import { Check, Moon, Palette, Sun } from "lucide-react";
-import { useTheme } from "@/contexts/theme-context";
-import { darkThemes, lightThemes, type Theme } from "@/lib/themes";
-import { cn } from "@/lib/utils";
+import { Check, Moon, Sun } from "lucide-react";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -13,6 +10,9 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SidebarMenuButton } from "@/components/ui/sidebar";
+import { useTheme } from "@/contexts/theme-context";
+import { darkThemes, lightThemes, type Theme } from "@/lib/themes";
+import { cn } from "@/lib/utils";
 
 function ThemeSwatch({ theme }: { theme: Theme }) {
 	return (
@@ -68,11 +68,7 @@ export function ThemeSelector() {
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
 				<SidebarMenuButton className="font-mono text-xs uppercase tracking-wider">
-					{isDark ? (
-						<Moon className="h-4 w-4" />
-					) : (
-						<Sun className="h-4 w-4" />
-					)}
+					{isDark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
 					<span>{currentTheme?.name ?? "Theme"}</span>
 				</SidebarMenuButton>
 			</DropdownMenuTrigger>
@@ -108,4 +104,3 @@ export function ThemeSelector() {
 		</DropdownMenu>
 	);
 }
-
