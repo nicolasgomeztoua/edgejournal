@@ -1,9 +1,6 @@
 import { and, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
-import {
-	calculateAggregateStats,
-	parsePnl,
-} from "@/lib/stats-calculations";
+import { calculateAggregateStats, parsePnl } from "@/lib/stats-calculations";
 import {
 	getActiveAccountsSubquery,
 	getUserBreakevenThreshold,
@@ -44,13 +41,8 @@ export const analyticsRouter = createTRPCRouter({
 			if (input?.accountId) {
 				conditions.push(eq(trades.accountId, input.accountId));
 			} else {
-				const activeAccountIds = getActiveAccountsSubquery(
-					ctx.db,
-					ctx.user.id,
-				);
-				conditions.push(
-					sql`${trades.accountId} IN (${activeAccountIds})`,
-				);
+				const activeAccountIds = getActiveAccountsSubquery(ctx.db, ctx.user.id);
+				conditions.push(sql`${trades.accountId} IN (${activeAccountIds})`);
 			}
 
 			// Date range filters
@@ -60,9 +52,7 @@ export const analyticsRouter = createTRPCRouter({
 				);
 			}
 			if (input?.endDate) {
-				conditions.push(
-					sql`${trades.exitTime} <= ${new Date(input.endDate)}`,
-				);
+				conditions.push(sql`${trades.exitTime} <= ${new Date(input.endDate)}`);
 			}
 
 			// Fetch all closed trades with P&L
@@ -80,10 +70,7 @@ export const analyticsRouter = createTRPCRouter({
 				.orderBy(trades.exitTime);
 
 			// Get user's breakeven threshold
-			const beThreshold = await getUserBreakevenThreshold(
-				ctx.db,
-				ctx.user.id,
-			);
+			const beThreshold = await getUserBreakevenThreshold(ctx.db, ctx.user.id);
 
 			// Calculate aggregate stats using existing function
 			const stats = calculateAggregateStats(closedTrades, beThreshold);
@@ -100,8 +87,7 @@ export const analyticsRouter = createTRPCRouter({
 					: 0;
 
 			// Payoff Ratio: avgWin / avgLoss
-			const payoffRatio =
-				stats.avgLoss > 0 ? stats.avgWin / stats.avgLoss : 0;
+			const payoffRatio = stats.avgLoss > 0 ? stats.avgWin / stats.avgLoss : 0;
 
 			// Sharpe Ratio: (mean return - risk free rate) / std dev
 			// Using 0 as risk-free rate for simplicity (common in trading)
@@ -175,4 +161,3 @@ export const analyticsRouter = createTRPCRouter({
 			};
 		}),
 });
-

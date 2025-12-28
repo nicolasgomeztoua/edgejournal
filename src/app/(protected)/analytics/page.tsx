@@ -1,18 +1,9 @@
 "use client";
 
 import { AgCharts } from "ag-charts-react";
-import {
-	Activity,
-	BarChart3,
-	Clock,
-	PieChart,
-	ShieldAlert,
-	Target,
-	TrendingUp,
-	Zap,
-} from "lucide-react";
+import { Clock } from "lucide-react";
 import { useMemo } from "react";
-import { MetricCard, METRIC_TOOLTIPS } from "@/components/analytics";
+import { METRIC_TOOLTIPS, MetricCard } from "@/components/analytics";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -53,69 +44,58 @@ function StatsOverview() {
 		<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
 			{/* Row 1: Core metrics */}
 			<MetricCard
-				title="Total P&L"
-				value={formatCurrency(overview.totalPnl)}
-				description={`${overview.totalTrades} closed trades`}
-				tooltip={METRIC_TOOLTIPS.totalPnl}
-				icon={TrendingUp}
 				colorClass={getPnLColorClass(overview.totalPnl)}
+				description={`${overview.totalTrades} closed trades`}
+				title="Total P&L"
+				tooltip={METRIC_TOOLTIPS.totalPnl}
+				value={formatCurrency(overview.totalPnl)}
 			/>
 			<MetricCard
-				title="Win Rate"
-				value={formatPercent(overview.winRate, 1).replace("+", "")}
-				description={`${overview.wins}W / ${overview.losses}L`}
-				tooltip={METRIC_TOOLTIPS.winRate}
-				icon={Target}
 				colorClass={overview.winRate >= 50 ? "text-profit" : "text-loss"}
+				description={`${overview.wins}W / ${overview.losses}L`}
+				title="Win Rate"
+				tooltip={METRIC_TOOLTIPS.winRate}
+				value={formatPercent(overview.winRate, 1).replace("+", "")}
 			/>
 			<MetricCard
+				colorClass={overview.profitFactor >= 1 ? "text-profit" : "text-loss"}
+				description="Gross profit / loss"
 				title="Profit Factor"
+				tooltip={METRIC_TOOLTIPS.profitFactor}
 				value={
 					overview.profitFactor === Infinity
 						? "∞"
 						: overview.profitFactor.toFixed(2)
 				}
-				description="Gross profit / loss"
-				tooltip={METRIC_TOOLTIPS.profitFactor}
-				icon={BarChart3}
-				colorClass={overview.profitFactor >= 1 ? "text-profit" : "text-loss"}
 			/>
 			<MetricCard
-				title="Avg Trade"
-				value={formatCurrency(overview.avgPnl)}
-				description={`Avg win: ${formatCurrency(overview.avgWin)}`}
-				tooltip={METRIC_TOOLTIPS.avgTrade}
-				icon={PieChart}
 				colorClass={getPnLColorClass(overview.avgPnl)}
+				description={`Avg win: ${formatCurrency(overview.avgWin)}`}
+				title="Avg Trade"
+				tooltip={METRIC_TOOLTIPS.avgTrade}
+				value={formatCurrency(overview.avgPnl)}
 			/>
 
 			{/* Row 2: Advanced metrics */}
 			<MetricCard
-				title="Expectancy"
-				value={formatCurrency(overview.expectancy)}
-				description="Expected profit per trade"
-				tooltip={METRIC_TOOLTIPS.expectancy}
-				icon={Zap}
 				colorClass={getPnLColorClass(overview.expectancy)}
+				description="Expected profit per trade"
+				title="Expectancy"
+				tooltip={METRIC_TOOLTIPS.expectancy}
+				value={formatCurrency(overview.expectancy)}
 			/>
 			<MetricCard
+				colorClass={overview.payoffRatio >= 1 ? "text-profit" : "text-loss"}
+				description="Avg win / avg loss"
 				title="Payoff Ratio"
+				tooltip={METRIC_TOOLTIPS.payoffRatio}
 				value={
 					overview.payoffRatio === Infinity
 						? "∞"
 						: overview.payoffRatio.toFixed(2)
 				}
-				description="Avg win / avg loss"
-				tooltip={METRIC_TOOLTIPS.payoffRatio}
-				icon={Activity}
-				colorClass={overview.payoffRatio >= 1 ? "text-profit" : "text-loss"}
 			/>
 			<MetricCard
-				title="Sharpe Ratio"
-				value={overview.sharpeRatio.toFixed(2)}
-				description="Risk-adjusted return"
-				tooltip={METRIC_TOOLTIPS.sharpeRatio}
-				icon={ShieldAlert}
 				colorClass={
 					overview.sharpeRatio >= 1
 						? "text-profit"
@@ -123,13 +103,18 @@ function StatsOverview() {
 							? "text-breakeven"
 							: "text-loss"
 				}
+				description="Risk-adjusted return"
+				title="Sharpe Ratio"
+				tooltip={METRIC_TOOLTIPS.sharpeRatio}
+				value={overview.sharpeRatio.toFixed(2)}
 			/>
 			<MetricCard
-				title="Current Streak"
-				value={
-					overview.currentStreakType === "none"
-						? "—"
-						: `${overview.currentStreak}${overview.currentStreakType === "win" ? "W" : "L"}`
+				colorClass={
+					overview.currentStreakType === "win"
+						? "text-profit"
+						: overview.currentStreakType === "loss"
+							? "text-loss"
+							: "text-muted-foreground"
 				}
 				description={
 					overview.currentStreakType === "win"
@@ -138,14 +123,12 @@ function StatsOverview() {
 							? "Consecutive losses"
 							: "No active streak"
 				}
+				title="Current Streak"
 				tooltip={METRIC_TOOLTIPS.currentStreak}
-				icon={TrendingUp}
-				colorClass={
-					overview.currentStreakType === "win"
-						? "text-profit"
-						: overview.currentStreakType === "loss"
-							? "text-loss"
-							: "text-muted-foreground"
+				value={
+					overview.currentStreakType === "none"
+						? "—"
+						: `${overview.currentStreak}${overview.currentStreakType === "win" ? "W" : "L"}`
 				}
 			/>
 		</div>
@@ -441,42 +424,42 @@ export default function AnalyticsPage() {
 			</div>
 
 			{/* Tab Navigation */}
-			<Tabs defaultValue="overview" className="space-y-6">
+			<Tabs className="space-y-6" defaultValue="overview">
 				<TabsList className="bg-secondary/50">
 					<TabsTrigger
-						value="overview"
 						className="font-mono text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+						value="overview"
 					>
 						Overview
 					</TabsTrigger>
 					<TabsTrigger
-						value="time"
 						className="font-mono text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+						value="time"
 					>
 						Time
 					</TabsTrigger>
 					<TabsTrigger
-						value="risk"
 						className="font-mono text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+						value="risk"
 					>
 						Risk
 					</TabsTrigger>
 					<TabsTrigger
-						value="symbols"
 						className="font-mono text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+						value="symbols"
 					>
 						Symbols
 					</TabsTrigger>
 					<TabsTrigger
-						value="behavior"
 						className="font-mono text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+						value="behavior"
 					>
 						Behavior
 					</TabsTrigger>
 				</TabsList>
 
 				{/* Overview Tab */}
-				<TabsContent value="overview" className="space-y-6">
+				<TabsContent className="space-y-6" value="overview">
 					{/* Stats Overview */}
 					<StatsOverview />
 

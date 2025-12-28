@@ -164,10 +164,7 @@ export function calculatePayoffRatio(avgWin: number, avgLoss: number): number {
  * @param riskFreeRate - Risk-free rate per period (default 0)
  * @returns Sharpe ratio, or 0 if insufficient data
  */
-export function calculateSharpeRatio(
-	pnls: number[],
-	riskFreeRate = 0,
-): number {
+export function calculateSharpeRatio(pnls: number[], riskFreeRate = 0): number {
 	if (pnls.length < 2) return 0;
 
 	const mean = pnls.reduce((sum, v) => sum + v, 0) / pnls.length;
@@ -199,7 +196,8 @@ export function calculateSortinoRatio(
 	if (negativeReturns.length === 0) return mean > 0 ? Infinity : 0;
 
 	const downsideVariance =
-		negativeReturns.reduce((sum, v) => sum + v ** 2, 0) / negativeReturns.length;
+		negativeReturns.reduce((sum, v) => sum + v ** 2, 0) /
+		negativeReturns.length;
 	const downsideDeviation = Math.sqrt(downsideVariance);
 
 	if (downsideDeviation === 0) return 0;

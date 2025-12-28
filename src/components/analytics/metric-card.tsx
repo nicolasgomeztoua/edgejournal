@@ -1,5 +1,5 @@
-import { Info } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { Info } from "lucide-react";
 import {
 	Tooltip,
 	TooltipContent,
@@ -65,9 +65,9 @@ export function MetricCard({
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<button
-								type="button"
-								className="text-muted-foreground/60 transition-colors hover:text-primary"
 								aria-label={`Learn more about ${title}`}
+								className="text-muted-foreground/60 transition-colors hover:text-primary"
+								type="button"
 							>
 								<Info className="h-3 w-3" />
 							</button>
@@ -85,8 +85,12 @@ export function MetricCard({
 								<p className="text-muted-foreground text-xs">{tooltip.why}</p>
 							</div>
 							<div>
-								<span className="font-medium text-primary text-xs">Benchmark:</span>
-								<p className="text-muted-foreground text-xs">{tooltip.benchmark}</p>
+								<span className="font-medium text-primary text-xs">
+									Benchmark:
+								</span>
+								<p className="text-muted-foreground text-xs">
+									{tooltip.benchmark}
+								</p>
 							</div>
 						</TooltipContent>
 					</Tooltip>
@@ -168,7 +172,8 @@ export const METRIC_TOOLTIPS = {
 	largestWin: {
 		what: "Your biggest winning trade.",
 		why: "Shows max upside. Very large wins may indicate luck or outliers.",
-		benchmark: "Should not be >30-40% of total profit (over-reliance on one trade).",
+		benchmark:
+			"Should not be >30-40% of total profit (over-reliance on one trade).",
 	},
 	largestLoss: {
 		what: "Your biggest losing trade.",
@@ -188,4 +193,3 @@ export const METRIC_TOOLTIPS = {
 			"Streaks are normal. Don't oversize after wins or revenge trade after losses.",
 	},
 } as const;
-

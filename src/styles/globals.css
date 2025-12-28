@@ -86,7 +86,7 @@
 	--secondary: #141414;
 	--secondary-foreground: #e5e5e5;
 	--muted: #1a1a1a;
-	--muted-foreground: #a3a3a3;
+	--muted-foreground: #e5e5e5;
 	--accent: #00d4ff;
 	--accent-foreground: #050505;
 	--destructive: #ff3b3b;
@@ -125,7 +125,7 @@
 	--secondary: #3e4451;
 	--secondary-foreground: #abb2bf;
 	--muted: #3e4451;
-	--muted-foreground: #5c6370;
+	--muted-foreground: #abb2bf;
 	--accent: #98c379;
 	--accent-foreground: #282c34;
 	--destructive: #e06c75;
@@ -164,7 +164,7 @@
 	--secondary: #44475a;
 	--secondary-foreground: #f8f8f2;
 	--muted: #44475a;
-	--muted-foreground: #6272a4;
+	--muted-foreground: #f8f8f2;
 	--accent: #ff79c6;
 	--accent-foreground: #282a36;
 	--destructive: #ff5555;
@@ -203,7 +203,7 @@
 	--secondary: #1d3b53;
 	--secondary-foreground: #d6deeb;
 	--muted: #1d3b53;
-	--muted-foreground: #637777;
+	--muted-foreground: #d6deeb;
 	--accent: #c792ea;
 	--accent-foreground: #011627;
 	--destructive: #ef5350;
@@ -242,7 +242,7 @@
 	--secondary: #403e41;
 	--secondary-foreground: #fcfcfa;
 	--muted: #403e41;
-	--muted-foreground: #727072;
+	--muted-foreground: #fcfcfa;
 	--accent: #78dce8;
 	--accent-foreground: #2d2a2e;
 	--destructive: #ff6188;
@@ -285,7 +285,7 @@
 	--secondary: #f5f5f5;
 	--secondary-foreground: #171717;
 	--muted: #f0f0f0;
-	--muted-foreground: #737373;
+	--muted-foreground: #171717;
 	--accent: #ecfccb;
 	--accent-foreground: #3f6212;
 	--destructive: #dc2626;
@@ -324,7 +324,7 @@
 	--secondary: #f6f8fa;
 	--secondary-foreground: #1f2328;
 	--muted: #f6f8fa;
-	--muted-foreground: #656d76;
+	--muted-foreground: #1f2328;
 	--accent: #ddf4ff;
 	--accent-foreground: #0969da;
 	--destructive: #cf222e;
@@ -363,7 +363,7 @@
 	--secondary: #f8f8f8;
 	--secondary-foreground: #5c6166;
 	--muted: #f3f4f5;
-	--muted-foreground: #8a9199;
+	--muted-foreground: #5c6166;
 	--accent: #fff4e6;
 	--accent-foreground: #e67e22;
 	--destructive: #f51818;
@@ -402,7 +402,7 @@
 	--secondary: #eee8d5;
 	--secondary-foreground: #586e75;
 	--muted: #eee8d5;
-	--muted-foreground: #93a1a1;
+	--muted-foreground: #586e75;
 	--accent: #eee8d5;
 	--accent-foreground: #268bd2;
 	--destructive: #dc322f;
