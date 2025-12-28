@@ -100,17 +100,17 @@ src/app/(protected)/analytics/page.tsx     # Refactor with tabs
 
 | Task | Priority | Status | Notes |
 |------|----------|--------|-------|
-| Create `getPerformanceByDayOfWeek` procedure | High | ⏳ | P&L, win rate per day |
-| Create `getPerformanceByHour` procedure | High | ⏳ | Respect user timezone |
-| Create `getPerformanceByMonth` procedure | High | ⏳ | Monthly comparison |
-| Create `getPerformanceBySession` procedure | Medium | ⏳ | Asia/London/NY |
-| Create `getCalendarData` procedure | High | ⏳ | Daily P&L for heatmap |
-| Build `CalendarHeatmap` component | High | ⏳ | GitHub-style, clickable |
-| Build `DayOfWeekChart` component | High | ⏳ | Bar chart by weekday |
-| Build `HourHeatmap` component | Medium | ⏳ | 24-hour grid |
-| Build `SessionChart` component | Medium | ⏳ | Session breakdown |
-| Build `MonthlyChart` component | Medium | ⏳ | Month-over-month |
-| Implement Time tab UI | High | ⏳ | Layout and styling |
+| Create `getPerformanceByDayOfWeek` procedure | High | ✅ | P&L, win rate per day |
+| Create `getPerformanceByHour` procedure | High | ✅ | Respect user timezone |
+| Create `getPerformanceByMonth` procedure | High | ✅ | Monthly comparison |
+| Create `getPerformanceBySession` procedure | Medium | ✅ | Asia/London/NY |
+| Create `getCalendarData` procedure | High | ✅ | Daily P&L for heatmap |
+| Build `CalendarHeatmap` component | High | ✅ | GitHub-style, clickable |
+| Build `DayOfWeekChart` component | High | ✅ | Bar chart by weekday |
+| Build `HourHeatmap` component | Medium | ✅ | 24-hour grid |
+| Build `SessionChart` component | Medium | ✅ | Session breakdown |
+| Build `MonthlyChart` component | Medium | ✅ | Month-over-month |
+| Implement Time tab UI | High | ✅ | Layout and styling |
 
 #### Files to Create
 

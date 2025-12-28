@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/resizable";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDebouncedMutation } from "@/hooks/use-debounced-mutation";
+import { useTimezone } from "@/hooks/use-timezone";
 import { calculateAllStats } from "@/lib/trade-calculations";
 import { cn, formatDate } from "@/lib/utils";
 import { api } from "@/trpc/react";
@@ -80,6 +81,7 @@ export default function TradeDetailPage() {
 	const params = useParams();
 	const router = useRouter();
 	const tradeId = parseInt(params.id as string, 10);
+	const { timezone } = useTimezone();
 
 	const [isClosing, setIsClosing] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
@@ -376,12 +378,16 @@ export default function TradeDetailPage() {
 								)}
 							</div>
 							<p className="font-mono text-[10px] text-muted-foreground">
-								{formatDate(trade.entryTime, {
-									weekday: "short",
-									month: "short",
-									day: "numeric",
-									year: "numeric",
-								})}
+								{formatDate(
+									trade.entryTime,
+									{
+										weekday: "short",
+										month: "short",
+										day: "numeric",
+										year: "numeric",
+									},
+									timezone,
+								)}
 								{stats?.duration && (
 									<span className="text-muted-foreground/50">
 										{" "}
@@ -707,7 +713,7 @@ export default function TradeDetailPage() {
 									{trade.symbol} {trade.direction.toUpperCase()}
 								</p>
 								<p className="font-mono text-[10px] text-muted-foreground">
-									{formatDate(trade.entryTime)}
+									{formatDate(trade.entryTime, undefined, timezone)}
 								</p>
 							</div>
 						</div>

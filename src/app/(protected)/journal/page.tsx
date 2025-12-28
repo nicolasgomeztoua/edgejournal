@@ -63,17 +63,14 @@ import {
 	useDebouncedMutation,
 	useOptimisticState,
 } from "@/hooks/use-debounced-mutation";
+import { useTimezone } from "@/hooks/use-timezone";
 import { useTradeColumns } from "@/hooks/use-trade-columns";
-import {
-	cn,
-	formatCurrency,
-	formatDateTime,
-	getPnLColorClass,
-} from "@/lib/utils";
+import { cn, formatCurrency, getPnLColorClass } from "@/lib/utils";
 import { api } from "@/trpc/react";
 
 export default function JournalPage() {
 	const { selectedAccountId, selectedAccount } = useAccount();
+	const { formatDateTime } = useTimezone();
 	const [tab, setTab] = useState<"trades" | "trash">("trades");
 
 	// Filters

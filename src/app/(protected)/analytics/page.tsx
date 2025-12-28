@@ -3,9 +3,18 @@
 import { AgCharts } from "ag-charts-react";
 import { Clock } from "lucide-react";
 import { useMemo } from "react";
-import { METRIC_TOOLTIPS, MetricCard } from "@/components/analytics";
+import {
+	CalendarHeatmap,
+	DayOfWeekChart,
+	HourHeatmap,
+	METRIC_TOOLTIPS,
+	MetricCard,
+	MonthlyChart,
+	SessionChart,
+} from "@/components/analytics";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useTimezone } from "@/hooks/use-timezone";
 import {
 	formatCurrency,
 	formatDate,
@@ -388,6 +397,91 @@ function ChartTerminal({
 }
 
 // =============================================================================
+// TIME TAB
+// =============================================================================
+
+function TimeTab() {
+	const { timezone, timezoneAbbr } = useTimezone();
+	const { data: calendarData, isLoading: calendarLoading } =
+		api.analytics.getCalendarData.useQuery();
+	const { data: dayOfWeekData, isLoading: dowLoading } =
+		api.analytics.getPerformanceByDayOfWeek.useQuery();
+	const { data: hourData, isLoading: hourLoading } =
+		api.analytics.getPerformanceByHour.useQuery();
+	const { data: sessionData, isLoading: sessionLoading } =
+		api.analytics.getPerformanceBySession.useQuery();
+	const { data: monthlyData, isLoading: monthlyLoading } =
+		api.analytics.getPerformanceByMonth.useQuery();
+
+	const isLoading =
+		calendarLoading ||
+		dowLoading ||
+		hourLoading ||
+		sessionLoading ||
+		monthlyLoading;
+
+	if (isLoading) {
+		return (
+			<div className="space-y-6">
+				<Skeleton className="h-[200px] w-full" />
+				<div className="grid gap-6 lg:grid-cols-2">
+					<Skeleton className="h-[300px] w-full" />
+					<Skeleton className="h-[300px] w-full" />
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<div className="space-y-6">
+			{/* Calendar Heatmap */}
+			<ChartTerminal
+				description="Daily P&L over the last year"
+				title="Trading Calendar"
+			>
+				<CalendarHeatmap data={calendarData ?? []} timezone={timezone} />
+			</ChartTerminal>
+
+			{/* Day of Week & Hour Analysis */}
+			<div className="grid gap-6 lg:grid-cols-2">
+				<ChartTerminal
+					description="Performance breakdown by weekday"
+					title="Day of Week"
+				>
+					<DayOfWeekChart data={dayOfWeekData ?? []} />
+				</ChartTerminal>
+
+				<ChartTerminal
+					description={`Performance by entry hour (${timezoneAbbr})`}
+					title="Hourly Performance"
+				>
+					<HourHeatmap data={hourData ?? []} timezoneAbbr={timezoneAbbr} />
+				</ChartTerminal>
+			</div>
+
+			{/* Session & Monthly Analysis */}
+			<div className="grid gap-6 lg:grid-cols-2">
+				<ChartTerminal
+					description="Performance by trading session"
+					title="Trading Sessions"
+				>
+					<SessionChart
+						data={sessionData ?? []}
+					/>
+				</ChartTerminal>
+
+				<ChartTerminal
+					description="Month-over-month performance"
+					title="Monthly P&L"
+				>
+					<MonthlyChart data={monthlyData ?? []} />
+				</ChartTerminal>
+			</div>
+		</div>
+	);
+}
+
+// =============================================================================
 // PLACEHOLDER TABS
 // =============================================================================
 
@@ -398,7 +492,7 @@ function PlaceholderTab({ title }: { title: string }) {
 			<div className="text-center">
 				<h3 className="font-medium text-muted-foreground">{title} Analysis</h3>
 				<p className="font-mono text-muted-foreground/60 text-xs">
-					Coming in Sprint 4.2+
+					Coming in Sprint 4.3+
 				</p>
 			</div>
 		</div>
@@ -491,8 +585,8 @@ export default function AnalyticsPage() {
 				</TabsContent>
 
 				{/* Time Tab */}
-				<TabsContent value="time">
-					<PlaceholderTab title="Time-Based" />
+				<TabsContent className="space-y-6" value="time">
+					<TimeTab />
 				</TabsContent>
 
 				{/* Risk Tab */}

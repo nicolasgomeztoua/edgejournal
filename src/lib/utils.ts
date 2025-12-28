@@ -74,6 +74,7 @@ export function formatNumber(
 
 /**
  * Format a date for display
+ * If timezone is provided, displays the date in that timezone
  */
 export function formatDate(
 	date: Date | string | null | undefined,
@@ -82,14 +83,17 @@ export function formatDate(
 		day: "numeric",
 		year: "numeric",
 	},
+	timezone?: string,
 ): string {
 	if (!date) return "-";
 	const d = typeof date === "string" ? new Date(date) : date;
-	return d.toLocaleDateString("en-US", options);
+	const opts = timezone ? { ...options, timeZone: timezone } : options;
+	return d.toLocaleDateString("en-US", opts);
 }
 
 /**
  * Format a time for display
+ * If timezone is provided, displays the time in that timezone
  */
 export function formatTime(
 	date: Date | string | null | undefined,
@@ -97,19 +101,25 @@ export function formatTime(
 		hour: "2-digit",
 		minute: "2-digit",
 	},
+	timezone?: string,
 ): string {
 	if (!date) return "-";
 	const d = typeof date === "string" ? new Date(date) : date;
-	return d.toLocaleTimeString("en-US", options);
+	const opts = timezone ? { ...options, timeZone: timezone } : options;
+	return d.toLocaleTimeString("en-US", opts);
 }
 
 /**
  * Format date and time together
+ * If timezone is provided, displays in that timezone
  */
-export function formatDateTime(date: Date | string | null | undefined): string {
+export function formatDateTime(
+	date: Date | string | null | undefined,
+	timezone?: string,
+): string {
 	if (!date) return "-";
 	const d = typeof date === "string" ? new Date(date) : date;
-	return `${formatDate(d)} ${formatTime(d)}`;
+	return `${formatDate(d, undefined, timezone)} ${formatTime(d, undefined, timezone)}`;
 }
 
 /**

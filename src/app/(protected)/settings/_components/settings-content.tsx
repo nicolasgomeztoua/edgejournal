@@ -1,9 +1,10 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
+import { useClerk, useUser } from "@clerk/nextjs";
 import {
 	Award,
 	Check,
+	Clock,
 	Edit,
 	Eye,
 	EyeOff,
@@ -77,6 +78,31 @@ const AI_PROVIDERS = [
 		description: "Gemini Pro, Gemini Ultra",
 		placeholder: "AI...",
 	},
+];
+
+// Default trading sessions (UTC hours)
+interface TradingSession {
+	name: string;
+	startHour: number;
+	endHour: number;
+	color: string;
+}
+
+const DEFAULT_SESSIONS: TradingSession[] = [
+	{ name: "Asia", startHour: 0, endHour: 8, color: "#00d4ff" },
+	{ name: "London", startHour: 8, endHour: 16, color: "#d4ff00" },
+	{ name: "New York", startHour: 13, endHour: 21, color: "#00ff88" },
+];
+
+const SESSION_COLORS = [
+	"#00d4ff", // Ice blue
+	"#d4ff00", // Chartreuse
+	"#00ff88", // Profit green
+	"#f59e0b", // Amber
+	"#ec4899", // Pink
+	"#8b5cf6", // Purple
+	"#14b8a6", // Teal
+	"#f97316", // Orange
 ];
 
 // Updated account type colors and labels
@@ -169,8 +195,8 @@ const defaultAccountForm: AccountFormState = {
 
 export function SettingsContent() {
 	const { user } = useUser();
+	const { openUserProfile } = useClerk();
 	const searchParams = useSearchParams();
-	const [saving, setSaving] = useState(false);
 	const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
 	const [activeTab, setActiveTab] = useState("general");
 
@@ -343,7 +369,14 @@ export function SettingsContent() {
 		timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
 		currency: "USD",
 		breakevenThreshold: "3.00",
+		tradingSessions: DEFAULT_SESSIONS,
 	});
+
+	// Track if settings have been modified
+	const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+	const [initialSettings, setInitialSettings] = useState<
+		typeof settings | null
+	>(null);
 
 	// Fetch user settings
 	const { data: userSettings } = api.settings.get.useQuery();
@@ -359,8 +392,15 @@ export function SettingsContent() {
 	// Sync fetched settings to local state
 	useEffect(() => {
 		if (userSettings) {
-			setSettings((prev) => ({
-				...prev,
+			let parsedSessions = DEFAULT_SESSIONS;
+			if (userSettings.tradingSessions) {
+				try {
+					parsedSessions = JSON.parse(userSettings.tradingSessions);
+				} catch {
+					// Keep defaults on parse error
+				}
+			}
+			const newSettings = {
 				preferredProvider: userSettings.preferredAiProvider ?? "openai",
 				openaiKey: userSettings.openaiApiKey ?? "",
 				anthropicKey: userSettings.anthropicApiKey ?? "",
@@ -371,9 +411,22 @@ export function SettingsContent() {
 					Intl.DateTimeFormat().resolvedOptions().timeZone,
 				currency: userSettings.currency ?? "USD",
 				breakevenThreshold: userSettings.breakevenThreshold ?? "3.00",
-			}));
+				tradingSessions: parsedSessions,
+			};
+			setSettings(newSettings);
+			setInitialSettings(newSettings);
+			setHasUnsavedChanges(false);
 		}
 	}, [userSettings]);
+
+	// Track changes to settings
+	useEffect(() => {
+		if (initialSettings) {
+			const hasChanges =
+				JSON.stringify(settings) !== JSON.stringify(initialSettings);
+			setHasUnsavedChanges(hasChanges);
+		}
+	}, [settings, initialSettings]);
 
 	const resetAccountForm = () => {
 		setAccountForm(defaultAccountForm);
@@ -525,11 +578,65 @@ export function SettingsContent() {
 		setShowKeys((prev) => ({ ...prev, [provider]: !prev[provider] }));
 	};
 
-	const handleSave = async () => {
-		setSaving(true);
-		await new Promise((resolve) => setTimeout(resolve, 1000));
-		toast.success("Settings saved successfully");
-		setSaving(false);
+	const handleSave = () => {
+		updateSettings.mutate(
+			{
+				preferredAiProvider: settings.preferredProvider,
+				openaiApiKey: settings.openaiKey || undefined,
+				anthropicApiKey: settings.anthropicKey || undefined,
+				googleApiKey: settings.googleKey || undefined,
+				defaultInstrumentType: settings.defaultInstrument as
+					| "futures"
+					| "forex",
+				timezone: settings.timezone,
+				currency: settings.currency,
+				breakevenThreshold: settings.breakevenThreshold,
+				tradingSessions: JSON.stringify(settings.tradingSessions),
+			},
+			{
+				onSuccess: () => {
+					setInitialSettings(settings);
+					setHasUnsavedChanges(false);
+				},
+			},
+		);
+	};
+
+	// Session management handlers
+	const addSession = () => {
+		const newSession: TradingSession = {
+			name: `Session ${settings.tradingSessions.length + 1}`,
+			startHour: 0,
+			endHour: 8,
+			color:
+				SESSION_COLORS[
+					settings.tradingSessions.length % SESSION_COLORS.length
+				] ?? "#00d4ff",
+		};
+		setSettings({
+			...settings,
+			tradingSessions: [...settings.tradingSessions, newSession],
+		});
+	};
+
+	const updateSession = (index: number, updates: Partial<TradingSession>) => {
+		const newSessions = [...settings.tradingSessions];
+		newSessions[index] = {
+			...newSessions[index],
+			...updates,
+		} as TradingSession;
+		setSettings({ ...settings, tradingSessions: newSessions });
+	};
+
+	const removeSession = (index: number) => {
+		setSettings({
+			...settings,
+			tradingSessions: settings.tradingSessions.filter((_, i) => i !== index),
+		});
+	};
+
+	const resetSessionsToDefault = () => {
+		setSettings({ ...settings, tradingSessions: DEFAULT_SESSIONS });
 	};
 
 	const isPropAccount =
@@ -552,12 +659,18 @@ export function SettingsContent() {
 			</div>
 
 			<Tabs onValueChange={setActiveTab} value={activeTab}>
-				<TabsList className="grid w-full grid-cols-4 border border-border bg-secondary">
+				<TabsList className="grid w-full grid-cols-5 border border-border bg-secondary">
 					<TabsTrigger
 						className="font-mono text-xs uppercase tracking-wider data-[state=active]:bg-white/10"
 						value="general"
 					>
 						General
+					</TabsTrigger>
+					<TabsTrigger
+						className="font-mono text-xs uppercase tracking-wider data-[state=active]:bg-white/10"
+						value="trading"
+					>
+						Trading
 					</TabsTrigger>
 					<TabsTrigger
 						className="font-mono text-xs uppercase tracking-wider data-[state=active]:bg-white/10"
@@ -581,34 +694,56 @@ export function SettingsContent() {
 
 				{/* General Tab */}
 				<TabsContent className="space-y-6" value="general">
-					{/* Account Info */}
-					<div className="rounded border border-border bg-card p-4">
-						<div className="mb-4 flex items-center gap-2">
-							<Shield className="h-4 w-4 text-muted-foreground" />
-							<span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-								Profile
-							</span>
-						</div>
-						<div className="flex items-center gap-4">
-							{user?.imageUrl && (
-								// biome-ignore lint/performance/noImgElement: External Clerk avatar URLs
-								<img
-									alt="Profile"
-									className="h-12 w-12 rounded border border-border"
-									src={user.imageUrl}
-								/>
-							)}
-							<div>
-								<p className="font-medium">
-									{user?.firstName} {user?.lastName}
-								</p>
-								<p className="font-mono text-muted-foreground text-xs">
-									{user?.primaryEmailAddress?.emailAddress}
-								</p>
+					{/* Profile Info */}
+					<Card>
+						<CardHeader>
+							<div className="flex items-center justify-between">
+								<div>
+									<CardTitle className="flex items-center gap-2">
+										<Shield className="h-5 w-5" />
+										Profile
+									</CardTitle>
+									<CardDescription>Your account information</CardDescription>
+								</div>
+								<Button
+									className="font-mono text-xs uppercase tracking-wider"
+									onClick={() => openUserProfile()}
+									variant="outline"
+								>
+									<Edit className="mr-2 h-3.5 w-3.5" />
+									Manage Profile
+								</Button>
 							</div>
-						</div>
-					</div>
+						</CardHeader>
+						<CardContent>
+							<button
+								className="flex items-center gap-4 rounded-lg p-2 -m-2 transition-colors hover:bg-secondary/50 cursor-pointer text-left"
+								onClick={() => openUserProfile()}
+								type="button"
+							>
+								{user?.imageUrl && (
+									// biome-ignore lint/performance/noImgElement: External Clerk avatar URLs
+									<img
+										alt="Profile"
+										className="h-12 w-12 rounded border border-border"
+										src={user.imageUrl}
+									/>
+								)}
+								<div>
+									<p className="font-medium hover:text-primary transition-colors">
+										{user?.firstName} {user?.lastName}
+									</p>
+									<p className="font-mono text-muted-foreground text-xs">
+										{user?.primaryEmailAddress?.emailAddress}
+									</p>
+								</div>
+							</button>
+						</CardContent>
+					</Card>
+				</TabsContent>
 
+				{/* Trading Tab */}
+				<TabsContent className="space-y-6" value="trading">
 					{/* Trading Preferences */}
 					<Card>
 						<CardHeader>
@@ -721,27 +856,195 @@ export function SettingsContent() {
 									are classified as breakeven
 								</p>
 							</div>
+						</CardContent>
+					</Card>
 
-							<Button
-								className="font-mono text-xs uppercase tracking-wider"
-								disabled={updateSettings.isPending}
-								onClick={() => {
-									updateSettings.mutate({
-										preferredAiProvider: settings.preferredProvider,
-										defaultInstrumentType: settings.defaultInstrument as
-											| "futures"
-											| "forex",
-										timezone: settings.timezone,
-										currency: settings.currency,
-										breakevenThreshold: settings.breakevenThreshold,
-									});
-								}}
-							>
-								{updateSettings.isPending && (
-									<Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-								)}
-								Save Preferences
-							</Button>
+					{/* Trading Sessions */}
+					<Card>
+						<CardHeader>
+							<div className="flex items-center justify-between">
+								<div>
+									<CardTitle className="flex items-center gap-2">
+										<Clock className="h-5 w-5" />
+										Trading Sessions
+									</CardTitle>
+									<CardDescription>
+										Define your trading sessions for analytics breakdown (UTC
+										hours)
+									</CardDescription>
+								</div>
+								<div className="flex gap-2">
+									<Button
+										className="font-mono text-[10px]"
+										onClick={resetSessionsToDefault}
+										size="sm"
+										variant="outline"
+									>
+										Reset to Default
+									</Button>
+									<Button
+										className="font-mono text-[10px]"
+										onClick={addSession}
+										size="sm"
+										variant="outline"
+									>
+										<Plus className="mr-1 h-3 w-3" />
+										Add Session
+									</Button>
+								</div>
+							</div>
+						</CardHeader>
+						<CardContent>
+							{settings.tradingSessions.length === 0 ? (
+								<p className="py-4 text-center text-muted-foreground text-sm">
+									No sessions configured. Add one or reset to defaults.
+								</p>
+							) : (
+								<div className="space-y-3">
+									{settings.tradingSessions.map((session, index) => (
+										<div
+											className="flex items-center gap-3 rounded border border-border bg-card p-3"
+											key={`session-${index}`}
+										>
+											{/* Color indicator */}
+											<div
+												className="h-8 w-2 rounded"
+												style={{ backgroundColor: session.color }}
+											/>
+
+											{/* Session name */}
+											<div className="flex-1">
+												<Input
+													className="h-8 font-mono text-sm"
+													onChange={(e) =>
+														updateSession(index, { name: e.target.value })
+													}
+													placeholder="Session name"
+													value={session.name}
+												/>
+											</div>
+
+											{/* Time range */}
+											<div className="flex items-center gap-2">
+												<Select
+													onValueChange={(value) =>
+														updateSession(index, { startHour: parseInt(value) })
+													}
+													value={session.startHour.toString()}
+												>
+													<SelectTrigger className="w-24 font-mono text-xs">
+														<SelectValue />
+													</SelectTrigger>
+													<SelectContent>
+														{Array.from({ length: 24 }, (_, i) => (
+															<SelectItem key={i} value={i.toString()}>
+																{i.toString().padStart(2, "0")}:00
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+												<span className="text-muted-foreground">→</span>
+												<Select
+													onValueChange={(value) =>
+														updateSession(index, { endHour: parseInt(value) })
+													}
+													value={session.endHour.toString()}
+												>
+													<SelectTrigger className="w-24 font-mono text-xs">
+														<SelectValue />
+													</SelectTrigger>
+													<SelectContent>
+														{Array.from({ length: 24 }, (_, i) => (
+															<SelectItem key={i} value={i.toString()}>
+																{i.toString().padStart(2, "0")}:00
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+												<span className="font-mono text-[10px] text-muted-foreground">
+													UTC
+												</span>
+											</div>
+
+											{/* Color picker */}
+											<Select
+												onValueChange={(value) =>
+													updateSession(index, { color: value })
+												}
+												value={session.color}
+											>
+												<SelectTrigger className="w-16">
+													<div
+														className="h-4 w-4 rounded"
+														style={{ backgroundColor: session.color }}
+													/>
+												</SelectTrigger>
+												<SelectContent>
+													{SESSION_COLORS.map((color) => (
+														<SelectItem key={color} value={color}>
+															<div className="flex items-center gap-2">
+																<div
+																	className="h-4 w-4 rounded"
+																	style={{ backgroundColor: color }}
+																/>
+															</div>
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+
+											{/* Delete button */}
+											<Button
+												className="h-8 w-8 p-0"
+												onClick={() => removeSession(index)}
+												size="sm"
+												variant="ghost"
+											>
+												<Trash2 className="h-4 w-4 text-destructive" />
+											</Button>
+										</div>
+									))}
+								</div>
+							)}
+
+							{/* Visual timeline */}
+							{settings.tradingSessions.length > 0 && (
+								<div className="mt-4 rounded border border-border bg-secondary p-3">
+									<p className="mb-2 font-mono text-[10px] text-muted-foreground uppercase">
+										24h Timeline (UTC)
+									</p>
+									<div className="relative h-8 rounded bg-card">
+										{settings.tradingSessions.map((session, index) => {
+											const start = (session.startHour / 24) * 100;
+											const width =
+												session.endHour >= session.startHour
+													? ((session.endHour - session.startHour) / 24) * 100
+													: ((24 - session.startHour + session.endHour) / 24) *
+														100;
+											return (
+												<div
+													className="absolute top-0 h-full rounded opacity-70"
+													key={`timeline-${index}`}
+													style={{
+														left: `${start}%`,
+														width: `${Math.min(width, 100 - start)}%`,
+														backgroundColor: session.color,
+													}}
+													title={`${session.name}: ${session.startHour}:00 - ${session.endHour}:00 UTC`}
+												/>
+											);
+										})}
+										{/* Hour markers */}
+										<div className="absolute bottom-0 left-0 flex w-full justify-between px-1 font-mono text-[8px] text-muted-foreground">
+											<span>0</span>
+											<span>6</span>
+											<span>12</span>
+											<span>18</span>
+											<span>24</span>
+										</div>
+									</div>
+								</div>
+							)}
 						</CardContent>
 					</Card>
 				</TabsContent>
@@ -1811,14 +2114,24 @@ export function SettingsContent() {
 				</TabsContent>
 			</Tabs>
 
-			{/* Save Button */}
-			<div className="flex justify-end">
+			{/* Save Button - Fixed at bottom */}
+			<div className="flex items-center justify-between rounded border border-border bg-card p-4">
+				<div className="flex items-center gap-2">
+					{hasUnsavedChanges && (
+						<>
+							<div className="h-2 w-2 animate-pulse rounded-full bg-amber-500" />
+							<span className="font-mono text-muted-foreground text-xs">
+								Unsaved changes
+							</span>
+						</>
+					)}
+				</div>
 				<Button
 					className="font-mono text-xs uppercase tracking-wider"
-					disabled={saving}
+					disabled={updateSettings.isPending || !hasUnsavedChanges}
 					onClick={handleSave}
 				>
-					{saving ? (
+					{updateSettings.isPending ? (
 						<Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
 					) : (
 						<Save className="mr-2 h-3.5 w-3.5" />

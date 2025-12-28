@@ -10,7 +10,8 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { cn, formatDate, formatTime } from "@/lib/utils";
+import { useTimezone } from "@/hooks/use-timezone";
+import { cn } from "@/lib/utils";
 
 // =============================================================================
 // TYPES
@@ -46,6 +47,7 @@ export function ExecutionTimeline({
 	instrumentType = "futures",
 	className,
 }: ExecutionTimelineProps) {
+	const { formatDate, formatTime } = useTimezone();
 	const [isAddingExecution, setIsAddingExecution] = useState(false);
 	const [newExecution, setNewExecution] = useState({
 		executionType: "entry" as Execution["executionType"],

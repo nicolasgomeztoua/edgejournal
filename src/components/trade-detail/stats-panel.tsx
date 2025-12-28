@@ -21,8 +21,9 @@ import {
 } from "@/components/ui/select";
 import { StarRating } from "@/components/ui/star-rating";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useTimezone } from "@/hooks/use-timezone";
 import type { TradeStats } from "@/lib/trade-calculations";
-import { cn, formatCurrency, formatTime } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { api } from "@/trpc/react";
 import type { TradeForStatsPanel } from "@/types";
 import { EditableField } from "./editable-field";
@@ -226,6 +227,7 @@ export function StatsPanel({
 	pendingRating,
 	className,
 }: StatsPanelProps) {
+	const { formatTime } = useTimezone();
 	const utils = api.useUtils();
 	const netPnl = trade.netPnl ? parseFloat(trade.netPnl) : null;
 	const isProfit = netPnl !== null && netPnl > 0;

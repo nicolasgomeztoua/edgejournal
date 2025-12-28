@@ -28,6 +28,18 @@ export async function getUserBreakevenThreshold(
 	return parseFloat(result?.breakevenThreshold ?? "3.00");
 }
 
+/**
+ * Get user's timezone setting
+ * Default is UTC if not set
+ */
+export async function getUserTimezone(db: Db, userId: number): Promise<string> {
+	const result = await db.query.userSettings.findFirst({
+		where: eq(userSettings.userId, userId),
+		columns: { timezone: true },
+	});
+	return result?.timezone ?? "UTC";
+}
+
 // =============================================================================
 // ACCOUNT QUERY HELPERS
 // =============================================================================
