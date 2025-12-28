@@ -208,12 +208,14 @@ Make the dashboard fully customizable with drag-and-drop widgets like TradeZella
 
 ## Phase 4: Advanced Analytics
 
-> **Priority:** HIGH | **Dependencies:** Phase 1, 2 | **Estimate:** 3-4 weeks
+> **Priority:** HIGH | **Dependencies:** Phase 1, 2 | **Estimate:** 4-5 weeks
 >
-> **Sub-plan:** [./plans/phase-4-analytics.md](./plans/phase-4-analytics.md)
+> **Sub-plan:** [./plans/phase-4-analytics.md](./plans/phase-4-analytics.md) *(DETAILED)*
+>
+> **Status:** 🔄 In Progress
 
 ### Goal
-Build 50+ specialized reports like TradeZella.
+Build 50+ specialized reports like TradeZella, plus professional-grade metrics used by hedge funds and prop firms (Sharpe/Sortino/Calmar ratios, Risk of Ruin, Kelly Criterion, MAE/MFE, Monte Carlo simulations).
 
 ### Tasks
 
@@ -241,6 +243,16 @@ Build 50+ specialized reports like TradeZella.
 - [ ] MAE (Maximum Adverse Excursion)
 - [ ] MFE (Maximum Favorable Excursion)
 - [ ] Position sizing analysis
+
+#### 4.3.1 Professional Risk Metrics *(NEW)*
+- [ ] Sharpe Ratio (risk-adjusted return)
+- [ ] Sortino Ratio (downside volatility only)
+- [ ] Calmar Ratio (return / max drawdown)
+- [ ] Risk of Ruin calculation
+- [ ] Kelly Criterion (optimal position sizing)
+- [ ] Recovery Factor
+- [ ] Ulcer Index
+- [ ] Monte Carlo simulation
 
 #### 4.4 Streak and Pattern Reports
 - [ ] Consecutive wins tracking
@@ -566,7 +578,7 @@ ALTER TABLE user_settings ADD COLUMN dashboard_layout_id INTEGER;
 | 1 | Enhanced Trade Log | 2-3 weeks | ✅ Complete |
 | 2 | Strategy System | 2 weeks | ✅ Complete |
 | 3 | Dashboard Customization | 2-3 weeks | ⏳ Pending |
-| 4 | Advanced Analytics | 3-4 weeks | ⏳ Pending |
+| 4 | Advanced Analytics | 4-5 weeks | 🔄 In Progress |
 | 5 | Trade Detail Enhancements | 2 weeks | 🔄 In Progress (Layout done, Screenshot/Chart pending) |
 | 6 | Notebook System | 2 weeks | ⏳ Pending |
 | 9.1 | CSV Parsers | 1-2 weeks | ⏳ Pending |

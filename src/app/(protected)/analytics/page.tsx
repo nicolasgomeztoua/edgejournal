@@ -1,11 +1,21 @@
 "use client";
 
 import { AgCharts } from "ag-charts-react";
-import { BarChart3, PieChart, Target, TrendingUp } from "lucide-react";
-import { useMemo } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
-	cn,
+	Activity,
+	BarChart3,
+	Clock,
+	PieChart,
+	ShieldAlert,
+	Target,
+	TrendingUp,
+	Zap,
+} from "lucide-react";
+import { useMemo } from "react";
+import { MetricCard, METRIC_TOOLTIPS } from "@/components/analytics";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
 	formatCurrency,
 	formatDate,
 	formatPercent,
@@ -13,13 +23,17 @@ import {
 } from "@/lib/utils";
 import { api } from "@/trpc/react";
 
+// =============================================================================
+// OVERVIEW TAB
+// =============================================================================
+
 function StatsOverview() {
-	const { data: stats, isLoading } = api.trades.getStats.useQuery();
+	const { data: overview, isLoading } = api.analytics.getOverview.useQuery();
 
 	if (isLoading) {
 		return (
 			<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-				{[...Array(4)].map((_, i) => (
+				{[...Array(8)].map((_, i) => (
 					<div
 						className="rounded border border-border bg-secondary p-4"
 						key={`skeleton-stat-${i.toString()}`}
@@ -33,83 +47,127 @@ function StatsOverview() {
 		);
 	}
 
-	if (!stats) return null;
-
-	const cards = [
-		{
-			title: "Total P&L",
-			value: formatCurrency(stats.totalPnl),
-			description: `${stats.totalTrades} closed trades`,
-			icon: TrendingUp,
-			colorClass: getPnLColorClass(stats.totalPnl),
-		},
-		{
-			title: "Win Rate",
-			value: formatPercent(stats.winRate, 1).replace("+", ""),
-			description: `${stats.wins}W / ${stats.losses}L`,
-			icon: Target,
-			colorClass: stats.winRate >= 50 ? "text-profit" : "text-loss",
-		},
-		{
-			title: "Profit Factor",
-			value:
-				stats.profitFactor === Infinity ? "∞" : stats.profitFactor.toFixed(2),
-			description: "Gross profit / loss",
-			icon: BarChart3,
-			colorClass: stats.profitFactor >= 1 ? "text-profit" : "text-loss",
-		},
-		{
-			title: "Avg Trade",
-			value: formatCurrency(
-				stats.totalTrades > 0 ? stats.totalPnl / stats.totalTrades : 0,
-			),
-			description: `Avg win: ${formatCurrency(stats.avgWin)}`,
-			icon: PieChart,
-			colorClass: getPnLColorClass(
-				stats.totalPnl / Math.max(stats.totalTrades, 1),
-			),
-		},
-	];
+	if (!overview) return null;
 
 	return (
 		<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-			{cards.map((card) => (
-				<div
-					className="rounded border border-border bg-card p-4 transition-all hover:border-primary/30"
-					key={card.title}
-				>
-					<div className="flex items-center justify-between">
-						<span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-							{card.title}
-						</span>
-						<card.icon className="h-3 w-3 text-muted-foreground" />
-					</div>
-					<div
-						className={cn("mt-2 font-bold font-mono text-xl", card.colorClass)}
-					>
-						{card.value}
-					</div>
-					<p className="mt-1 font-mono text-[10px] text-muted-foreground">
-						{card.description}
-					</p>
-				</div>
-			))}
+			{/* Row 1: Core metrics */}
+			<MetricCard
+				title="Total P&L"
+				value={formatCurrency(overview.totalPnl)}
+				description={`${overview.totalTrades} closed trades`}
+				tooltip={METRIC_TOOLTIPS.totalPnl}
+				icon={TrendingUp}
+				colorClass={getPnLColorClass(overview.totalPnl)}
+			/>
+			<MetricCard
+				title="Win Rate"
+				value={formatPercent(overview.winRate, 1).replace("+", "")}
+				description={`${overview.wins}W / ${overview.losses}L`}
+				tooltip={METRIC_TOOLTIPS.winRate}
+				icon={Target}
+				colorClass={overview.winRate >= 50 ? "text-profit" : "text-loss"}
+			/>
+			<MetricCard
+				title="Profit Factor"
+				value={
+					overview.profitFactor === Infinity
+						? "∞"
+						: overview.profitFactor.toFixed(2)
+				}
+				description="Gross profit / loss"
+				tooltip={METRIC_TOOLTIPS.profitFactor}
+				icon={BarChart3}
+				colorClass={overview.profitFactor >= 1 ? "text-profit" : "text-loss"}
+			/>
+			<MetricCard
+				title="Avg Trade"
+				value={formatCurrency(overview.avgPnl)}
+				description={`Avg win: ${formatCurrency(overview.avgWin)}`}
+				tooltip={METRIC_TOOLTIPS.avgTrade}
+				icon={PieChart}
+				colorClass={getPnLColorClass(overview.avgPnl)}
+			/>
+
+			{/* Row 2: Advanced metrics */}
+			<MetricCard
+				title="Expectancy"
+				value={formatCurrency(overview.expectancy)}
+				description="Expected profit per trade"
+				tooltip={METRIC_TOOLTIPS.expectancy}
+				icon={Zap}
+				colorClass={getPnLColorClass(overview.expectancy)}
+			/>
+			<MetricCard
+				title="Payoff Ratio"
+				value={
+					overview.payoffRatio === Infinity
+						? "∞"
+						: overview.payoffRatio.toFixed(2)
+				}
+				description="Avg win / avg loss"
+				tooltip={METRIC_TOOLTIPS.payoffRatio}
+				icon={Activity}
+				colorClass={overview.payoffRatio >= 1 ? "text-profit" : "text-loss"}
+			/>
+			<MetricCard
+				title="Sharpe Ratio"
+				value={overview.sharpeRatio.toFixed(2)}
+				description="Risk-adjusted return"
+				tooltip={METRIC_TOOLTIPS.sharpeRatio}
+				icon={ShieldAlert}
+				colorClass={
+					overview.sharpeRatio >= 1
+						? "text-profit"
+						: overview.sharpeRatio >= 0
+							? "text-breakeven"
+							: "text-loss"
+				}
+			/>
+			<MetricCard
+				title="Current Streak"
+				value={
+					overview.currentStreakType === "none"
+						? "—"
+						: `${overview.currentStreak}${overview.currentStreakType === "win" ? "W" : "L"}`
+				}
+				description={
+					overview.currentStreakType === "win"
+						? "Consecutive wins"
+						: overview.currentStreakType === "loss"
+							? "Consecutive losses"
+							: "No active streak"
+				}
+				tooltip={METRIC_TOOLTIPS.currentStreak}
+				icon={TrendingUp}
+				colorClass={
+					overview.currentStreakType === "win"
+						? "text-profit"
+						: overview.currentStreakType === "loss"
+							? "text-loss"
+							: "text-muted-foreground"
+				}
+			/>
 		</div>
 	);
 }
 
+// =============================================================================
+// CHARTS
+// =============================================================================
+
 function WinLossChart() {
-	const { data: stats, isLoading } = api.trades.getStats.useQuery();
+	const { data: overview, isLoading } = api.analytics.getOverview.useQuery();
 
 	const chartOptions = useMemo(() => {
-		if (!stats) return {};
+		if (!overview) return {};
 
 		return {
 			background: { fill: "transparent" },
 			data: [
-				{ category: "Wins", value: stats.wins, color: "#00ff88" },
-				{ category: "Losses", value: stats.losses, color: "#ff3b3b" },
-				{ category: "Breakeven", value: stats.breakevens, color: "#f5a623" },
+				{ category: "Wins", value: overview.wins, color: "#00ff88" },
+				{ category: "Losses", value: overview.losses, color: "#ff3b3b" },
+				{ category: "Breakeven", value: overview.breakevens, color: "#fbbf24" },
 			],
 			series: [
 				{
@@ -117,7 +175,7 @@ function WinLossChart() {
 					angleKey: "value",
 					calloutLabelKey: "category",
 					sectorLabelKey: "value",
-					fills: ["#00ff88", "#ff3b3b", "#f5a623"],
+					fills: ["#00ff88", "#ff3b3b", "#fbbf24"],
 					innerRadiusRatio: 0.6,
 				},
 			],
@@ -132,13 +190,13 @@ function WinLossChart() {
 				},
 			},
 		};
-	}, [stats]);
+	}, [overview]);
 
 	if (isLoading) {
 		return <Skeleton className="h-[300px] w-full" />;
 	}
 
-	if (!stats || stats.totalTrades === 0) {
+	if (!overview || overview.totalTrades === 0) {
 		return (
 			<div className="flex h-[300px] items-center justify-center font-mono text-muted-foreground text-xs">
 				No trade data available
@@ -304,7 +362,10 @@ function CumulativePnLChart() {
 	return <AgCharts options={chartOptions as any} style={{ height: 300 }} />;
 }
 
-// Terminal window wrapper for charts
+// =============================================================================
+// TERMINAL WRAPPER
+// =============================================================================
+
 function ChartTerminal({
 	title,
 	description,
@@ -343,6 +404,28 @@ function ChartTerminal({
 	);
 }
 
+// =============================================================================
+// PLACEHOLDER TABS
+// =============================================================================
+
+function PlaceholderTab({ title }: { title: string }) {
+	return (
+		<div className="flex h-[400px] flex-col items-center justify-center gap-4 rounded border border-border border-dashed bg-card/50">
+			<Clock className="h-12 w-12 text-muted-foreground/30" />
+			<div className="text-center">
+				<h3 className="font-medium text-muted-foreground">{title} Analysis</h3>
+				<p className="font-mono text-muted-foreground/60 text-xs">
+					Coming in Sprint 4.2+
+				</p>
+			</div>
+		</div>
+	);
+}
+
+// =============================================================================
+// MAIN PAGE
+// =============================================================================
+
 export default function AnalyticsPage() {
 	return (
 		<div className="space-y-6">
@@ -353,38 +436,97 @@ export default function AnalyticsPage() {
 				</span>
 				<h1 className="font-bold text-3xl tracking-tight">Analytics</h1>
 				<p className="mt-1 font-mono text-muted-foreground text-sm">
-					Visualize your trading performance
+					Analyze your trading performance with professional metrics
 				</p>
 			</div>
 
-			{/* Stats Overview */}
-			<StatsOverview />
-
-			{/* Charts */}
-			<div className="grid gap-6 lg:grid-cols-2">
-				<ChartTerminal
-					description="Breakdown of trade outcomes"
-					title="Win/Loss Distribution"
-				>
-					<WinLossChart />
-				</ChartTerminal>
-
-				<ChartTerminal
-					description="Equity curve over time"
-					title="Cumulative P&L"
-				>
-					<CumulativePnLChart />
-				</ChartTerminal>
-
-				<div className="lg:col-span-2">
-					<ChartTerminal
-						description="Individual trade results (last 50)"
-						title="P&L by Trade"
+			{/* Tab Navigation */}
+			<Tabs defaultValue="overview" className="space-y-6">
+				<TabsList className="bg-secondary/50">
+					<TabsTrigger
+						value="overview"
+						className="font-mono text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
 					>
-						<PnLDistributionChart />
-					</ChartTerminal>
-				</div>
-			</div>
+						Overview
+					</TabsTrigger>
+					<TabsTrigger
+						value="time"
+						className="font-mono text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+					>
+						Time
+					</TabsTrigger>
+					<TabsTrigger
+						value="risk"
+						className="font-mono text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+					>
+						Risk
+					</TabsTrigger>
+					<TabsTrigger
+						value="symbols"
+						className="font-mono text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+					>
+						Symbols
+					</TabsTrigger>
+					<TabsTrigger
+						value="behavior"
+						className="font-mono text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+					>
+						Behavior
+					</TabsTrigger>
+				</TabsList>
+
+				{/* Overview Tab */}
+				<TabsContent value="overview" className="space-y-6">
+					{/* Stats Overview */}
+					<StatsOverview />
+
+					{/* Charts */}
+					<div className="grid gap-6 lg:grid-cols-2">
+						<ChartTerminal
+							description="Breakdown of trade outcomes"
+							title="Win/Loss Distribution"
+						>
+							<WinLossChart />
+						</ChartTerminal>
+
+						<ChartTerminal
+							description="Equity curve over time"
+							title="Cumulative P&L"
+						>
+							<CumulativePnLChart />
+						</ChartTerminal>
+
+						<div className="lg:col-span-2">
+							<ChartTerminal
+								description="Individual trade results (last 50)"
+								title="P&L by Trade"
+							>
+								<PnLDistributionChart />
+							</ChartTerminal>
+						</div>
+					</div>
+				</TabsContent>
+
+				{/* Time Tab */}
+				<TabsContent value="time">
+					<PlaceholderTab title="Time-Based" />
+				</TabsContent>
+
+				{/* Risk Tab */}
+				<TabsContent value="risk">
+					<PlaceholderTab title="Risk" />
+				</TabsContent>
+
+				{/* Symbols Tab */}
+				<TabsContent value="symbols">
+					<PlaceholderTab title="Symbol & Setup" />
+				</TabsContent>
+
+				{/* Behavior Tab */}
+				<TabsContent value="behavior">
+					<PlaceholderTab title="Behavioral" />
+				</TabsContent>
+			</Tabs>
 		</div>
 	);
 }
